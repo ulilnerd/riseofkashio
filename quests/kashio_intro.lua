@@ -14,6 +14,14 @@ local QDEF = QuestDef.Define
     end,
 }
 
+:AddCastByAlias{
+    cast_id = "lumin_miner",
+    alias = "HEBBEL",
+    cast_fn = function(quest, t)
+        table.insert(t, TheGame:GetGameState():GetLocation("GB_WORKSITE_1"):GetProprietor())
+    end,
+}
+
 :AddObjective{
     id = "work_with_kalandra",
     title = "Another day, Another time",
@@ -24,9 +32,7 @@ local QDEF = QuestDef.Define
 -- below is you and kalandra talking
 QDEF:AddConvo("work_with_kalandra") 
     :Confront(function(cxt)
-        
             return "STATE_START"
-        
     end)
 
     :State("STATE_START")
@@ -123,7 +129,53 @@ QDEF:AddConvo("work_with_kalandra")
                 !left
                 I guess you sure do want this promotion badly
         ]],
-                
+        DIALOG_GATE_TROUBLE = [[
+            * SCREEEEEEEEEEEECH
+            * Workers and Spark Barons alike gather around the gate
+            * One of the workers near Kashio fumbles to the ground as he bumps into Kalandra
+            lumin_miner:
+                !right
+                OOOOOF 
+                ouch
+            kalandra:
+                !left
+                Hey buddy, watch it!
+            player:
+                !right
+                Kalandra knock it off
+            lumin_miner:
+                !left
+            player:
+                !right
+                Are you alright?
+                What's happening up there?
+            lumin_miner:
+                !left
+                I am so sorry ma'am 
+                I was just working on crafting some Lumin Infused weapons for the Admirality who live up at Murder Bay
+                Ya know, where them rich and fortunate people live
+                Anyway, had a talk with one of them Spark Baron Task Leaders at our station
+                Said we wouldn't be handing these over to the Admirality and their order would not be delivered
+                So now some wild machine is beeping and booping and screeching around making a ton of noise and hurtin me eardrums
+                This thing is just right outside of our gate and it doesn't look friendly
+            player:
+                !right
+                Thank you for informing us, you can go on your way now.
+            kalandra: 
+                !left
+                Well he sure was rude
+            player:
+                !right
+                Just relax, he is the least of our problems at the moment
+                Right now we need to head over to that main gate and see whats about to go down
+            kalandra:
+                !left
+                I'm right with you Kashio, and whatever happens, I will be with you every single step of the way.
+            player:
+                !right 
+                Likewise.
+        ]],
+        OPT_LEAVE = "Get to the main gate",        
         
        -- initiate negotiation or fight with kalandra
 
@@ -136,6 +188,7 @@ QDEF:AddConvo("work_with_kalandra")
             cxt:Dialog("DIALOG_INTRO")
         else
             cxt:Dialog("DIALOG_REINTRO")
+
         end
 
         cxt:Opt("OPT_FIGHT_KALANDRA")
@@ -143,28 +196,25 @@ QDEF:AddConvo("work_with_kalandra")
             :Battle{
                 on_success = function(cxt) 
                     cxt:Dialog("DIALOG_SUCCESS")
-                    cxt:GoTo("GATE_TROUBLE") -- when the admirality show up at the lumin mine gate
                 end,
                 on_fail = function(cxt)
                     cxt:Dialog("DIALOG_FAIL")
-                    cxt:GoTo("GATE_TROUBLE") -- when the admirality show up at the lumin mine gate
                 end,
-                -- GATE_TROUBLE plays no matter if you win or lose
-            }    
-            
-            
+            }     
         cxt:Opt("OPT_NEGOTIATE")
                 :Dialog("DIALOG_NEGOTIATE")
                 :Negotiation{
                     on_success = function(cxt) 
                         cxt:Dialog("DIALOG_SUCCESS")
-                        cxt:GoTo("GATE_TROUBLE") -- when the admirality show up at the lumin mine gate
                     end,
                     on_fail = function(cxt)
                         cxt:Dialog("DIALOG_FAIL")
-                        cxt:GoTo("GATE_TROUBLE") -- when the admirality show up at the lumin mine gate
                     end,
-                    -- GATE_TROUBLE plays no matter if you win or lose
                 }
+            cxt:Dialog("DIALOG_GATE_TROUBLE")
+            cxt:Opt("OPT_LEAVE")
+                        :PreIcon( global_images.close)
+                        :CompleteQuest()
+                       
+            -- cxt.quest:Complete("first_bar_visit")
     end)
-

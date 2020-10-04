@@ -18,6 +18,14 @@ local QDEF = QuestDef.Define
     id = "intro_scene",
     quest_id = "KASHIO_INTRO",
     on_complete = function(quest)
+       quest:Activate("intro_gate")
+    end,
+}
+
+:AddSubQuest{
+    id = "intro_gate",
+    quest_id = "KASHIO_TROUBLE_AT_GATE",
+    on_complete = function(quest)
        
     end,
 }

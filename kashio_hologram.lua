@@ -35,7 +35,7 @@ local function AddHoloEffect( anim_fighter )
     local screen_pos = math.abs(x)/width
     local pan_pos = easing.linear( screen_pos, -1, 2, 1 )
     AUDIO:PlayParamEvent("event:/sfx/battle/atk_anim/kashio/hologram_on", "position", pan_pos)
-    anim_fighter:Flash(KASHIO_FLASH_VALUES.colour, KASHIO_FLASH_VALUES.time_in, KASHIO_FLASH_VALUES.time_out, KASHIO_FLASH_VALUES.max_intensity)
+    anim_fighter:Flash(KASHIO_FLASH_VALUES.colour, KASHIO_FLASH_VALUES.time_in, KASHIO_FLASH_VALUES.time_out, KASHIO_FLASH_VALUES.max_intensity)    
     anim_fighter:SetHologramEffect(true, KASHIO_HOLOGRAM_VALUES)
 end
 
@@ -88,6 +88,14 @@ local def = CharacterDef("KASHIO_HOLO_PLAYER",
         
                     base_damage = { 2, 4, 6 },
                 },
+
+                nothing_card = table.extend(NPC_MELEE)
+                {
+                    name = "does nothing",
+                    anim = "taunt",
+                    flags = CARD_FLAGS.SKILL,
+        
+                },
                 
                 
             },
@@ -98,8 +106,6 @@ local def = CharacterDef("KASHIO_HOLO_PLAYER",
 
             behaviour =
             {
-                
-
                 OnActivate = function( self, fighter)
                     self.flail_attacks = self:MakePicker()
                         :AddID( "flail_crack1", 2)
