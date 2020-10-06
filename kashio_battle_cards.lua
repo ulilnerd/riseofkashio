@@ -1035,83 +1035,6 @@ local CARDS =
         -- }
     },
 
-    -- deceived = 
-    -- {
-    --     name = "Deceive",
-    --     anim = "taunt",
-    --     desc = "have a chance to inflict all enemies with deceive, this will cause their next attack to miss and you will counter their missed attack.",
-    --     icon = "battle/improvise_chug.tex",
-
-    --     flags =  CARD_FLAGS.SKILL,
-    --     cost = 2,
-    --     rarity = CARD_RARITY.UNCOMMON,
-    --     max_xp = 4,
-    --     target_type = TARGET_TYPE.SELF,
-    -- },
-
-     -- devious_taunt = 
-    -- {
-    --     name = "Devious Taunt",
-    --     anim = "surrender",
-    --     desc = "if an enemy is not preparing an attack card on to you, they will be forced to attack you this turn then gain a random buff.",
-    --     icon = "battle/improvise_chug.tex",
-
-    --     flags =  CARD_FLAGS.SKILL,
-    --     cost = 2,
-    --     rarity = CARD_RARITY.UNCOMMON,
-    --     max_xp = 4,
-    --     target_type = TARGET_TYPE.SELF,
-    -- },
-
-    -- even_the_odds = 
-    -- {
-    --     name = "Even the Odds",
-    --     anim = "taunt",
-    --     desc = "Singles out a random enemy, while this effect is active, you and the random enemy are the only fighters that can attack and can only attack eachother.",
-    --     icon = "battle/single_out.tex",
-
-    --     flags =  CARD_FLAGS.SKILL,
-    --     cost = 2,
-    --     rarity = CARD_RARITY.UNCOMMON,
-    --     max_xp = 4,
-    --     target_type = TARGET_TYPE.SELF,
-
-    --     OnPreResolve = function( self, battle, attack, card, fighter )
-    --         self.owner:AddCondition("EVEN_ODDS", 1 , self)
-    --         local target_fighter = {}
-    --         battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
-    --         for i=1, #target_fighter do
-    --             target_fighter[i]:AddCondition("EVEN_ODDS", 1, self)
-    --         end
-    --     end,
-
-    --     OnPostResolve = function( self, battle, attack, card, fighter )
-    --         for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-    --             if not enemy:HasCondition("EVEN_ODDS") then
-    --                 enemy:AddCondition("OUT_OF_WAY")
-    --             end
-    --         end
-    --         for i, ally in self.owner:GetEnemyTeam():Fighters() do
-    --             if not ally:HasCondition("EVEN_ODDS") then
-    --                 ally:AddCondition("OUT_OF_WAY")
-    --             end
-    --         end
-    --     end,
-    -- },
-
- -- hypnotize = 
-    -- {
-    --     name = "Hypnotize",
-    --     anim = "taunt",
-    --     desc = "Hypnotizes an enemy forcing them to become your ally for a few turns and attack their former allies.",
-    --     icon = "battle/improvise_chug.tex",
-
-    --     flags =  CARD_FLAGS.SKILL,
-    --     cost = 2,
-    --     rarity = CARD_RARITY.UNCOMMON,
-    --     max_xp = 4,
-    --     target_type = TARGET_TYPE.SELF,
-    -- },
 
  blade_dance = 
     {
@@ -1236,7 +1159,7 @@ local CARDS =
         anim = "spin_attack",
         icon = "battle/duster.tex",
 
-        flags =  CARD_FLAGS.MELEE,
+        flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
         cost = 0,
         rarity = CARD_RARITY.UNIQUE,
         max_xp = 6,
@@ -1251,7 +1174,7 @@ local CARDS =
         anim = "slash_up",
         icon = "battle/gash.tex",
 
-        flags =  CARD_FLAGS.MELEE,
+        flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
         cost = 0,
         rarity = CARD_RARITY.UNIQUE,
         max_xp = 6,
@@ -1343,7 +1266,7 @@ local CARDS =
         desc = "Gain {1} {DEFEND}.",
         icon = "battle/whirl.tex",
 
-        flags =  CARD_FLAGS.SKILL,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         cost = 1,
         rarity = CARD_RARITY.UNIQUE,
         max_xp = 6,
@@ -1457,11 +1380,152 @@ local CARDS =
             end
             
         end
+    },
+
+    battle_cry_rejuvenate = 
+    {
+        name = "Battle Cry: Rejuvenate",
+        anim = "taunt4",
+        desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {MENDING} evenly depending on how many {TAG_TEAM} stacks were consumed.",
+        icon = "battle/healing_vapors.tex",
+
+        flags =  CARD_FLAGS.SKILL,
+        cost = 1,
+        rarity = CARD_RARITY.UNCOMMON,
+        max_xp = 6,
+        target_type = TARGET_TYPE.SELF,
+        target_mod = TARGET_MOD.TEAM,
+
+        OnPostResolve = function( self, battle, attack, card )
+            local stacks = 0
+            local teammates = 0
+            for i, ally in self.owner:GetTeam():Fighters() do
+                teammates = i
+            end
+            if self.owner:HasCondition("TAG_TEAM") then
+                stacks = self.owner:GetConditionStacks("TAG_TEAM")
+                for i, ally in self.owner:GetTeam():Fighters() do
+                    ally:AddCondition("MENDING", math.round(stacks / teammates)  , self)
+                end
+            end
+            self.owner:RemoveCondition("TAG_TEAM", self.owner:GetConditionStacks("TAG_TEAM"), self)
+        end
+    },
+
+    tag_team = 
+    {
+        name = "Tag Team",
+        anim = "transition1",
+        desc = "Gain {TAG_TEAM} and swap to {equip_glaive}.",
+        icon = "battle/baron_expedition.tex",
+
+        flags =  CARD_FLAGS.SKILL,
+        cost = 1,
+        rarity = CARD_RARITY.UNCOMMON,
+        max_xp = 6,
+        target_type = TARGET_TYPE.SELF,
+
+        PostPresAnim = function( self, anim_fighter )
+            anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
+        end,
+
+        OnPostResolve = function( self, battle, attack, card )
+            self.owner:AddCondition("equip_glaive", 1, self)
+            self.owner:AddCondition("TAG_TEAM", 1, self)
+        end
     }
 
-    
+    -- deceived = 
+    -- {
+    --     name = "Deceive",
+    --     anim = "taunt",
+    --     desc = "have a chance to inflict all enemies with deceive, this will cause their next attack to miss and you will counter their missed attack.",
+    --     icon = "battle/improvise_chug.tex",
 
-    
+    --     flags =  CARD_FLAGS.SKILL,
+    --     cost = 2,
+    --     rarity = CARD_RARITY.UNCOMMON,
+    --     max_xp = 4,
+    --     target_type = TARGET_TYPE.SELF,
+    -- },
+
+     -- devious_taunt = 
+    -- {
+    --     name = "Devious Taunt",
+    --     anim = "surrender",
+    --     desc = "if an enemy is not preparing an attack card on to you, they will be forced to attack you this turn then gain a random buff.",
+    --     icon = "battle/improvise_chug.tex",
+
+    --     flags =  CARD_FLAGS.SKILL,
+    --     cost = 2,
+    --     rarity = CARD_RARITY.UNCOMMON,
+    --     max_xp = 4,
+    --     target_type = TARGET_TYPE.SELF,
+    -- },
+
+    -- even_the_odds = 
+    -- {
+    --     name = "Even the Odds",
+    --     anim = "taunt",
+    --     desc = "Singles out a random enemy, while this effect is active, you and the random enemy are the only fighters that can attack and can only attack eachother.",
+    --     icon = "battle/single_out.tex",
+
+    --     flags =  CARD_FLAGS.SKILL,
+    --     cost = 2,
+    --     rarity = CARD_RARITY.UNCOMMON,
+    --     max_xp = 4,
+    --     target_type = TARGET_TYPE.SELF,
+
+    --     OnPreResolve = function( self, battle, attack, card, fighter )
+    --         self.owner:AddCondition("EVEN_ODDS", 1 , self)
+    --         local target_fighter = {}
+    --         battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
+    --         for i=1, #target_fighter do
+    --             target_fighter[i]:AddCondition("EVEN_ODDS", 1, self)
+    --         end
+    --     end,
+
+    --     OnPostResolve = function( self, battle, attack, card, fighter )
+    --         for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+    --             if not enemy:HasCondition("EVEN_ODDS") then
+    --                 enemy:AddCondition("OUT_OF_WAY")
+    --             end
+    --         end
+    --         for i, ally in self.owner:GetEnemyTeam():Fighters() do
+    --             if not ally:HasCondition("EVEN_ODDS") then
+    --                 ally:AddCondition("OUT_OF_WAY")
+    --             end
+    --         end
+    --     end,
+    -- },
+
+ -- hypnotize = 
+    -- {
+    --     name = "Hypnotize",
+    --     anim = "taunt",
+    --     desc = "Hypnotizes an enemy forcing them to become your ally for a few turns and attack their former allies.",
+    --     icon = "battle/improvise_chug.tex",
+
+    --     flags =  CARD_FLAGS.SKILL,
+    --     cost = 2,
+    --     rarity = CARD_RARITY.UNCOMMON,
+    --     max_xp = 4,
+    --     target_type = TARGET_TYPE.SELF,
+    -- },
+
+    -- parasite_infusion =
+    -- {
+    --     name = "Parasite Infusion",
+    --     anim = "throw1",
+    --     desc = "Infuses an enemy with a parasite, gaining a condition that has a number of stacks depending on their max health, dealing damage to this target will decrease the stacks, when the stacks hit 0, summon bog poking guy on your side or bog mine on their side.",
+    --     icon = "battle/improvise_chug.tex",
+
+    --     flags =  CARD_FLAGS.RANGED,
+    --     cost = 1,
+    --     rarity = CARD_RARITY.UNCOMMON,
+    --     max_xp = 4,
+       
+    -- }
 
 }
 
@@ -1472,6 +1536,76 @@ end
 
 local CONDITIONS = 
 {
+        -- EVEN_ODDS = 
+    -- {
+    --     name = "Even The Odds",
+    --     desc = "All fighters in the battle are unable to attack except the two fighters with this condition, they may only attack eachother.",
+    --     icon = "battle/conditions/vendetta.tex",
+    --     apply_sound = "event:/sfx/battle/status/system/Status_Buff_Attack",
+    --     max_stacks = 1,
+
+    --     CanBeTargetted = function( self, card, fighter)
+    --         if fighter:GetTeam() ~= card:GetOwner():GetTeam() and fighter:GetTeam() == self.owner:GetTeam() then
+    --             if fighter:HasCondition("OUT_OF_WAY") then
+    --                 if fighter ~= self.owner and self.owner:IsAlive() then
+    --                     return false
+    --                 end
+    --             end
+    --         end
+    --         return true
+    --     end
+    -- },
+
+    -- OUT_OF_WAY =
+    -- {
+    --     name = "Out of the way",
+    --     desc = "Fighters waiting for the brawl to come to a closure.",
+    --     icon = "battle/conditions/favorite_of_hesh.tex",
+    --     -- apply_sound = "event:/sfx/battle/status/system/Status_Buff_Attack",
+    --     max_stacks = 1,
+
+    --     -- CanBeTargetted = function( self, card, fighter )
+    --     --     if fighter:HasCondition("OUT_OF_WAY") then
+    --     --         return false
+    --     --     end
+            
+    --     -- end
+    -- },
+
+    TAG_TEAM = 
+    {
+        name = "Tag Team",
+        desc = "Your team generates {TAG_TEAM} stacks every time your team makes an action, these stacks can be consumed to use powerful team abilities.",
+        icon = "battle/conditions/ai_spark_baron_goon_buff.tex",
+
+        min_stacks = 1,
+
+        event_handlers =
+        {
+
+                [ BATTLE_EVENT.ON_HIT] = function(self, card, fighter, hit)
+                    if hit.attacker ~= self.owner then
+                        for i, ally in ipairs(self.owner:GetTeam():GetFighters()) do
+                            if ally.prepared_cards then
+                                for i, card in ipairs( ally.prepared_cards ) do
+                                    self.owner:AddCondition("TAG_TEAM", 1)
+                                end
+                            end
+                        end
+                    end
+                        
+        
+                 end,
+
+                 [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, fighter )
+                    if fighter == self.owner then
+                        self.owner:RemoveCondition( "TAG_TEAM", 1 )
+                    end
+                end,
+        }
+
+        
+    },
 
     DEFLECTION = 
     {
@@ -1673,41 +1807,6 @@ local CONDITIONS =
 
     },
 
-    -- EVEN_ODDS = 
-    -- {
-    --     name = "Even The Odds",
-    --     desc = "All fighters in the battle are unable to attack except the two fighters with this condition, they may only attack eachother.",
-    --     icon = "battle/conditions/vendetta.tex",
-    --     apply_sound = "event:/sfx/battle/status/system/Status_Buff_Attack",
-    --     max_stacks = 1,
-
-    --     CanBeTargetted = function( self, card, fighter)
-    --         if fighter:GetTeam() ~= card:GetOwner():GetTeam() and fighter:GetTeam() == self.owner:GetTeam() then
-    --             if fighter:HasCondition("OUT_OF_WAY") then
-    --                 if fighter ~= self.owner and self.owner:IsAlive() then
-    --                     return false
-    --                 end
-    --             end
-    --         end
-    --         return true
-    --     end
-    -- },
-
-    -- OUT_OF_WAY =
-    -- {
-    --     name = "Out of the way",
-    --     desc = "Fighters waiting for the brawl to come to a closure.",
-    --     icon = "battle/conditions/favorite_of_hesh.tex",
-    --     -- apply_sound = "event:/sfx/battle/status/system/Status_Buff_Attack",
-    --     max_stacks = 1,
-
-    --     -- CanBeTargetted = function( self, card, fighter )
-    --     --     if fighter:HasCondition("OUT_OF_WAY") then
-    --     --         return false
-    --     --     end
-            
-    --     -- end
-    -- },
 
 
     FORCE_FIELD =
