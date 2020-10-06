@@ -1,3 +1,4 @@
+
 local def = CharacterDef("KASHIO_PLAYER",
 {
     base_def = "PLAYER_BASE",
@@ -92,7 +93,9 @@ local def = CharacterDef("KASHIO_PLAYER",
             death_holo = "death_holo2",
             taunt = "taunt4",
             holo_spawn_2 = "holo_spawn",
-        }
+        },
+
+       
     },
 
     negotiation_data =

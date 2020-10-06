@@ -777,26 +777,26 @@ local CARDS =
         end
     },
 
-    the_bigger_they_are = 
+    no_mercy = 
     {
-        name = "The Bigger They are...",
+        name = "No Mercy",
         anim = "spin_attack",
-        desc = "Deals damage equal to 15% of the target's current health.",
-        icon = "RISE:textures/thebiggertheyare.png",
+        desc = "Deals 75% of the enemy's missing health.",
+        icon = "battle/bonkers.tex",
 
         flags = CARD_FLAGS.MELEE,
-        cost = 1,
+        cost = 2,
         rarity = CARD_RARITY.COMMON,
         max_xp = 6,
 
-        min_damage = 0,
-        max_damage = 0,
+        min_damage = 2,
+        max_damage = 2,
         
         event_handlers =
         {
             [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
                 if card == self and target then
-                    local bonus = math.floor( target:GetHealth() * 0.15 )
+                    local bonus = math.floor(( target:GetMaxHealth() - target:GetHealth()) * 0.75)
                     dmgt:AddDamage( bonus, bonus )
                 end
             end,
@@ -1076,12 +1076,25 @@ local CARDS =
     --     max_xp = 4,
     --     target_type = TARGET_TYPE.SELF,
 
-    --     OnPostResolve = function( self, battle, attack, card )
+    --     OnPreResolve = function( self, battle, attack, card, fighter )
     --         self.owner:AddCondition("EVEN_ODDS", 1 , self)
     --         local target_fighter = {}
     --         battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
     --         for i=1, #target_fighter do
     --             target_fighter[i]:AddCondition("EVEN_ODDS", 1, self)
+    --         end
+    --     end,
+
+    --     OnPostResolve = function( self, battle, attack, card, fighter )
+    --         for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+    --             if not enemy:HasCondition("EVEN_ODDS") then
+    --                 enemy:AddCondition("OUT_OF_WAY")
+    --             end
+    --         end
+    --         for i, ally in self.owner:GetEnemyTeam():Fighters() do
+    --             if not ally:HasCondition("EVEN_ODDS") then
+    --                 ally:AddCondition("OUT_OF_WAY")
+    --             end
     --         end
     --     end,
     -- },
@@ -1371,7 +1384,84 @@ local CARDS =
                 end
             end
         end
+    },
+
+    playing_with_fire =
+    {
+        name = "Playing With Fire",
+        anim = "slam",
+        desc = "Apply a random negative condition to either you or the enemy {KINGPIN} 15: Always apply a random debuff to an enemy.",
+        icon = "battle/weakness_inflammable.tex",
+
+        flags =  CARD_FLAGS.MELEE,
+        cost = 1,
+        rarity = CARD_RARITY.COMMON,
+        max_xp = 8,
+        
+        min_damage = 2,
+        max_damage = 4,
+
+        debuff_amount = 1,
+
+        OnPostResolve = function( self, battle, attack, card )
+            local randomPerson = math.random(1,2)
+            if self.owner:HasCondition("KINGPIN") then
+                if self.owner:GetConditionStacks("KINGPIN") >= 15 then
+                    randomPerson = 1
+                end
+            end
+            local randomDebuff = math.random(1,7)
+            local randomDebuffList = {"SHATTER", "EXPOSED", "TARGETED", "WOUND", "DEFECT", "IMPAIR", "BLEED"}
+            for i, hit in attack:Hits() do
+                local target = hit.target
+                if not hit.evaded then 
+                    if randomPerson == 1 then
+                        target:AddCondition(randomDebuffList[randomDebuff], self.debuff_amount, self)
+                    end
+                end
+            end
+            if randomPerson == 2 then 
+                self.owner:AddCondition(randomDebuffList[randomDebuff], self.debuff_amount, self)
+            end
+        end
+    },
+
+    great_escape =
+    {
+        name = "The Great Escape",
+        anim = "taunt4",
+        desc = "Gain {EVASION}, {DEFEND}, {EXPOSED}, or {IMPAIR}, {KINGPIN} 23: Gain {EVASION} or {DEFEND}.",
+        icon = "battle/misdirection.tex",
+
+        flags =  CARD_FLAGS.SKILL,
+        cost = 1,
+        rarity = CARD_RARITY.COMMON,
+        max_xp = 8,
+        target_type = TARGET_TYPE.SELF,
+
+        condition_amount = 3,
+        defend_amount = 10,
+
+        OnPostResolve = function( self, battle, attack, card )
+            local randomChance = math.random(1,4)
+            if self.owner:HasCondition("KINGPIN") then
+                if self.owner:GetConditionStacks("KINGPIN") >= 23 then
+                    randomChance = math.random(1,2)
+                end
+            end
+            local randomConditionList = {"EVASION", "DEFEND", "EXPOSED", "IMPAIR"}
+            if randomChance == 2 then 
+                self.owner:AddCondition(randomConditionList[randomChance], self.defend_amount, self)
+            else
+                self.owner:AddCondition(randomConditionList[randomChance], self.condition_amount, self)
+            end
+            
+        end
     }
+
+    
+
+    
 
 }
 
@@ -1591,37 +1681,32 @@ local CONDITIONS =
     --     apply_sound = "event:/sfx/battle/status/system/Status_Buff_Attack",
     --     max_stacks = 1,
 
-    --     OnApply = function( self )
-    --         for i, ally in self.owner:GetTeam():Fighters() do
-    --             if not ally:HasCondition("EVEN_ODDS") then
-    --                 ally:AddCondition("OUT_OF_WAY", 1, self)
+    --     CanBeTargetted = function( self, card, fighter)
+    --         if fighter:GetTeam() ~= card:GetOwner():GetTeam() and fighter:GetTeam() == self.owner:GetTeam() then
+    --             if fighter:HasCondition("OUT_OF_WAY") then
+    --                 if fighter ~= self.owner and self.owner:IsAlive() then
+    --                     return false
+    --                 end
     --             end
     --         end
-    --     end,
-
-    --     CanBeTargetted = function( self, card, fighter )
-    --         for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-    --             if enemy:HasCondition("EVEN_ODDS") and not enemy:HasCondition("OUT_OF_WAY") then
-    --                 return true
-    --             end
-    --         end
+    --         return true
     --     end
-
     -- },
 
     -- OUT_OF_WAY =
     -- {
     --     name = "Out of the way",
     --     desc = "Fighters waiting for the brawl to come to a closure.",
-    --     icon = "battle/conditions/drunk.tex",
+    --     icon = "battle/conditions/favorite_of_hesh.tex",
     --     -- apply_sound = "event:/sfx/battle/status/system/Status_Buff_Attack",
     --     max_stacks = 1,
 
-    --     CanBeTargetted = function( self, card, fighter )
-    --         if fighter:HasCondition("OUT_OF_WAY") then
-    --             return false
-    --         end
-    --     end
+    --     -- CanBeTargetted = function( self, card, fighter )
+    --     --     if fighter:HasCondition("OUT_OF_WAY") then
+    --     --         return false
+    --     --     end
+            
+    --     -- end
     -- },
 
 
@@ -1631,10 +1716,14 @@ local CONDITIONS =
         desc = "Gain a shield that will negate all damage unless the enemy that is attacking you has higher damage than the threshold, the threshold is equal to 10% of your max health plus current defend value.",
         icon = "battle/conditions/active_shield_generator.tex",
 
-        
-        -- OnApply = function( self, anim_fighter, fighter )
-        --     anim_fighter:Flash(0xff00ffff, 0.1, 0.3, 1)
-        -- end,
+
+        -- local function shieldVisual( fighter )
+        --     fighter.battle:BroadcastEvent( BATTLE_EVENT.CUSTOM, fighter, function( fight_screen, ent )
+        --         local anim_fighter = ent.cmp.AnimFighter
+        --         anim_fighter:Flash(0xff00ffff, 0.1, 0.3, 1) 
+        --     end)
+        -- end
+
 
         event_handlers = 
         {
@@ -1664,7 +1753,7 @@ local CONDITIONS =
                         end
                     end
                 end
-            end
+            end,
         }
     },
 
@@ -1768,7 +1857,6 @@ local CONDITIONS =
         }
     },
 }
-
 
 for id, def in pairs( CONDITIONS ) do
     Content.AddBattleCondition( id, def )
