@@ -37,7 +37,6 @@ local QDEF = QuestDef.Define
 
 QDEF:AddConvo("trouble_at_gate") 
     :Confront(function(cxt)
-
             return "STATE_START"
     end)
 

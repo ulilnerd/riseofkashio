@@ -46,10 +46,11 @@ local function OnLoad( mod )
 
     ------------------------------------------------------------------------------------------
     -- Characters
-
-    require "RISE:kashio"
-    require "RISE:kashio_hologram"
-
+    for k, filepath in ipairs( filepath.list_files( "RISE:characters", "*.lua", true )) do
+        filepath = filepath:match( "^(.+)[.]lua$")
+        require( filepath )
+    end
+   
     ------------------------------------------------------------------------------------------
     -- Convos / Quests
 
@@ -68,6 +69,8 @@ local function OnLoad( mod )
         filepath = filepath:match( "^(.+)[.]lua$")
         require( filepath )
     end
+
+   
 
     ------------------------------------------------------------------------------------------
     -- Locations

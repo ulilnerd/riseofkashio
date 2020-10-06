@@ -32,7 +32,7 @@ local QDEF = QuestDef.Define
 -- below is you and kalandra talking
 QDEF:AddConvo("work_with_kalandra") 
     :Confront(function(cxt)
-            return "STATE_START"
+        return "STATE_START"
     end)
 
     :State("STATE_START")
@@ -129,6 +129,43 @@ QDEF:AddConvo("work_with_kalandra")
                 !left
                 I guess you sure do want this promotion badly
         ]],
+    }
+    -- above: 
+    :SetLooping()
+    :Fn(function(cxt) 
+        if cxt:FirstLoop() then
+            cxt.enc:SetPrimaryCast(cxt.quest:GetCastMember("kalandra"))
+            cxt:Dialog("DIALOG_INTRO")
+
+            cxt:Opt("OPT_FIGHT_KALANDRA")
+            :Dialog("DIALOG_FIGHT_KALANDRA")
+            :Battle{
+                on_success = function(cxt) 
+                    cxt:Dialog("DIALOG_SUCCESS")
+                end,
+                on_fail = function(cxt)
+                    cxt:Dialog("DIALOG_FAIL")
+                end,
+            }     
+        cxt:Opt("OPT_NEGOTIATE")
+                :Dialog("DIALOG_NEGOTIATE")
+                :Negotiation{
+                    on_success = function(cxt) 
+                        cxt:Dialog("DIALOG_SUCCESS")
+                        
+                    end,
+                    on_fail = function(cxt)
+                        cxt:Dialog("DIALOG_FAIL")
+                    end,
+                }    
+        else
+            -- cxt:Dialog("DIALOG_REINTRO")
+            cxt:GoTo("STATE_TROUBLE_AT_GATE")
+        end
+    end)
+
+    :State("STATE_TROUBLE_AT_GATE")
+    :Loc{ 
         DIALOG_GATE_TROUBLE = [[
             * SCREEEEEEEEEEEECH
             * Workers and Spark Barons alike gather around the gate
@@ -175,46 +212,17 @@ QDEF:AddConvo("work_with_kalandra")
                 !right 
                 Likewise.
         ]],
-        OPT_LEAVE = "Get to the main gate",        
-        
-       -- initiate negotiation or fight with kalandra
-
+        OPT_LEAVE = "Get to the main gate",     
     }
-    -- above: 
     :SetLooping()
     :Fn(function(cxt) 
-        if cxt:FirstLoop() then
-            cxt.enc:SetPrimaryCast(cxt.quest:GetCastMember("kalandra"))
-            cxt:Dialog("DIALOG_INTRO")
-        else
-            cxt:Dialog("DIALOG_REINTRO")
-
-        end
-
-        cxt:Opt("OPT_FIGHT_KALANDRA")
-            :Dialog("DIALOG_FIGHT_KALANDRA")
-            :Battle{
-                on_success = function(cxt) 
-                    cxt:Dialog("DIALOG_SUCCESS")
-                end,
-                on_fail = function(cxt)
-                    cxt:Dialog("DIALOG_FAIL")
-                end,
-            }     
-        cxt:Opt("OPT_NEGOTIATE")
-                :Dialog("DIALOG_NEGOTIATE")
-                :Negotiation{
-                    on_success = function(cxt) 
-                        cxt:Dialog("DIALOG_SUCCESS")
-                    end,
-                    on_fail = function(cxt)
-                        cxt:Dialog("DIALOG_FAIL")
-                    end,
-                }
-            cxt:Dialog("DIALOG_GATE_TROUBLE")
-            cxt:Opt("OPT_LEAVE")
-                        :PreIcon( global_images.close)
-                        :CompleteQuest()
-                       
-            -- cxt.quest:Complete("first_bar_visit")
+        cxt:Dialog("DIALOG_GATE_TROUBLE")
+        cxt:Opt("OPT_LEAVE")
+            :PreIcon( global_images.close)
+            :CompleteQuest()
+            :Travel()
+            -- :Fn(function() 
+            --     cxt.quest:Activate("trouble_at_gate")
+            -- end)
+            
     end)

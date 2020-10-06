@@ -5,8 +5,6 @@ local BATTLE_EVENT = battle_defs.BATTLE_EVENT
 
 local CARDS =
 {
-
- 
     improvise_smokescreen = 
     {
         name = "Smokescreen",
@@ -52,6 +50,7 @@ local CARDS =
 
         OnPostResolve = function( self, battle, attack)
             self.owner:AddCondition("POWER_LOSS", self.power_amt )
+            self.owner:AddCondition("POWER", self.power_amt )
             self.owner:AddCondition("WOUND", self.wound_amt )
         end
     },
@@ -325,9 +324,9 @@ local CARDS =
     flail_swap =
     {
         name = "Kashio's Flail",
-        anim = "taunt",
         desc = "Equip {equip_flail} and gain {DEFEND} equal to 5% of your maximum health and current defend then {HEAL} self for 10% of your missing health every turn. Also have a chance a 25% chance to apply a random debuff to an enemy on hit.",
         icon = "battle/overloaded_spark_hammer.tex",
+        anim = "taunt",
 
         flags = CARD_FLAGS.BUFF | CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         target_type = TARGET_TYPE.SELF,
@@ -349,28 +348,23 @@ local CARDS =
     glaive_swap = 
     {
         name = "Kashio's Force Glaive",
-        anim = "transition1",
         desc = "Equip the Rentorian Force Glaive gaining {POWER} and an extra action every turn.",
         icon = "battle/rentorian_force_glaive.tex",
+        anim = "transition1",
 
         flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         target_type = TARGET_TYPE.SELF,
         cost = 0,
         rarity = CARD_RARITY.UNIQUE,
 
-
         PostPresAnim = function( self, anim_fighter )
             anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
         end,
-
+        
         OnPostResolve = function( self, battle, attack )
             self.owner:AddCondition("equip_glaive", 1 )
         end,
-
-
     },
-
-
 
     suitcase_grenade = 
     {
@@ -452,48 +446,24 @@ local CARDS =
     {
         name = "Deflect",
         anim = "taunt3",
-        desc = "Deal damage to all enemies equal to half the damage they will deal to you and gain {DEFEND} equal to that amount.",
+        desc = "Gain {1} {DEFLECTION}, {KINGPIN} 10: Deal half the damage enemies will deal to you instead and defend for the same amount.",
         icon = "battle/hammer_swing.tex",
 
         flags = CARD_FLAGS.SKILL,
         cost = 1,
         rarity = CARD_RARITY.UNCOMMON,
         max_xp = 6,
-        target_mod = TARGET_MOD.TEAM,
-        min_damage = 0,
-        max_damage = 0,
+        target_type = TARGET_TYPE.SELF,
 
-        OnPostResolve = function( self, battle, attack )
-            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-                if enemy.prepared_cards then
-                    for i, card in ipairs( enemy.prepared_cards ) do
-                        if card:IsAttackCard() then
-                            self.owner:AddCondition("DEFEND", math.round(card.min_damage / 2), self)
-                        end
-                    end
-                end
-            end
+        deflection_amount = 3,
+
+        desc_fn = function( self, fmt_str )
+            return loc.format( fmt_str, self.deflection_amount or 1 )
         end,
 
-        event_handlers =
-        {
-            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
-                local count = 0
-                if card == self then
-                for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-                    if enemy.prepared_cards then
-                        for i, card in ipairs( enemy.prepared_cards ) do
-                            if card:IsAttackCard() then
-                                count = count + card.min_damage
-                            end
-                        end
-                    end
-                end
-                dmgt:AddDamage( math.round(count / 2), math.round(count / 2), self )
-                end
-            end,
-        }
-
+        OnPostResolve = function( self, battle, attack )
+            self.owner:AddCondition("DEFLECTION", self.deflection_amount)
+        end
     },
 
     afterburner_gloves =
@@ -916,7 +886,8 @@ local CARDS =
 
         PostPresAnim = function( self, anim_fighter )
             anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
-        end
+        end,
+        
     },
 
     highground = 
@@ -1045,8 +1016,10 @@ local CARDS =
         target_type = TARGET_TYPE.SELF,
 
         OnPostResolve = function( self, battle, attack, card )
-            local randomChance = math.random(1,5)
-            if randomChance == 1 then
+            local chance = math.floor(self.owner:GetHealth() / self.owner:GetMaxHealth() * 100)
+            chance = 100 - chance
+            local randomChance = math.random(1,100)
+            if chance >= randomChance then
                 self.owner:AddCondition("PLEAD_FOR_LIFE", 1 , self)
                 for i, enemy in self.owner:GetEnemyTeam():Fighters() do
                     enemy:AddCondition("DEFECT", 1)
@@ -1374,7 +1347,7 @@ local CARDS =
         end
     },
 
-    Irritating_blow = 
+    irritating_blow = 
     {
         name = "Irritating Blow",
         anim = "crack",
@@ -1410,20 +1383,68 @@ end
 local CONDITIONS = 
 {
 
+    DEFLECTION = 
+    {
+        name = "Deflection",
+        desc = "Deal damage to enemies equal to 25% of the damage they will deal to you and gain {DEFEND} equal to that amount {KINGPIN} 10: Deal 50% damage back instead and gain {DEFEND} for the same amount.",
+        icon = "battle/conditions/shield_of_hesh.tex",
+
+        event_handlers =
+        {
+                [ BATTLE_EVENT.END_PLAYER_TURN ] = function(self, card, fighter)
+                    local count = 0
+                        for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                            if enemy.prepared_cards then
+                                for i, card in ipairs( enemy.prepared_cards ) do
+                                    if card:IsAttackCard() then
+                                        if self.owner:HasCondition("KINGPIN") then
+                                            if self.owner:GetConditionStacks("KINGPIN") >= 10 then
+                                                self.owner:AddCondition("DEFEND", math.round(card.max_damage / 2), self)
+                                            end
+                                        else
+                                            self.owner:AddCondition("DEFEND", math.round(card.max_damage / 4), self)
+                                        end
+                                        count = count + card.max_damage
+                                    end
+                                end
+                            end
+                            if self.owner:HasCondition("KINGPIN") then
+                                if self.owner:GetConditionStacks("KINGPIN") >= 10 then
+                                    enemy:ApplyDamage( math.round(count / 2), math.round(count / 2), self )
+                                end
+                            else
+                                enemy:ApplyDamage( math.round(count / 4), math.round(count / 4), self )
+                            end
+                        end
+                    self.owner:RemoveCondition("DEFLECTION", 1)
+                end
+        }
+    },
+
     ULTIMATE_HUNTER = 
     {
         name = "Ultimate Hunter",
         desc = "Gain {DEFEND} whenever you swap weapons.",
         icon = "battle/conditions/vroc_howl.tex",
 
+        flailCount = 0,
+        glaiveCount = 0,
+
         event_handlers =
         {
-            [ BATTLE_EVENT.CONDITION_ADDED ] = function( self, battle, attack, hit )
-            --    if self.owner:HasCondition("equip_flail") then
-            --         self.owner:AddCondition("DEFEND", 3, self)
-            --    elseif self.owner:HasCondition("equip_glaive") then
-            --         self.owner:AddCondition("DEFEND", 3, self)
-            --    end
+            [ BATTLE_EVENT.CARD_MOVED ] = function( self, battle, attack, hit )
+                
+                if self.owner:HasCondition("equip_flail") then
+                    self.flailCount = 1
+                end
+                if self.owner:HasCondition("equip_glaive") then
+                   self.glaiveCount = 1
+                end
+                if self.flailCount == 1 and self.glaiveCount == 1 then
+                    self.flailCount = 0
+                    self.glaiveCount = 0
+                    self.owner:AddCondition("DEFEND", 3, self)
+                end
             end
         }
     },
@@ -1434,22 +1455,22 @@ local CONDITIONS =
         desc = "For 3 turns, all of your attacks apply burn to enemies and yourself, if {equip_flail} is active gain defend equal to your {BURN}.",
         icon = "battle/conditions/sharpened_blades.tex",
 
-
         event_handlers =
         {
             [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
-                for i, hit in attack:Hits() do
-                    local target = hit.target
-                    if not hit.evaded then 
-                        target:AddCondition("BURN", self.burn_amount, self)
+                if attack.attacker == self.owner and attack.card:IsAttackCard() and not hit.evaded then
+                    for i, hit in attack:Hits() do
+                        local target = hit.target
+                        if not hit.evaded then 
+                            target:AddCondition("BURN", self.burn_amount, self)
+                        end
+                    end
+                    self.owner:AddCondition("BURN", 1)
+                    if self.owner:HasCondition("equip_flail") then
+                        self.owner:AddCondition("DEFEND", 1)
                     end
                 end
-                self.owner:AddCondition("BURN", 1)
-                if self.owner:HasCondition("equip_flail") then
-                    self.owner:AddCondition("DEFEND", 1)
-                end
             end,
-
             [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit )
                 self.owner:RemoveCondition("AFTERBURN_GLOVES", 1)
             end
@@ -1462,6 +1483,8 @@ local CONDITIONS =
         name = "Blade Dance",
         desc = "Gain stacks of {BLADE_DANCE} depending on a random enemy's health which will decrease the stacks for every point of damage you deal, when the stacks reach 0, gain evade.",
         icon = "battle/conditions/sharpened_blades.tex",
+
+        min_stacks = 1,
          
         event_handlers =
         {
@@ -1471,15 +1494,14 @@ local CONDITIONS =
                         self.owner:RemoveCondition("BLADE_DANCE", hit.damage, self)
                    end
                 end
-
-                if self.owner:GetConditionStacks("BLADE_DANCE") == 0 then
+                if self.owner:GetConditionStacks("BLADE_DANCE") <= 1 then
                     local randomEnemyHealth = 0
                     local target_fighter = {}
                     battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
                         for i=1, #target_fighter do
                             randomEnemyHealth = target_fighter[i]:GetHealth()
                         end
-                        randomEnemyHealth = math.round(randomEnemyHealth * 0.3)
+                        randomEnemyHealth = math.round(randomEnemyHealth * 0.75)
                     self.owner:AddCondition("BLADE_DANCE", randomEnemyHealth, self)
                     self.owner:AddCondition("EVASION", 1, self)
                     for i, hit in attack:Hits() do
@@ -1495,22 +1517,22 @@ local CONDITIONS =
     KINGPIN = 
     {
         name = "Kingpin",
-        desc = "Gain stacks of {KINGPIN} which will unlock the full potential of certain cards, every offensive action generates {KINGPIN}.  Every stack grants 0.5% additional damage.",
+        desc = "Gain stacks of {KINGPIN} which will unlock the full potential of certain cards, every action generates {KINGPIN}.",
         icon = "battle/conditions/burr_boss_enrage.tex",
         max_stacks = 30,
         event_handlers =
         {
-            [ BATTLE_EVENT.ON_HIT ] = function( self, battle )
+            [ BATTLE_EVENT.CARD_MOVED ] = function( self, battle )
                     self.owner:AddCondition("KINGPIN", 1, self)
             end,
-            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
-                if card.owner == self.owner and card:IsAttackCard() then
-                    dmgt:AddDamage( math.round(self.owner:GetConditionStacks("KINGPIN") * 0.005), math.round(self.owner:GetConditionStacks("KINGPIN") * 0.005), self )
-                end
-                if target == self.owner then
-                    dmgt:AddDamage( math.round(self.owner:GetConditionStacks("KINGPIN") * 0.005), math.round(self.owner:GetConditionStacks("KINGPIN") * 0.005), self )
-                end
-            end,
+            -- [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+            --     if card.owner == self.owner and card:IsAttackCard() then
+            --         dmgt:ModifyDamage( math.round(dmgt.min_damage + dmgt.min_damage * 0.3), math.round(dmgt.max_damage + dmgt.max_damage * 0.3), self )
+            --     end
+            --     if target == self.owner then
+            --         dmgt:ModifyDamage( math.round(dmgt.min_damage + dmgt.min_damage * 0.3), math.round(dmgt.max_damage + dmgt.max_damage * 0.3), self )
+            --     end
+            -- end,
         }
     },
 
@@ -1522,15 +1544,18 @@ local CONDITIONS =
         max_stacks = 1,  
 
         CanBeTargetted = function( self, card, fighter )
-            if self.owner:HasCondition("PLEAD_FOR_LIFE") then
+            if fighter:HasCondition("PLEAD_FOR_LIFE") then
                 return false
             end
             return true
         end,
 
-        [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle )
-            self.owner:RemoveCondition("PLEAD_GUILTY", 1, self)
-        end
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, fighter )
+                self.owner:RemoveCondition("PLEAD_FOR_LIFE", 1, self)
+            end
+        }
     },
 
     FLURRY = 
@@ -1544,7 +1569,7 @@ local CONDITIONS =
         event_handlers =
         {
             [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
-                local randomConNum = math.floor(math.random(0,5))
+                local randomConNum = math.floor(math.random(1,6))
                 local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
                 if attack.attacker == self.owner and attack.card:IsAttackCard() and not hit.evaded then
                     hit.target:AddCondition( posConditions[randomConNum], 1, self)
@@ -1664,24 +1689,25 @@ local CONDITIONS =
     equip_glaive = 
     {
         name = "Kashio's Force Glaive",
-        desc = "Deal extra damage with your attacks and gain an extra action per turn at the cost of taking more damage and gaining {EXPOSED}.",
+        desc = "Deal extra damage with your attacks and gain an extra action per turn at the cost of taking more damage and halving {DEFEND}.",
         icon = "battle/conditions/kashio_glaive.tex",
 
         max_stacks = 1,
 
-        OnApply = function( self )
+        OnApply = function( self, card )
             if self.owner:HasCondition("equip_flail") then
                 self.owner:RemoveCondition("equip_flail", 1, self)
             end
-            self.owner:AddCondition("EXPOSED", 1, self)
             self.owner:AddCondition("NEXT_TURN_ACTION", 1, self)
+            -- if self.owner == card.owner and not card.name == "glaive_swap" then
+            --     self.owner:BroadcastEvent( BATTLE_EVENT.PLAY_ANIM, "transition1", false, true)
+            -- end
         end,
-
 
         event_handlers = 
         {
             [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function (self, battle, fighter)
-                self.owner:AddCondition("EXPOSED", 1, self)
+                
                 self.owner:AddCondition("NEXT_TURN_ACTION", 1, self)
             end,
 
@@ -1691,6 +1717,14 @@ local CONDITIONS =
                 end
                 if target == self.owner then
                     dmgt:ModifyDamage( math.round(dmgt.min_damage + dmgt.min_damage * 0.3), math.round(dmgt.max_damage + dmgt.max_damage * 0.3), self )
+                end
+            end,
+
+            [ BATTLE_EVENT.CALC_MODIFY_STACKS ] = function( self, acc, condition_id, fighter, source )
+                if condition_id == "DEFEND" and fighter == self.owner then
+                    if acc.value > 0 then
+                        acc:AddValue( -math.floor( acc.value / 2 ), self )
+                    end
                 end
             end,
         }
@@ -1706,6 +1740,7 @@ local CONDITIONS =
             if self.owner:HasCondition("equip_glaive") then
                 self.owner:RemoveCondition("equip_glaive", 1, self)
             end
+            -- self.owner:BroadcastEvent( BATTLE_EVENT.PLAY_ANIM, "taunt", false, true)
         end,
 
         max_stacks = 1,
@@ -1714,20 +1749,21 @@ local CONDITIONS =
         {
             -- 25% chance to apply debuff to enemy
             [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
-                local randomNum = math.floor(math.random(0,1)) -- 0 to 1
-                local randomChance = math.floor(math.random(1,2)) -- 1 or 2
-                local randomConNum = math.floor(math.random(0,5)) -- 0 to 5
+                local randomNum = math.random(1,4) -- 1 to 4
+                local randomConNum = math.random(1,6) -- 1 to 6, kept crashing because arrays start at index 1  in lua
                 local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
                 if randomNum == 1 then
-                    if attack.attacker == self.owner and attack.card:IsAttackCard() and not hit.evaded then
-                        hit.target:AddCondition(posConditions[randomConNum], randomChance)
+                    if attack.attacker == self.owner and attack.card:IsAttackCard() then
+                            if not hit.evaded then 
+                                hit.target:AddCondition(posConditions[randomConNum], 1, self)
+                            end
                     end  
                 end      
             end,
 
             [ BATTLE_EVENT.END_PLAYER_TURN ] = function (self, battle, attack)
-                self.owner:AddCondition("DEFEND", math.round(self.owner:GetConditionStacks("DEFEND") * 0.05) + math.round(self.owner:GetHealth() * 0.05), self)
-                self.owner:HealHealth(self.owner:GetMaxHealth() - math.round(self.owner:GetHealth() * 0.10), self)
+                self.owner:AddCondition("DEFEND", math.round(self.owner:GetHealth() * 0.05), self)
+                self.owner:HealHealth(math.round((self.owner:GetMaxHealth() - self.owner:GetHealth()) * 0.10), self)
             end,
         }
     },
