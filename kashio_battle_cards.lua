@@ -1435,7 +1435,7 @@ local CARDS =
         end
     },
 
-        parasite_infusion =
+    parasite_infusion =
     {
         name = "Parasite Infusion", -- bugged when you have more than one copy in your hand: enemies gain more stacks than intended and gain even more stacks while attacking not with this card
         anim = "throw1",
@@ -1540,7 +1540,7 @@ local CARDS =
     --     target_type = TARGET_TYPE.SELF,
     -- },
 
-     -- bleeding_edge= 
+     -- bleeding_edge = 
     -- {
     --     name = "Bleeding Edge",
     --     anim = "spin_attack",
@@ -1554,7 +1554,21 @@ local CARDS =
     --     target_type = TARGET_TYPE.SELF,
     -- },
 
+         -- contaminate = 
+    -- {
+    --     name = "Contaminate",
+    --     anim = "throw2",
+    --     desc = "Contaminates an enemy, which grants them stacks of {CONTAMINATION} based on their missing health, dealing damage to this enemy will deal damage to enemies as well and decreasing the stacks.",
+            -- when stacks hit 0, all enemies gain {CONTAMINATION}
+    --     icon = "battle/improvise_chug.tex",
 
+    --     flags =  CARD_FLAGS.MELEE,
+    --     cost = 2,
+    --     rarity = CARD_RARITY.UNCOMMON,
+    --     max_xp = 4,
+    --     target_type = TARGET_TYPE.SELF,
+    -- },
+   
 
 }
 

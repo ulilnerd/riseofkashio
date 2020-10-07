@@ -112,12 +112,14 @@ QDEF:AddConvo("work_with_kalandra")
         DIALOG_SUCCESS = [[
             kalandra:
                 !right
+                !happy
                 Wow Kashio! You're way better than I expected!
                 You really showed me that I don't deserve that promotion
                 It's time to practice two times a day instead of one!
                 Until next time, you've won this time around
             player:
                 !left
+                !happy
                 Well I did say I wouldn't go easy on you
                 Better luck next time
         ]],
@@ -140,26 +142,28 @@ QDEF:AddConvo("work_with_kalandra")
             cxt:Opt("OPT_FIGHT_KALANDRA")
             :Dialog("DIALOG_FIGHT_KALANDRA")
             :Battle{
-                on_success = function(cxt) 
-                    cxt:Dialog("DIALOG_SUCCESS")
-                end,
-                on_fail = function(cxt)
-                    cxt:Dialog("DIALOG_FAIL")
-                end,
+                
+                -- on_success = function(cxt) 
+                    
+                -- end,
+                -- on_fail = function(cxt)
+                --     -- cxt:Dialog("DIALOG_FAIL")
+                -- end,
             }     
         cxt:Opt("OPT_NEGOTIATE")
                 :Dialog("DIALOG_NEGOTIATE")
                 :Negotiation{
-                    on_success = function(cxt) 
-                        cxt:Dialog("DIALOG_SUCCESS")
+                    -- on_success = function(cxt) 
+                    --     -- cxt:Dialog("DIALOG_SUCCESS")
                         
-                    end,
-                    on_fail = function(cxt)
-                        cxt:Dialog("DIALOG_FAIL")
-                    end,
+                    -- end,
+                    -- on_fail = function(cxt)
+                    --     -- cxt:Dialog("DIALOG_FAIL")
+                    -- end,
                 }    
         else
             -- cxt:Dialog("DIALOG_REINTRO")
+            cxt:Dialog("DIALOG_SUCCESS")
             cxt:GoTo("STATE_TROUBLE_AT_GATE")
         end
     end)

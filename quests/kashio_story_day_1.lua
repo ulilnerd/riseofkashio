@@ -49,13 +49,6 @@ local QDEF = QuestDef.Define
         table.insert(t, TheGame:GetGameState():GetLocation("GB_GATE"):GetProprietor())
     end,
 }
-:AddCastByAlias{
-    cast_id = "admiralty_goon",
-    alias = "WEEZIL",
-    cast_fn = function(quest, t)
-        table.insert(t, TheGame:GetGameState():GetLocation("GB_GATE"):GetProprietor())
-    end,
-}
 
 :AddObjective{
     id = "trouble_at_gate",
@@ -70,6 +63,7 @@ local QDEF = QuestDef.Define
 
 QDEF:AddConvo("trouble_at_gate") 
     :Confront(function(cxt)
+            
             return "STATE_START"
     end)
 
@@ -122,7 +116,7 @@ QDEF:AddConvo("trouble_at_gate")
         * The Spark Barons and Admiralty clash with one another, with some unlucky workers also getting caught between the crossfire
         * The worksite is in complete chaos 
         * Kashio and Kalandra try to sneak out from the back
-        admiralty_goon:
+        agent:
             !right
             ARGHHHHHH KILL THEM ALL KILL ALL THE SPARK BARONS 
         * The enraged Admiralty Goon swings his weapon at you
@@ -130,36 +124,53 @@ QDEF:AddConvo("trouble_at_gate")
             !left 
             Kashio watch out!!
         * Kalandra pushes you out the of way just in time without both of you getting injured
-        admiralty_goon:
+        agent:
             !right
+            !angry_accuse
             YOU CAN'T LEAVE, YOU CAN'T ESCAPE 
             THE ONLY OTHER WAY
             IS DEATH
         player:
             !left
-            Kalandra I don't think he's going to let us through
+            Kalandra I don't think they're going to let us through
             We can try another path, or run back to Headquarters.
             Kalandra?
         * Kalandra rushes towards the Admiralty Goon
-        player:
+       
+        ]],
+        OPT_FIGHT_ADMIRALTY = "Help Kalandra.",
+        DIALOG_FIGHT_ADMIRALTY = [[
+            player:
             !left
-            sigh
+            Sigh, I swear this happens every single time.
         * You follow through with Kalandra's assault on the goon 
         ]],
         DIALOG_REINTRO = [[
                 kalandra:
+                    !right
                     !crossed
                     You've made it to the end of the campaign
                 player:
+                    !left
                     Oh noes!
+                kalandra:
+                    !right
+                    !happy
+                    Thanks for watching!
             ]],
     }
     -- above: 
     :SetLooping()
     :Fn(function(cxt) 
         if cxt:FirstLoop() then
-            cxt.enc:SetPrimaryCast(cxt.quest:GetCastMember("kalandra"))
+            local thugs = CreateCombatParty("INVARIANT_ADMIRALTY_GUARDS", cxt.quest:GetRank(), cxt.location, true, function(agent) return agent:GetRelationship() < RELATIONSHIP.LIKED end)
+            cxt.encounter:SetPrimaryCast(thugs[1])
             cxt:Dialog("DIALOG_INTRO")
+            cxt:Opt("OPT_FIGHT_ADMIRALTY")
+            :Dialog("DIALOG_FIGHT_ADMIRALTY")
+            :Battle{
+                allies = {"kalandra"}
+            }     
         else
             cxt:Dialog("DIALOG_REINTRO")
         end
