@@ -1607,7 +1607,7 @@ local CARDS =
         name = "Finish Them",
         anim = "slash_up",
         desc = "Deal bonus damage equal to how many cards were played this turn if you have {equip_glaive}.",
-        icon = "battle/the_sledge.tex",
+        icon = "battle/weakness_telegraphed.tex",
 
         flags =  CARD_FLAGS.MELEE,
         cost = 1,
@@ -1623,6 +1623,63 @@ local CARDS =
                 local stacks = self.engine:CountCardsPlayed()
                 if self == card and self.owner:HasCondition("equip_glaive") then
                     dmgt:AddDamage( stacks, stacks, self )
+                end
+            end,
+        },
+    },
+
+    exposeaid =
+    {
+        name = "Exposeaid",
+        anim = "crack",
+        desc = "If you have {equip_flail} gain {SHATTER}.",
+        icon = "RISE:textures/overdrive.png",
+
+        flags =  CARD_FLAGS.MELEE,
+        cost = 1,
+        rarity = CARD_RARITY.COMMON,
+        max_xp = 6,
+      
+        min_damage = 2,
+        max_damage = 4, 
+
+        OnPostResolve = function( self, battle, attack, card )
+            if self.owner:HasCondition("equip_flail") then
+                self.owner:AddCondition("SHATTER", 1, self)
+                self.owner:AddCondition("TEMP_SHATTER", 1, self)
+            end
+        end,
+    },
+
+    nice_knowin_ya = 
+    {
+        name = "Nice Knowin Ya",
+        anim = "spin_attack",
+        desc = "If you have {equip_glaive}, have a chance to deal double or triple damage or decreased damage.",
+        icon = "RISE:textures/gumption.png",
+
+        flags =  CARD_FLAGS.MELEE,
+        cost = 1,
+        rarity = CARD_RARITY.COMMON,
+        max_xp = 6,
+      
+        min_damage = 1,
+        max_damage = 3, 
+
+        event_handlers =
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                local damageChance = math.random(1,3)
+                if card == self then
+                    if self.owner:HasCondition("equip_glaive") then
+                        if damageChance == 3 then
+                            dmgt:ModifyDamage( dmgt.min_damage * 2, dmgt.max_damage * 2, self ) -- triple damage
+                        elseif damageChance == 2 then
+                            dmgt:ModifyDamage( dmgt.min_damage * 1, dmgt.max_damage * 1, self ) -- double damage
+                        elseif damageChance == 1 then
+                            dmgt:ModifyDamage( dmgt.min_damage - 1, dmgt.max_damage - 1, self ) -- decreased damage
+                        end
+                    end
                 end
             end,
         },
@@ -1768,6 +1825,20 @@ local CONDITIONS =
             
     --     -- end
     -- },
+    TEMP_SHATTER = 
+    {
+        name = "Temporary Shatter",
+        desc = "When your turn ends, remove 1 shatter.",
+        icon = "battle/conditions/power_loss.tex",
+
+        event_handlers =
+        {
+            [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, card, target )
+                self.owner:RemoveCondition("SHATTER")
+                self.owner:RemoveCondition(self.id)
+            end,
+        },
+    },
 
     BLEEDING_EDGE = 
     {
