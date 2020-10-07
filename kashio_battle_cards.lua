@@ -1433,6 +1433,35 @@ local CARDS =
             self.owner:AddCondition("equip_glaive", 1, self)
             self.owner:AddCondition("TAG_TEAM", 1, self)
         end
+    },
+
+        parasite_infusion =
+    {
+        name = "Parasite Infusion",
+        anim = "throw1",
+        desc = "Infuses an enemy with {PARASITIC_INFUSION}, gaining a condition that has a number of stacks depending on their max health. ",
+        icon = "battle/branch.tex",
+
+        flags =  CARD_FLAGS.RANGED,
+        cost = 1,
+        rarity = CARD_RARITY.UNCOMMON,
+        max_xp = 4,
+
+        min_damage = 1,
+        max_damage = 2,
+
+        
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.ON_HIT ] = function( self, card, hit ) 
+                local enemy_health = 0
+                if hit.target ~= self.owner then
+                enemy_health = math.round(hit.target:GetMaxHealth() * 0.60)
+                    hit.target:AddCondition("PARASITIC_INFUSION", enemy_health, self)
+                end
+            end
+        }
+       
     }
 
     -- deceived = 
@@ -1513,19 +1542,7 @@ local CARDS =
     --     target_type = TARGET_TYPE.SELF,
     -- },
 
-    -- parasite_infusion =
-    -- {
-    --     name = "Parasite Infusion",
-    --     anim = "throw1",
-    --     desc = "Infuses an enemy with a parasite, gaining a condition that has a number of stacks depending on their max health, dealing damage to this target will decrease the stacks, when the stacks hit 0, summon bog poking guy on your side or bog mine on their side.",
-    --     icon = "battle/improvise_chug.tex",
 
-    --     flags =  CARD_FLAGS.RANGED,
-    --     cost = 1,
-    --     rarity = CARD_RARITY.UNCOMMON,
-    --     max_xp = 4,
-       
-    -- }
 
 }
 
@@ -1571,6 +1588,21 @@ local CONDITIONS =
             
     --     -- end
     -- },
+
+    PARASITIC_INFUSION = 
+    {
+        name = "Parasitic Infusion",
+        desc = "Dealing damage to this target will decrease {PARASITIC_INFUSION} stacks, After {PARASITIC_INFUSION} stacks hit 0, spawn a Grout Eye or Grout Knuckle to your side or a Grout Mine to the enemy team.",
+        icon = "battle/conditions/brain_of_the_bog_debuff.tex",
+        
+        
+        [ BATTLE_EVENT.ON_HIT] = function(self, card, fighter, hit)
+            if hit.attacker ~= self.owner then
+                self.owner:RemoveCondition("PARASITIC_INFUSION", 1)
+            end
+        end
+
+    },
 
     TAG_TEAM = 
     {
