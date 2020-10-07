@@ -1412,6 +1412,67 @@ local CARDS =
         end
     },
 
+    battle_cry_inspire = 
+    {
+        name = "Battle Cry: Inspire",
+        anim = "taunt4",
+        desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {POWER_LOSS} evenly depending on how many {TAG_TEAM} stacks were consumed.",
+        icon = "battle/adrenaline_shot.tex",
+
+        flags =  CARD_FLAGS.SKILL,
+        cost = 1,
+        rarity = CARD_RARITY.UNCOMMON,
+        max_xp = 6,
+        target_type = TARGET_TYPE.SELF,
+        target_mod = TARGET_MOD.TEAM,
+
+        OnPostResolve = function( self, battle, attack, card )
+            local stacks = 0
+            local teammates = 0
+            for i, ally in self.owner:GetTeam():Fighters() do
+                teammates = i
+            end
+            if self.owner:HasCondition("TAG_TEAM") then
+                stacks = self.owner:GetConditionStacks("TAG_TEAM")
+                for i, ally in self.owner:GetTeam():Fighters() do
+                    ally:AddCondition("POWER", math.round(stacks / teammates)  , self)
+                    ally:AddCondition("POWER_LOSS", math.round(stacks / teammates)  , self)
+                end
+            end
+            self.owner:RemoveCondition("TAG_TEAM", self.owner:GetConditionStacks("TAG_TEAM"), self)
+        end
+    },
+
+    battle_cry_hold_line = 
+    {
+        name = "Battle Cry: Hold The Line",
+        anim = "taunt4",
+        desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {ARMOURED} evenly depending on how many {TAG_TEAM} stacks were consumed.",
+        icon = "battle/get_down.tex",
+
+        flags =  CARD_FLAGS.SKILL,
+        cost = 1,
+        rarity = CARD_RARITY.UNCOMMON,
+        max_xp = 6,
+        target_type = TARGET_TYPE.SELF,
+        target_mod = TARGET_MOD.TEAM,
+
+        OnPostResolve = function( self, battle, attack, card )
+            local stacks = 0
+            local teammates = 0
+            for i, ally in self.owner:GetTeam():Fighters() do
+                teammates = i
+            end
+            if self.owner:HasCondition("TAG_TEAM") then
+                stacks = self.owner:GetConditionStacks("TAG_TEAM")
+                for i, ally in self.owner:GetTeam():Fighters() do
+                    ally:AddCondition("ARMOURED", math.round(stacks / teammates)  , self)
+                end
+            end
+            self.owner:RemoveCondition("TAG_TEAM", self.owner:GetConditionStacks("TAG_TEAM"), self)
+        end
+    },
+
     tag_team = 
     {
         name = "Tag Team",
