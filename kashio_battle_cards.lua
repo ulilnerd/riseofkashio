@@ -1557,6 +1557,77 @@ local CARDS =
         }
     },
 
+    run_it_back = 
+    {
+        name = "Run it Back", -- won't hit twice
+        anim = "slam",
+        desc = "If {equip_flail} is active, attack twice instead and draw a card.",
+        icon = "battle/the_sledge.tex",
+
+        flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
+        cost = 1,
+        rarity = CARD_RARITY.COMMON,
+        max_xp = 6,
+      
+        min_damage = 2,
+        max_damage = 3,
+
+        PreReq = function( self, battle )
+            if self.owner:HasCondition("equip_flail") then
+                self.hit_count = 2
+                return true
+            else
+                self.hit_count = 1
+                return false
+            end
+        end,
+
+        OnPostResolve = function( self, battle, attack, card )
+            if self.owner:HasCondition("equip_flail") then
+                battle:DrawCards(1)
+            end
+        end,
+
+        event_handlers =
+        {
+            [ BATTLE_EVENT.START_RESOLVE ] = function( self, battle, card )
+                if card == self then
+                    if self.owner:HasCondition("equip_flail") then
+                        self.hit_count = 2
+                    else
+                        self.hit_count = 1
+                    end
+                end
+            end,
+        },
+    },
+
+    finish_them =
+    {
+        name = "Finish Them",
+        anim = "slash_up",
+        desc = "Deal bonus damage equal to how many cards were played this turn if you have {equip_glaive}.",
+        icon = "battle/the_sledge.tex",
+
+        flags =  CARD_FLAGS.MELEE,
+        cost = 1,
+        rarity = CARD_RARITY.COMMON,
+        max_xp = 6,
+      
+        min_damage = 3,
+        max_damage = 3, 
+
+        event_handlers =
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                local stacks = self.engine:CountCardsPlayed()
+                if self == card and self.owner:HasCondition("equip_glaive") then
+                    dmgt:AddDamage( stacks, stacks, self )
+                end
+            end,
+        },
+    }
+
     -- deceived = 
     -- {
     --     name = "Deceive",
@@ -1710,14 +1781,12 @@ local CONDITIONS =
                 if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
                     self.owner:RemoveCondition( "BLEEDING_EDGE", attack.card.max_damage )
                     if self.owner:GetConditionStacks("BLEEDING_EDGE") <= 1 then
-                        self.owner:ApplyDamage( math.round(self.owner:GetHealth() * 0.40), 10, self )
-                        attack.attacker:HealHealth(math.round(self.owner:GetHealth() * 0.40), self)
+                        self.owner:ApplyDamage( math.round(self.owner:GetMaxHealth() * 0.40), 10, self )
+                        attack.attacker:HealHealth(math.round(self.owner:GetMaxHealth() * 0.40), self)
                     end
                 end
             end
         }
-        
-
     },
 
     PARASITIC_INFUSION = 
@@ -1751,8 +1820,6 @@ local CONDITIONS =
                 end
             end
         }
-        
-
     },
 
     TAG_TEAM = 
