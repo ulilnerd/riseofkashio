@@ -1437,12 +1437,12 @@ local CARDS =
 
         parasite_infusion =
     {
-        name = "Parasite Infusion",
+        name = "Parasite Infusion", -- bugged when you have more than one copy in your hand: enemies gain more stacks than intended and gain even more stacks while attacking not with this card
         anim = "throw1",
-        desc = "Infuses an enemy with {PARASITIC_INFUSION}, gaining a condition that has a number of stacks depending on their max health. ",
+        desc = "Infuses an enemy with {PARASITIC_INFUSION}, gaining stacks depending on the target enemy's max health.",
         icon = "battle/branch.tex",
 
-        flags =  CARD_FLAGS.RANGED,
+        flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
         cost = 1,
         rarity = CARD_RARITY.UNCOMMON,
         max_xp = 4,
@@ -1450,18 +1450,16 @@ local CARDS =
         min_damage = 1,
         max_damage = 2,
 
-        
         event_handlers = 
         {
             [ BATTLE_EVENT.ON_HIT ] = function( self, card, hit ) 
                 local enemy_health = 0
                 if hit.target ~= self.owner then
-                enemy_health = math.round(hit.target:GetMaxHealth() * 0.60)
-                    hit.target:AddCondition("PARASITIC_INFUSION", enemy_health, self)
+                    enemy_health = math.round(hit.target:GetMaxHealth() * 0.6)
+                    hit.target:AddCondition("PARASITIC_INFUSION", enemy_health)
                 end
             end
         }
-       
     }
 
     -- deceived = 
@@ -1542,6 +1540,20 @@ local CARDS =
     --     target_type = TARGET_TYPE.SELF,
     -- },
 
+     -- bleeding_edge= 
+    -- {
+    --     name = "Bleeding Edge",
+    --     anim = "spin_attack",
+    --     desc = "Slashes an enemy with such precision that causes them to gain {BLEEDING_EDGE} which gives an enemy stacks of bleeding edge depending on their health, deal massive damage and heal after stacks have depleted to 0.",
+    --     icon = "battle/improvise_chug.tex",
+
+    --     flags =  CARD_FLAGS.MELEE,
+    --     cost = 2,
+    --     rarity = CARD_RARITY.UNCOMMON,
+    --     max_xp = 4,
+    --     target_type = TARGET_TYPE.SELF,
+    -- },
+
 
 
 }
@@ -1594,13 +1606,33 @@ local CONDITIONS =
         name = "Parasitic Infusion",
         desc = "Dealing damage to this target will decrease {PARASITIC_INFUSION} stacks, After {PARASITIC_INFUSION} stacks hit 0, spawn a Grout Eye or Grout Knuckle to your side or a Grout Mine to the enemy team.",
         icon = "battle/conditions/brain_of_the_bog_debuff.tex",
-        
-        
-        [ BATTLE_EVENT.ON_HIT] = function(self, card, fighter, hit)
-            if hit.attacker ~= self.owner then
-                self.owner:RemoveCondition("PARASITIC_INFUSION", 1)
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.ON_HIT] = function(self, battle, attack, hit, target, fighter)
+                if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
+                    self.owner:RemoveCondition( "PARASITIC_INFUSION", attack.card.max_damage )
+                    local randomNum = math.random(1,3)
+                    if self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 1 and randomNum == 1 then
+                        local sparkMine = Agent( "GROUT_SPARK_MINE" )
+                        local fighter = Fighter.CreateFromAgent( sparkMine, battle:GetScenario():GetAllyScale() )
+                        self.owner:GetTeam():AddFighter( fighter )
+                        self.owner:GetTeam():ActivateNewFighters()
+                    elseif self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 1 and randomNum == 2 then
+                        local groutKnuckle = Agent( "GROUT_KNUCKLE" )
+                        local fighter = Fighter.CreateFromAgent( groutKnuckle, battle:GetScenario():GetAllyScale() )
+                        self.owner:GetEnemyTeam():AddFighter( fighter )
+                        self.owner:GetEnemyTeam():ActivateNewFighters()
+                    elseif self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 1 and randomNum == 3 then
+                        local groutEye = Agent( "GROUT_EYE" )
+                        local fighter = Fighter.CreateFromAgent( groutEye, battle:GetScenario():GetAllyScale() )
+                        self.owner:GetEnemyTeam():AddFighter( fighter )
+                        self.owner:GetEnemyTeam():ActivateNewFighters()
+                    end
+                end
             end
-        end
+        }
+        
 
     },
 
@@ -1625,8 +1657,6 @@ local CONDITIONS =
                             end
                         end
                     end
-                        
-        
                  end,
 
                  [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, fighter )
@@ -1699,7 +1729,7 @@ local CONDITIONS =
                 if self.flailCount == 1 and self.glaiveCount == 1 then
                     self.flailCount = 0
                     self.glaiveCount = 0
-                    self.owner:AddCondition("DEFEND", 3, self)
+                    self.owner:AddCondition("DEFEND", 5, self)
                 end
             end
         }
@@ -1926,6 +1956,7 @@ local CONDITIONS =
 
         event_handlers = 
         {
+
             [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function (self, battle, fighter)
                 
                 self.owner:AddCondition("NEXT_TURN_ACTION", 1, self)
