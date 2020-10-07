@@ -1039,7 +1039,7 @@ local CARDS =
  blade_dance = 
     {
         name = "Blade Dance",
-        anim = "taunt4",
+        anim = "transition1",
         desc = "Gain stacks of {BLADE_DANCE} depending on a random enemy's current health, switch to {equip_glaive}.",
         icon = "battle/blade_fury.tex",
 
@@ -1521,7 +1521,41 @@ local CARDS =
                 end
             end
         }
-    }
+    },
+
+    bleeding_edge = 
+    {
+        name = "Bleeding Edge",
+        anim = "slash_up",
+        desc = "Slashes an enemy with such precision that causes them to gain {BLEEDING_EDGE}.",
+        icon = "battle/hemorrhage.tex",
+
+        flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
+        cost = 2,
+        rarity = CARD_RARITY.UNCOMMON,
+        max_xp = 4,
+      
+        min_damage = 5,
+        max_damage = 7,
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.ON_HIT ] = function( self, card, hit ) 
+                local enemy_health = 0
+                if hit.target:HasCondition("BLEED") then
+                    if hit.target ~= self.owner then
+                        enemy_health = math.round((hit.target:GetMaxHealth() * 0.30) - hit.target:GetConditionStacks("BLEED"))
+                        hit.target:AddCondition("BLEEDING_EDGE", enemy_health)
+                    end
+                else
+                    if hit.target ~= self.owner then
+                        enemy_health = math.round((hit.target:GetMaxHealth() * 0.30))
+                        hit.target:AddCondition("BLEEDING_EDGE", enemy_health)
+                    end
+                end
+            end
+        }
+    },
 
     -- deceived = 
     -- {
@@ -1601,19 +1635,7 @@ local CARDS =
     --     target_type = TARGET_TYPE.SELF,
     -- },
 
-     -- bleeding_edge = 
-    -- {
-    --     name = "Bleeding Edge",
-    --     anim = "spin_attack",
-    --     desc = "Slashes an enemy with such precision that causes them to gain {BLEEDING_EDGE} which gives an enemy stacks of bleeding edge depending on their health, deal massive damage and heal after stacks have depleted to 0.",
-    --     icon = "battle/improvise_chug.tex",
 
-    --     flags =  CARD_FLAGS.MELEE,
-    --     cost = 2,
-    --     rarity = CARD_RARITY.UNCOMMON,
-    --     max_xp = 4,
-    --     target_type = TARGET_TYPE.SELF,
-    -- },
 
          -- contaminate = 
     -- {
@@ -1675,6 +1697,28 @@ local CONDITIONS =
             
     --     -- end
     -- },
+
+    BLEEDING_EDGE = 
+    {
+        name = "Bleeding Edge",
+        desc = "Gives an enemy stacks of {BLEEDING_EDGE} depending on their health, if the target has bleed, they start with lower stacks, attacking this target will decrease stacks, deal massive damage and heal after stacks have depleted to 0.",
+        icon = "battle/conditions/brain_of_the_bog_debuff.tex",
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.ON_HIT] = function(self, battle, attack, hit, target, fighter)
+                if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
+                    self.owner:RemoveCondition( "BLEEDING_EDGE", attack.card.max_damage )
+                    if self.owner:GetConditionStacks("BLEEDING_EDGE") <= 1 then
+                        self.owner:ApplyDamage( math.round(self.owner:GetHealth() * 0.40), 10, self )
+                        attack.attacker:HealHealth(math.round(self.owner:GetHealth() * 0.40), self)
+                    end
+                end
+            end
+        }
+        
+
+    },
 
     PARASITIC_INFUSION = 
     {
