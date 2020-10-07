@@ -1683,6 +1683,37 @@ local CARDS =
                 end
             end,
         },
+    },
+
+    it_wasnt_me = 
+    {
+        name = "It Wasn't Me!!",
+        anim = "slash_up",
+        desc = "If you have {equip_glaive}, gain {1} {EVASION} and  {2} {WOUND}.",
+        icon = "RISE:textures/save_face.png",
+
+        flags =  CARD_FLAGS.MELEE,
+        cost = 1,
+        rarity = CARD_RARITY.COMMON,
+        max_xp = 6,
+      
+        min_damage = 1,
+        max_damage = 5, 
+
+        evasion_amount = 1,
+        wound_amount = 2,
+
+        desc_fn = function ( self, fmt_str )
+            return loc.format(fmt_str, self.evasion_amount, self.wound_amount)
+        end,
+
+        OnPostResolve = function( self, battle, attack, card )
+            if self.owner:HasCondition("equip_glaive") then
+                self.owner:AddCondition("EVASION", self.evasion_amount, self)
+                self.owner:AddCondition("WOUND", self.wound_amount, self)
+            end
+        end,
+        
     }
 
     -- deceived = 
@@ -2113,9 +2144,16 @@ local CONDITIONS =
         {
             [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
                 local randomConNum = math.floor(math.random(1,6))
+                local randomTeam = math.random(1,2)
                 local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
+                local posPosCondition = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "METALLIC", "EVASION"}
                 if attack.attacker == self.owner and attack.card:IsAttackCard() and not hit.evaded then
-                    hit.target:AddCondition( posConditions[randomConNum], 1, self)
+                    if randomTeam == 1 then
+                        hit.target:AddCondition( posConditions[randomConNum], 1, self)
+                    elseif randomTeam == 2 then
+                        self.owner:AddCondition( posPosConditions[randomConNum], 1, self)
+                    end
+                    
                 end
             end,
 
@@ -2247,6 +2285,7 @@ local CONDITIONS =
         OnApply = function( self )
             if self.owner:HasCondition("equip_glaive") then
                 self.owner:RemoveCondition("equip_glaive", 1, self)
+                self.owner:RemoveCondition("NEXT_TURN_ACTION", 1, self)
             end
             -- self.owner:BroadcastEvent( BATTLE_EVENT.PLAY_ANIM, "taunt", false, true)
         end,
