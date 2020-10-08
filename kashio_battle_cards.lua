@@ -1399,7 +1399,7 @@ local CARDS =
     {
         name = "Irritating Blow",
         anim = "crack",
-        desc = "{KINGPIN} 4: Shuffle a copy of Irritating Blow into your draw pile then draw a card.",
+        desc = "{KINGPIN} 4: Shuffle a copy of Irritating Blow into your draw pile.",
         icon = "battle/weakness_quick_jab.tex",
 
         flags =  CARD_FLAGS.MELEE,
@@ -1415,7 +1415,7 @@ local CARDS =
                 if self.owner:GetConditionStacks("KINGPIN") >= 4 then
                     local card = Battle.Card( "irritating_blow", self.owner )
                     battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
-                    battle:DrawCards(1)
+                    -- battle:DrawCards(1)
                 end
             end
         end
@@ -2276,8 +2276,6 @@ local CONDITIONS =
 
     },
 
-
-
     FORCE_FIELD =
     {
         name = "Rentorian Force Field",
@@ -2391,7 +2389,8 @@ local CONDITIONS =
     equip_flail = 
     {
         name = "Kashio's Flail",
-        desc = "gain {DEFEND} equal to 5% of your current health and {DEFEND} then {HEAL} self for 10% of your missing health every turn. Also have a chance 25% chance to apply a random debuff to an enemy on hit.",
+        -- desc = "Gain {DEFEND} equal to 5% of your current health and {DEFEND} then {HEAL} self for 10% of your missing health every turn. Also have a chance 25% chance to apply a random debuff to an enemy on hit.",
+        desc = "Gain {DEFEND} for every 10 current health then {HEAL} self for 10% of your missing health every turn.", -- new description
         icon = "battle/conditions/spree_rage.tex",
 
         OnApply = function( self )
@@ -2406,22 +2405,23 @@ local CONDITIONS =
 
         event_handlers = 
         {
-            -- 25% chance to apply debuff to enemy
-            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
-                local randomNum = math.random(1,4) -- 1 to 4
-                local randomConNum = math.random(1,6) -- 1 to 6, kept crashing because arrays start at index 1  in lua
-                local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
-                if randomNum == 1 then
-                    if attack.attacker == self.owner and attack.card:IsAttackCard() then
-                            if not hit.evaded then 
-                                hit.target:AddCondition(posConditions[randomConNum], 1, self)
-                            end
-                    end  
-                end      
-            end,
+            -- 25% chance to apply debuff to enemy // removed since flail gives too much as is and would be more of a defensive "weapon"
+            -- [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
+            --     local randomNum = math.random(1,4) -- 1 to 4
+            --     local randomConNum = math.random(1,6) -- 1 to 6, kept crashing because arrays start at index 1  in lua
+            --     local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
+            --     if randomNum == 1 then
+            --         if attack.attacker == self.owner and attack.card:IsAttackCard() then
+            --                 if not hit.evaded then 
+            --                     hit.target:AddCondition(posConditions[randomConNum], 1, self)
+            --                 end
+            --         end  
+            --     end      
+            -- end,
 
             [ BATTLE_EVENT.END_PLAYER_TURN ] = function (self, battle, attack)
-                self.owner:AddCondition("DEFEND", math.round(self.owner:GetHealth() * 0.05), self)
+                -- self.owner:AddCondition("DEFEND", math.round(self.owner:GetHealth() * 0.05), self)
+                self.owner:AddCondition("DEFEND", math.round(self.owner:GetHealth() * 0.10), self) -- gains more defense due to less offensive capability and less confusing tooltip
                 self.owner:HealHealth(math.round((self.owner:GetMaxHealth() - self.owner:GetHealth()) * 0.10), self)
             end,
         }
