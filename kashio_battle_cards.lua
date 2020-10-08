@@ -703,7 +703,7 @@ local CARDS =
     {
         name = "Sonic Pistol",
         anim = "gun1",
-        desc = "This card costs 0 if you have the {equip_glaive} equipped.",
+        desc = "This card costs 0 if you have {equip_glaive} equipped.",
         icon = "battle/lifeline.tex",
 
         min_damage = 2,
@@ -1332,7 +1332,7 @@ local CARDS =
         desc = "Whenever you swap weapons, gain {DEFEND}.",
         icon = "battle/butcher_of_the_bog.tex",
 
-        flags =  CARD_FLAGS.SKILL,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         cost = 1,
         rarity = CARD_RARITY.UNCOMMON,
         max_xp = 6,
@@ -1592,7 +1592,7 @@ local CARDS =
         desc = "Gain {TAG_TEAM} and swap to {equip_glaive}.",
         icon = "battle/baron_expedition.tex",
 
-        flags =  CARD_FLAGS.SKILL,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         cost = 1,
         rarity = CARD_RARITY.UNCOMMON,
         max_xp = 6,
@@ -1639,7 +1639,7 @@ local CARDS =
     {
         name = "Bleeding Edge",
         anim = "slash_up",
-        desc = "Slashes an enemy with such precision that causes them to gain {BLEEDING_EDGE}.",
+        desc = "Slashes an enemy causing them to gain {BLEEDING_EDGE}.",
         icon = "battle/hemorrhage.tex",
 
         flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
@@ -2345,6 +2345,7 @@ local CONDITIONS =
     {
         name = "Kashio's Force Glaive",
         desc = "Deal extra damage with your attacks and gain an extra action per turn at the cost of taking more damage and halving {DEFEND}.",
+        -- desc = "Deal extra damage on your first attack and gain an extra action per turn at the cost of taking more damage and halving {DEFEND}.",
         icon = "battle/conditions/kashio_glaive.tex",
 
         max_stacks = 1,
