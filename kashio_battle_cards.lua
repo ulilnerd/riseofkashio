@@ -2146,7 +2146,7 @@ local CONDITIONS =
                 local randomConNum = math.floor(math.random(1,6))
                 local randomTeam = math.random(1,2)
                 local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
-                local posPosCondition = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "METALLIC", "EVASION"}
+                local posPosConditions = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "METALLIC", "EVASION"}
                 if attack.attacker == self.owner and attack.card:IsAttackCard() and not hit.evaded then
                     if randomTeam == 1 then
                         hit.target:AddCondition( posConditions[randomConNum], 1, self)
