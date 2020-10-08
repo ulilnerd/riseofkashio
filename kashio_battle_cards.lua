@@ -460,7 +460,7 @@ local CARDS =
     glaive_swap = 
     {
         name = "Kashio's Force Glaive",
-        desc = "Equip the Rentorian Force Glaive gaining {POWER} and an extra action every turn.",
+        desc = "Equip the Rentorian Force Glaive gaining extra damage with your attacks and an extra action per turn at the cost of taking more damage and halving {DEFEND}.",
         icon = "battle/rentorian_force_glaive.tex",
         anim = "transition1",
 
@@ -848,7 +848,7 @@ local CARDS =
     {
         name = "Raging Slam",
         anim = "slam",
-        desc = "Damage a random enemy and gain {1} {EXPOSED}.",
+        desc = "Damage a random enemy and gain {EXPOSED}.",
         icon = "RISE:textures/ragingslam.png",
 
         flags = CARD_FLAGS.MELEE,
@@ -1329,7 +1329,7 @@ local CARDS =
     {
         name = "Ultimate Hunter",
         anim = "taunt",
-        desc = "Whenever you swap weapons, gain {DEFEND}.",
+        desc = "Whenever you swap weapons, gain {DEFEND}. Swap to next weapon.",
         icon = "battle/butcher_of_the_bog.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -1340,6 +1340,11 @@ local CARDS =
 
         OnPostResolve = function( self, battle, attack, card )
             self.owner:AddCondition("ULTIMATE_HUNTER", 1, self)
+            if self.owner:HasCondition("equip_flail") then
+                self.owner:AddCondition("equip_glaive", 1 , self)
+            elseif self.owner:HasCondition("equip_glaive") then
+                self.owner:AddCondition("equip_flail", 1, self)
+            end
         end
     },
 
@@ -1826,6 +1831,47 @@ local CARDS =
             end
         end,
         
+    },
+
+    call_it_even = 
+    {
+        name = "Call it Even",
+        anim = "slam",
+        desc = "Gain 3 random debuffs. {KINGPIN} 20: Don't gain any debuffs.",
+        icon = "RISE:textures/ransack.png",
+
+        flags =  CARD_FLAGS.MELEE,
+        cost = 1,
+        rarity = CARD_RARITY.UNCOMMON,
+        max_xp = 6,
+      
+        min_damage = 15,
+        max_damage = 15, 
+
+        OnPostResolve = function( self, battle, attack, card ) -- sometimes only gives you 2 debuffs
+            if self.owner:HasCondition("KINGPIN") then
+                if self.owner:GetConditionStacks("KINGPIN") >= 20 then
+                
+                else
+                    local randomCon1 = math.random(1,5)
+                    local randomCon2 = math.random(1,5)
+                    local randomCon3 = math.random(1,5)
+                    local posConditions = {"BLEED", "IMPAIR", "BURN", "WOUND", "EXPOSED"}
+                    self.owner:AddCondition(posConditions[randomCon1], 1, self)
+                    self.owner:AddCondition(posConditions[randomCon2], 1, self)
+                    self.owner:AddCondition(posConditions[randomCon3], 1, self)
+                end
+            end
+            if not self.owner:HasCondition("KINGPIN") then
+                local randomCon1 = math.random(1,5)
+                local randomCon2 = math.random(1,5)
+                local randomCon3 = math.random(1,5)
+                local posConditions = {"BLEED", "IMPAIR", "BURN", "WOUND", "EXPOSED"}
+                self.owner:AddCondition(posConditions[randomCon1], 1, self)
+                self.owner:AddCondition(posConditions[randomCon2], 1, self)
+                self.owner:AddCondition(posConditions[randomCon3], 1, self)
+            end
+        end
     }
 
     -- deceived = 
@@ -2203,7 +2249,7 @@ local CONDITIONS =
     KINGPIN = 
     {
         name = "Kingpin",
-        desc = "Gain stacks of {KINGPIN} which will unlock the full potential of certain cards, every action generates {KINGPIN}.",
+        desc = "Gain stacks of {KINGPIN} which will unlock the full potential of certain cards, every action generates {KINGPIN}.  Swapping weapons resets {KINGPIN} to 1 stack.",
         icon = "battle/conditions/burr_boss_enrage.tex",
         max_stacks = 30,
         event_handlers =
