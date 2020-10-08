@@ -42,6 +42,7 @@ local function OnLoad( mod )
 
 
     require "RISE:kashio_battle_cards"
+    require "RISE:negotiation_cards"
 
 
     ------------------------------------------------------------------------------------------

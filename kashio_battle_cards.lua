@@ -95,6 +95,35 @@ local CARDS =
         anim = "crack",
         
     },
+    flail_crack_plus = 
+    {
+        name = "Boosted Flail Crack",
+        min_damage = 3,
+        max_damage = 6,
+    },
+    flail_crack_plus2 = 
+    {
+        name = "Burning Flail Crack",
+        desc = "<#UPGRADE>Apply {1} {BURN}.</>",
+        desc_fn = function(self, fmt_str)
+            return loc.format(fmt_str, self:CalculateDefendText( self.features.BURN ))
+        end,
+        manual_desc = true,
+        features = 
+        {
+            BURN = 1,
+        }
+    },
+    flail_crack_plus3 = 
+    {
+        name = "Flail Crack of Clarity",
+        desc = "<#UPGRADE>{CONSUME}</>",
+        manual_desc = true,
+        flags = CARD_FLAGS.MELEE | CARD_FLAGS.CONSUME,
+        
+        min_damage = 7,
+        max_damage = 7,
+    },
 
     flail_smash = 
     {
@@ -124,29 +153,74 @@ local CARDS =
             end
         end
     },
+    flail_smash_plus =
+    {
+        name = "Burning Flail Smash",
+        desc = "<#UPGRADE>Apply {1} {BURN}.</>",
+        desc_fn = function(self, fmt_str)
+            return loc.format(fmt_str, self:CalculateDefendText( self.features.BURN ))
+        end,
+        manual_desc = true,
+        features = 
+        {
+            BURN = 3,
+        }
+    },
+    flail_smash_plus2 =
+    {
+        name = "Flail Smash of Clarity",
+        desc = "<#UPGRADE>{CONSUME}</>",
+        manual_desc = true,
+        flags = CARD_FLAGS.MELEE | CARD_FLAGS.CONSUME,
+        
+        min_damage = 6,
+        max_damage = 6,
+    },
 
     flail_slam = 
     {
         name = "Flail Slam",
+        desc = "Apply {WOUND} then {WOUND} self.",
+        icon = "RISE:textures/flailslam.png",
+        anim = "slam",
+
+        flags = CARD_FLAGS.MELEE,
         rarity = CARD_RARITY.BASIC,
+
         cost = 1,
         max_xp = 6,
-        flags = CARD_FLAGS.MELEE,
-        icon = "RISE:textures/flailslam.png",
-        min_damage = 5,
-        max_damage = 5,
-        anim = "slam",
-        desc = "Apply {IMPAIR {1}} and {WOUND {1}} then {WOUND {1}} self.",
+        min_damage = 4,
+        max_damage = 4,
+
         OnPostResolve = function( self, battle, attack)
             self.owner:AddCondition( "WOUND", 1 )
             for i, hit in attack:Hits() do
                 local target = hit.target
                 if not hit.evaded then 
-                    target:AddCondition("IMPAIR", self.impair_per_bleed, self)
-                    target:AddCondition("WOUND", self.wound_amount, self)
+                    -- target:AddCondition("IMPAIR", 1, self)
+                    target:AddCondition("WOUND", 1, self)
                 end
             end
         end
+    },
+    flail_slam_plus = 
+    {
+        name = "Flail Slam of Crippling",
+        desc = "<#UPGRADE>Apply {WOUND} and {IMPAIR} then {WOUND} self</>.",   
+        manual_desc = true,
+        features = 
+        {
+            IMPAIR = 1,
+        }
+    },
+    flail_slam_plus2 = 
+    {
+        name = "Boosted Flail Slam",
+        desc = "<#UPGRADE>Apply {WOUND} then {WOUND} self</>.",   
+        manual_desc = true,
+        
+        min_damage = 5,
+        max_damage = 6,
     },
 
     safeguard = 
@@ -176,6 +250,44 @@ local CARDS =
 
         PostPresAnim = function( self, anim_fighter )
             anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_flail)
+        end
+    },
+    safeguard_plus = 
+    {
+        name = "Boosted Safeguard",
+        desc = "<#UPGRADE>Apply {1} {DEFEND} then equip {equip_flail}</>.",
+        desc_fn = function(self, fmt_str)
+            return loc.format(fmt_str, self:CalculateDefendText( self.features.DEFEND ))
+        end,    
+        manual_desc = true,
+        features = 
+        {
+            DEFEND = 6,
+        }
+    },
+    safeguard_plus2 = 
+    {
+        name = "Offensive Safeguard",
+        desc = "<#UPGRADE>Apply {1} {DEFEND} then equip {equip_glaive}</>.",
+            
+        manual_desc = true,
+        equip_flail = 0,
+
+        desc_fn = function(self, fmt_str)
+            return loc.format(fmt_str, self:CalculateDefendText( self.features.DEFEND ))
+        end,
+
+        features = 
+        {
+            DEFEND = 4,
+        },
+
+        OnPostResolve = function( self, battle, attack )
+            self.owner:AddCondition("equip_glaive", 1, self)
+        end,
+
+        PostPresAnim = function( self, anim_fighter )
+            anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
         end
     },
 
@@ -2319,4 +2431,25 @@ local CONDITIONS =
 for id, def in pairs( CONDITIONS ) do
     Content.AddBattleCondition( id, def )
 end
+
+
+-- local FEATURES =
+-- {
+--     equip_flail = 
+--     {
+--         name = "Kashio's Flail",
+--         desc = "gain {DEFEND} equal to 5% of your current health and {DEFEND} then {HEAL} self for 10% of your missing health every turn. Also have a chance 25% chance to apply a random debuff to an enemy on hit.",
+--     },
+--     equip_glaive =
+--     {
+--         name="Kashio's Glaive",
+--         desc = "Deal extra damage with your attacks and gain an extra action per turn at the cost of taking more damage and halving {DEFEND}.",
+--     },
+-- }
+
+-- for id, data in pairs( FEATURES ) do
+--     local def = BattleFeatureDef(id, data)
+--     Content.AddBattleCardFeature(id, def)
+--     CARD_FEATURES[id] = def
+-- end
 
