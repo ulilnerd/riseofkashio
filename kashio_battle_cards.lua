@@ -2436,8 +2436,8 @@ local CONDITIONS =
     equip_flail = 
     {
         name = "Kashio's Flail",
-        -- desc = "Gain {DEFEND} equal to 5% of your current health and {DEFEND} then {HEAL} self for 10% of your missing health every turn. Also have a chance 25% chance to apply a random debuff to an enemy on hit.",
-        desc = "Gain {DEFEND} for every 10 current health then {HEAL} self for 10% of your missing health every turn.", -- new description
+        desc = "Gain {DEFEND} equal to 5% of your current health and {DEFEND} then {HEAL} self for 10% of your missing health every turn. Also have a chance 25% chance to apply a random debuff to an enemy on hit.",
+        -- desc = "Gain {DEFEND} for every 10 current health then {HEAL} self for 10% of your missing health every turn.", -- new description
         icon = "battle/conditions/spree_rage.tex",
 
         OnApply = function( self )
@@ -2452,19 +2452,19 @@ local CONDITIONS =
 
         event_handlers = 
         {
-            -- 25% chance to apply debuff to enemy // removed since flail gives too much as is and would be more of a defensive "weapon"
-            -- [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
-            --     local randomNum = math.random(1,4) -- 1 to 4
-            --     local randomConNum = math.random(1,6) -- 1 to 6, kept crashing because arrays start at index 1  in lua
-            --     local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
-            --     if randomNum == 1 then
-            --         if attack.attacker == self.owner and attack.card:IsAttackCard() then
-            --                 if not hit.evaded then 
-            --                     hit.target:AddCondition(posConditions[randomConNum], 1, self)
-            --                 end
-            --         end  
-            --     end      
-            -- end,
+            25% chance to apply debuff to enemy // removed since flail gives too much as is and would be more of a defensive "weapon"
+            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
+                local randomNum = math.random(1,4) -- 1 to 4
+                local randomConNum = math.random(1,6) -- 1 to 6, kept crashing because arrays start at index 1  in lua
+                local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
+                if randomNum == 1 then
+                    if attack.attacker == self.owner and attack.card:IsAttackCard() then
+                            if not hit.evaded then 
+                                hit.target:AddCondition(posConditions[randomConNum], 1, self)
+                            end
+                    end  
+                end      
+            end,
 
             [ BATTLE_EVENT.END_PLAYER_TURN ] = function (self, battle, attack)
                 -- self.owner:AddCondition("DEFEND", math.round(self.owner:GetHealth() * 0.05), self)
