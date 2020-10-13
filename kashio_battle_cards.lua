@@ -1506,9 +1506,9 @@ local CARDS =
         desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {MENDING} evenly depending on how many {TAG_TEAM} stacks were consumed.",
         icon = "battle/healing_vapors.tex",
 
-        flags =  CARD_FLAGS.SKILL,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         cost = 1,
-        rarity = CARD_RARITY.UNCOMMON,
+        rarity = CARD_RARITY.UNIQUE,
         max_xp = 6,
         target_type = TARGET_TYPE.SELF,
         target_mod = TARGET_MOD.TEAM,
@@ -1536,9 +1536,9 @@ local CARDS =
         desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {POWER_LOSS} evenly depending on how many {TAG_TEAM} stacks were consumed.",
         icon = "battle/adrenaline_shot.tex",
 
-        flags =  CARD_FLAGS.SKILL,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         cost = 1,
-        rarity = CARD_RARITY.UNCOMMON,
+        rarity = CARD_RARITY.UNIQUE,
         max_xp = 6,
         target_type = TARGET_TYPE.SELF,
         target_mod = TARGET_MOD.TEAM,
@@ -1567,9 +1567,9 @@ local CARDS =
         desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {ARMOURED} evenly depending on how many {TAG_TEAM} stacks were consumed.",
         icon = "battle/get_down.tex",
 
-        flags =  CARD_FLAGS.SKILL,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         cost = 1,
-        rarity = CARD_RARITY.UNCOMMON,
+        rarity = CARD_RARITY.UNIQUE,
         max_xp = 6,
         target_type = TARGET_TYPE.SELF,
         target_mod = TARGET_MOD.TEAM,
@@ -2085,10 +2085,21 @@ local CONDITIONS =
     TAG_TEAM = 
     {
         name = "Tag Team",
-        desc = "Your team generates {TAG_TEAM} stacks every time your team makes an action, these stacks can be consumed to use powerful team abilities.",
+        desc = "Your team generates {TAG_TEAM} stacks every time your team makes an action, these stacks can be consumed to use powerful team abilities.
+          After you end your turn, you will shuffle up to 2 Battle Cry cards into your deck if you have less than 2 Battle Cry cards.",
         icon = "battle/conditions/ai_spark_baron_goon_buff.tex",
 
         min_stacks = 1,
+        bc_cards = 0,
+        cardCount = 0,
+
+        OnApply = function( self, battle )
+            local randomNum = math.random(1,3)
+            local battleCryCards = {"battle_cry_rejuvenate", "battle_cry_inspire", "battle_cry_hold_line"}
+            local card1 = Battle.Card( battleCryCards[randomNum], self.owner )
+            self.bc_cards = self.bc_cards + 1
+            card1:TransferCard( battle:GetDrawDeck() )
+        end,
 
         event_handlers =
         {
@@ -2105,9 +2116,51 @@ local CONDITIONS =
                     end
                  end,
 
-                 [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, fighter )
-                    if fighter == self.owner then
-                        self.owner:RemoveCondition( "TAG_TEAM", 1 )
+                 [ BATTLE_EVENT.PRE_RESOLVE] = function(self, battle, attack)
+                    self.cardCount = 0
+                    for i, card in battle:GetDrawDeck():Cards() do
+                        if card.id == "battle_cry_rejuvenate" then
+                            self.cardCount = self.cardCount + 1
+                        end
+                        if card.id == "battle_cry_inspire" then
+                            self.cardCount = self.cardCount + 1
+                        end
+                        if card.id == "battle_cry_hold_line" then
+                            self.cardCount = self.cardCount + 1
+                        end
+                    end
+                    for i, card in battle:GetDiscardDeck():Cards() do
+                        if card.id == "battle_cry_rejuvenate" then
+                            self.cardCount = self.cardCount + 1
+                        end
+                        if card.id == "battle_cry_inspire" then
+                            self.cardCount = self.cardCount + 1
+                        end
+                        if card.id == "battle_cry_hold_line" then
+                            self.cardCount = self.cardCount + 1
+                        end
+                    end
+                    for i, card in battle:GetHandDeck():Cards() do
+                        if card.id == "battle_cry_rejuvenate" then
+                            self.cardCount = self.cardCount + 1
+                        end
+                        if card.id == "battle_cry_inspire" then
+                            self.cardCount = self.cardCount + 1
+                        end
+                        if card.id == "battle_cry_hold_line" then
+                            self.cardCount = self.cardCount + 1
+                        end
+                    end
+                    self.bc_cards = self.cardCount
+                 end,
+
+                 [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, fighter, battle)
+                    local randomNum = math.random(1,3)
+                    local battleCryCards = {"battle_cry_rejuvenate", "battle_cry_inspire", "battle_cry_hold_line"}
+                    if self.bc_cards < 2 then
+                        local card1 = Battle.Card( battleCryCards[randomNum], self.owner )
+                        card1:TransferCard( self.battle:GetDrawDeck() )
+                        self.bc_cards = self.bc_cards + 1
                     end
                 end,
         }
@@ -2452,7 +2505,7 @@ local CONDITIONS =
 
         event_handlers = 
         {
-            25% chance to apply debuff to enemy // removed since flail gives too much as is and would be more of a defensive "weapon"
+            -- 25% chance to apply debuff to enemy 
             [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
                 local randomNum = math.random(1,4) -- 1 to 4
                 local randomConNum = math.random(1,6) -- 1 to 6, kept crashing because arrays start at index 1  in lua
