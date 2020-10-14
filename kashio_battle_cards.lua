@@ -1923,7 +1923,7 @@ local CARDS =
         desc = "Contaminates an enemy, which grants them stacks of {CONTAMINATION} based on their current health.",
         icon = "RISE:textures/contamination.png",
 
-        flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
+        flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
         cost = 2,
         rarity = CARD_RARITY.RARE,
         max_xp = 4,
@@ -1932,7 +1932,6 @@ local CARDS =
         max_damage = 7,
 
         OnPostResolve = function( self, battle, attack, card )
-            local enemy_health = 0
             for i, hit in attack:Hits() do
                 if not attack:CheckHitResult( hit.target, "evaded" ) then
                     hit.target:AddCondition("CONTAMINATION", math.round(hit.target:GetHealth()) , self)
@@ -1940,6 +1939,96 @@ local CARDS =
             end
         end
     },
+
+    remote_plague =
+    {
+        name = "Remote Plague",
+        anim = "throw2",
+        desc = "Contaminates an enemy, which grants them random stacks of {REMOTE_PLAGUE}.",
+        icon = "battle/half_sandwich.tex",
+
+        flags =  CARD_FLAGS.RANGED,
+        cost = 1,
+        rarity = CARD_RARITY.RARE,
+    
+        min_damage = 4,
+        max_damage = 5,
+
+        OnPostResolve = function( self, battle, attack, card )
+            local randomNum = math.random(3,10)
+            for i, hit in attack:Hits() do
+                if not attack:CheckHitResult( hit.target, "evaded" ) then
+                    hit.target:AddCondition("REMOTE_PLAGUE", randomNum, self)
+                end
+            end
+            local randomNum = math.random(1,1)
+            local remoteCards = {"remote_expunge"}
+            local card = Battle.Card( remoteCards[randomNum], self.owner )
+            card:TransferCard( battle:GetDrawDeck() )
+        end
+    },
+
+    remote_expunge = 
+    {
+        name = "Remote: Expunge",
+        anim = "taunt",
+        desc = "Deal damage to all enemies with {REMOTE_PLAGUE} equal to their stacks * 2, then remove all stacks of {REMOTE_PLAGUE}.",
+        icon = "battle/automech_access_code.tex",
+        -- planning on making a condition that can count how much damage you did during your turn, apply the damage to this card
+
+        flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
+        cost = 1,
+        rarity = CARD_RARITY.UNIQUE,
+        max_xp = 6,
+        target_mod = TARGET_MOD.TEAM,
+
+        expunge_damage = 2,
+
+        PreReq = function( self, minigame )
+            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                return enemy:HasCondition("REMOTE_PLAGUE")
+            end
+        end,
+
+        OnPostResolve = function( self, battle, attack)
+            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                if enemy:HasCondition("REMOTE_PLAGUE") then
+                    enemy:ApplyDamage( math.round(enemy:GetConditionStacks("REMOTE_PLAGUE") * self.expunge_damage), math.round(enemy:GetConditionStacks("REMOTE_PLAGUE") * self.expunge_damage), self)
+                    enemy:RemoveCondition("REMOTE_PLAGUE", enemy:GetConditionStacks("REMOTE_PLAGUE"))
+                end
+            end
+            
+        end
+    },
+
+    remote_blind = 
+    {
+        name = "Remote: Blind",
+        anim = "taunt",
+        desc = "Enemies with {REMOTE_PLAGUE} will gain stacks of {BLINDED} depending on their stacks of {REMOTE_PLAGUE}.",
+        icon = "battle/automech_access_code.tex",
+
+        flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
+        cost = 1,
+        rarity = CARD_RARITY.UNIQUE,
+        max_xp = 6,
+        target_mod = TARGET_MOD.TEAM,
+
+        PreReq = function( self, minigame )
+            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                return enemy:HasCondition("REMOTE_PLAGUE")
+            end
+        end,
+
+        OnPostResolve = function( self, battle, attack)
+            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                if enemy:HasCondition("REMOTE_PLAGUE") then
+                    enemy:AddCondition("BLINDED", enemy:GetConditionStacks("REMOTE_PLAGUE"))
+                end
+            end
+            
+        end
+    }
 
     -- deceived = 
     -- {
@@ -2068,6 +2157,46 @@ local CONDITIONS =
             
     --     -- end
     -- },
+
+    BLINDED = 
+    {
+        name = "Blinded", 
+        desc = "This enemy is blinded and will miss their next attack and following attacks depending on the stacks of {BLINDED}. Remove one stack every attack.",
+        icon = "battle/conditions/acidic_slime.tex",  
+
+        OnPreDamage = function( self, damage, attacker, battle, source )
+            
+        end,
+
+        -- event_handlers = 
+        -- {
+        --     [ BATTLE_EVENT.ON_HIT] = function(self, battle, attack, hit, target, fighter)
+                
+        --     end
+        -- }
+    }
+
+    REMOTE_PLAGUE = 
+    {
+        name = "Remotely Plagued", -- using an OnApply to give a remote card to you is bugged (use Remote Plague card instead)
+        desc = "Shuffle a Plague Remote into your deck which will do certain effects depending on the remote.  Every turn reduce this condition by 1",
+        icon = "battle/conditions/acidic_slime.tex",  
+
+        -- OnApply = function( self, battle )
+        --     local randomNum = math.random(1,1)
+        --     local remoteCards = {"remote_expunge"}
+        --     local card = Battle.Card( remoteCards[randomNum], self.owner )
+        --     card:TransferCard( battle:GetDrawDeck() )
+        -- end,
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.BEGIN_PLAYER_TURN] = function(self, battle, attack, hit, target, fighter)
+                self.owner:RemoveCondition("REMOTE_PLAGUE", 1, self)
+            end
+        }
+    },
+
     CONTAMINATION = 
     {
         name = "Contamination",
