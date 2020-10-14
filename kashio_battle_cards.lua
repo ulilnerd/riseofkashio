@@ -262,7 +262,7 @@ local CARDS =
         manual_desc = true,
         features = 
         {
-            DEFEND = 6,
+            DEFEND = 2,
         }
     },
     safeguard_plus2 = 
@@ -276,11 +276,6 @@ local CARDS =
         desc_fn = function(self, fmt_str)
             return loc.format(fmt_str, self:CalculateDefendText( self.features.DEFEND ))
         end,
-
-        features = 
-        {
-            DEFEND = 4,
-        },
 
         OnPostResolve = function( self, battle, attack )
             self.owner:AddCondition("equip_glaive", 1, self)
@@ -756,11 +751,11 @@ local CARDS =
         end,
     },
 
-    crippling_slice = 
+    taste_of_blood = 
     {
-        name = "Crippling Slice",
+        name = "Taste of Blood",
         anim = "slash_up",
-        desc = "Apply {1} {BLEED} to target enemy and to self.",
+        desc = "Apply {1} {BLEED} to target enemy and to self. {KINGPIN} 9: Apply double the amount of bleed to the enemy.",
         icon = "RISE:textures/cripplingstrike.png",
 
         flags = CARD_FLAGS.MELEE,
@@ -781,7 +776,15 @@ local CARDS =
             for i, hit in attack:Hits() do
                 local target = hit.target
                 if not hit.evaded then 
-                    target:AddCondition("BLEED", self.bleed_amount, self)
+                    if self.owner:HasCondition("KINGPIN") then
+                        if self.owner:GetConditionStacks("KINGPIN") >= 9 then
+                            target:AddCondition("BLEED", self.bleed_amount * 2, self)
+                        else
+                            target:AddCondition("BLEED", self.bleed_amount, self)
+                        end
+                    else
+                        target:AddCondition("BLEED", self.bleed_amount, self)
+                    end
                     self.owner:AddCondition("BLEED", self.bleed_amount, self)
                 end
             end
@@ -789,19 +792,59 @@ local CARDS =
         
     },
 
+    crippling_slice = 
+    {
+        name = "Crippling Slice",
+        anim = "slash_up",
+        desc = "Apply {1} {IMPAIR} to target enemy if you have Taste of Blood in your hand.",
+        icon = "battle/weakness_old_injury.tex",
+
+        flags = CARD_FLAGS.MELEE,
+        cost = 1,
+        rarity = CARD_RARITY.COMMON,
+        max_xp = 6,
+        
+        min_damage = 3,
+        max_damage = 5,
+
+        impair_amount = 2,
+        hasTOB = false,
+
+        desc_fn = function(self, fmt_str)
+            return loc.format(fmt_str, self:CalculateDefendText( self.impair_amount))
+        end,
+
+        OnPostResolve = function( self, battle, attack)
+            for i, card in battle:GetHandDeck():Cards() do
+                if card.id == "taste_of_blood" then
+                    self.hasTOB = true
+                end
+            end
+            if self.hasTOB == true then
+                for i, hit in attack:Hits() do
+                    local target = hit.target
+                    if not hit.evaded then 
+                        target:AddCondition("IMPAIR", self.impair_amount, self)
+                    end
+                end
+            end
+        end
+    },
+
     feel_what_i_feel = 
     {
         name = "Feel What I Feel",
-        anim = "taunt3",
+        anim = "crack",
         desc = "Apply all self debuffs to target enemy.",
         icon = "RISE:textures/feelwhatifeel.png",
 
-        flags = CARD_FLAGS.SKILL,
+        flags = CARD_FLAGS.MELEE,
         cost = 1,
         rarity = CARD_RARITY.UNCOMMON,
         max_xp = 6,
-        target_type = TARGET_TYPE.ENEMY,
-        min_damage = 0,
+        -- target_type = TARGET_TYPE.ENEMY,
+        min_damage = 3,
+        max_damage = 5,
 
         OnPostResolve = function( self, battle, attack)
             for i,condition in pairs(self.owner:GetConditions()) do
@@ -993,7 +1036,6 @@ local CARDS =
 
         OnPostResolve = function( self, battle, attack)
             self.owner:AddCondition("equip_glaive", 1)
-            self.owner:AddCondition("EXPOSED", 1)
         end,
 
         PostPresAnim = function( self, anim_fighter )
@@ -1218,23 +1260,23 @@ local CARDS =
     the_execution = 
     {
         name = "The Execution",
-        desc = "Gain {KINGPIN} status, which can unlock the full potential of certain cards, switch to {equip_glaive}.",
-        anim = "taunt2",
+        desc = "Gain {KINGPIN} status, which can unlock the full potential of certain cards.",
+        anim = "transition1",
         icon = "RISE:textures/tempt.png",
 
-        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.REPLENISH | CARD_FLAGS.AMBUSH,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.REPLENISH,
         cost = 0,
-        rarity = CARD_RARITY.RARE,
+        rarity = CARD_RARITY.UNIQUE,
         max_xp = 6,
         target_type = TARGET_TYPE.SELF,
 
-        PostPresAnim = function( self, anim_fighter )
-            anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
-        end,
+        -- PostPresAnim = function( self, anim_fighter )
+        --     anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
+        -- end,
 
         OnPostResolve = function( self, battle, attack, card )
             self.owner:AddCondition("KINGPIN", 1, self)
-            self.owner:AddCondition("equip_glaive", 1 )
+            -- self.owner:AddCondition("equip_glaive", 1 )
         end
     },
 
@@ -1369,7 +1411,7 @@ local CARDS =
 
         OnPostResolve = function( self, battle, attack, card )
             self.owner:AddCondition("DEFEND", self.defend_amount, self)
-            if self.owner:GetConditionStacks("KINGPIN") >= 7 then
+            if self.owner:GetConditionStacks("KINGPIN") >= 6 then
                 local card = Battle.Card( "control_vee", self.owner )
                 card:TransferCard( battle:GetHandDeck() )
             end
@@ -1384,7 +1426,7 @@ local CARDS =
         icon = "battle/whirl.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
-        cost = 1,
+        cost = 0,
         rarity = CARD_RARITY.UNIQUE,
         max_xp = 6,
         target_type = TARGET_TYPE.SELF,
@@ -1503,7 +1545,7 @@ local CARDS =
     {
         name = "Battle Cry: Rejuvenate",
         anim = "taunt4",
-        desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {MENDING} evenly depending on how many {TAG_TEAM} stacks were consumed.",
+        desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {MENDING} evenly amongst your team depending on how many {TAG_TEAM} stacks were consumed.",
         icon = "battle/healing_vapors.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -1533,7 +1575,7 @@ local CARDS =
     {
         name = "Battle Cry: Inspire",
         anim = "taunt4",
-        desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {POWER_LOSS} evenly depending on how many {TAG_TEAM} stacks were consumed.",
+        desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {POWER_LOSS} evenly amongst your team depending on how many {TAG_TEAM} stacks were consumed.",
         icon = "battle/adrenaline_shot.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -1564,7 +1606,7 @@ local CARDS =
     {
         name = "Battle Cry: Hold The Line",
         anim = "taunt4",
-        desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {ARMOURED} evenly depending on how many {TAG_TEAM} stacks were consumed.",
+        desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {ARMOURED} evenly amongst your team depending on how many {TAG_TEAM} stacks were consumed.",
         icon = "battle/get_down.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -1644,7 +1686,7 @@ local CARDS =
     {
         name = "Bleeding Edge",
         anim = "slash_up",
-        desc = "Slashes an enemy causing them to gain {BLEEDING_EDGE}.",
+        desc = "Slashes an enemy inflicting them with {BLEEDING_EDGE}.",
         icon = "battle/hemorrhage.tex",
 
         flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
@@ -1749,7 +1791,7 @@ local CARDS =
     {
         name = "Exposeaid",
         anim = "crack",
-        desc = "If you have {equip_flail} gain {SHATTER}.",
+        desc = "If you have {equip_flail} gain {SHATTER} for one turn.",
         icon = "RISE:textures/overdrive.png",
 
         flags =  CARD_FLAGS.MELEE,
@@ -2085,8 +2127,7 @@ local CONDITIONS =
     TAG_TEAM = 
     {
         name = "Tag Team",
-        desc = "Your team generates {TAG_TEAM} stacks every time your team makes an action, these stacks can be consumed to use powerful team abilities.
-          After you end your turn, you will shuffle up to 2 Battle Cry cards into your deck if you have less than 2 Battle Cry cards.",
+        desc = "Your team generates {TAG_TEAM} stacks every time your team makes an action, these stacks can be consumed to use powerful team abilities. After you end your turn, you will shuffle up to 2 Battle Cry cards into your deck if you have less than 2 Battle Cry cards.",
         icon = "battle/conditions/ai_spark_baron_goon_buff.tex",
 
         min_stacks = 1,
@@ -2302,22 +2343,51 @@ local CONDITIONS =
     KINGPIN = 
     {
         name = "Kingpin",
-        desc = "Gain stacks of {KINGPIN} which will unlock the full potential of certain cards, every action generates {KINGPIN}.  Swapping weapons resets {KINGPIN} to 1 stack.",
+        desc = "Gain {KINGPIN} by making 6 actions using the same weapon consecutively. {KINGPIN} can unlock the full potential of certain cards, every action generates {KINGPIN}.  Swapping weapons resets {KINGPIN} to 1 stack. Every 10 stacks of {KINGPIN} triggers a special ability",
         icon = "battle/conditions/burr_boss_enrage.tex",
         max_stacks = 30,
+        min_stacks = 1,
+
+        glaive_equipped = false,
+        flail_equipped = false,
+
+        -- 10 stacks: gain METALLIC
+        -- 20 stacks: Your attacks on an enemy have a small chance of granting you a random buff
+        -- 30 stacks: random enemy gains DEFECT every turn
+        -- 40 stacks: your attacks have a chance to inflict an enemy with PARASITIC_INFUSION or BLEEDING_EDGE
+        -- 50 stacks: every turn a random enemy gains all of your current debuffs
+
+        OnApply = function( self )
+            if self.owner:HasCondition("equip_glaive") then
+                self.glaive_equipped = true
+            end
+            if self.owner:HasCondition("equip_flail") then
+                self.flail_equipped = true
+            end
+        end,
+
         event_handlers =
         {
-            [ BATTLE_EVENT.CARD_MOVED ] = function( self, battle )
-                    self.owner:AddCondition("KINGPIN", 1, self)
+            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, fighter )
+                self.owner:AddCondition("KINGPIN", 1, self)
+
+                if self.owner:HasCondition("equip_glaive") then
+                    self.glaive_equipped = true
+                end
+                if self.owner:HasCondition("equip_flail") then
+                    self.flail_equipped = true
+                end
+                
+                if self.glaive_equipped == true and self.flail_equipped == true and self.owner:GetConditionStacks("KINGPIN") >= 2 then
+                    self.owner:RemoveCondition("KINGPIN", self.owner:GetConditionStacks("KINGPIN"))
+                    if not self.owner:HasCondition("equip_glaive") then
+                        self.glaive_equipped = false
+                    end
+                    if not self.owner:HasCondition("equip_flail") then
+                        self.flail_equipped = false
+                    end
+                end
             end,
-            -- [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
-            --     if card.owner == self.owner and card:IsAttackCard() then
-            --         dmgt:ModifyDamage( math.round(dmgt.min_damage + dmgt.min_damage * 0.3), math.round(dmgt.max_damage + dmgt.max_damage * 0.3), self )
-            --     end
-            --     if target == self.owner then
-            --         dmgt:ModifyDamage( math.round(dmgt.min_damage + dmgt.min_damage * 0.3), math.round(dmgt.max_damage + dmgt.max_damage * 0.3), self )
-            --     end
-            -- end,
         }
     },
 
@@ -2448,6 +2518,7 @@ local CONDITIONS =
         icon = "battle/conditions/kashio_glaive.tex",
 
         max_stacks = 1,
+        momentum = 0,
 
         OnApply = function( self, card )
             if self.owner:HasCondition("equip_flail") then
@@ -2483,6 +2554,14 @@ local CONDITIONS =
                     end
                 end
             end,
+
+            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, fighter, battle )
+                self.momentum = self.momentum + 1
+                if self.momentum >= 6 then
+                    local card = Battle.Card( "the_execution", self.owner )
+                    card:TransferCard( self.battle:GetHandDeck() )
+                end
+            end,
         }
     },
 
@@ -2493,6 +2572,9 @@ local CONDITIONS =
         -- desc = "Gain {DEFEND} for every 10 current health then {HEAL} self for 10% of your missing health every turn.", -- new description
         icon = "battle/conditions/spree_rage.tex",
 
+        max_stacks = 1,
+        momentum = 0,
+
         OnApply = function( self )
             if self.owner:HasCondition("equip_glaive") then
                 self.owner:RemoveCondition("equip_glaive", 1, self)
@@ -2500,8 +2582,6 @@ local CONDITIONS =
             end
             -- self.owner:BroadcastEvent( BATTLE_EVENT.PLAY_ANIM, "taunt", false, true)
         end,
-
-        max_stacks = 1,
 
         event_handlers = 
         {
@@ -2524,6 +2604,18 @@ local CONDITIONS =
                 self.owner:AddCondition("DEFEND", math.round(self.owner:GetHealth() * 0.10), self) -- gains more defense due to less offensive capability and less confusing tooltip
                 self.owner:HealHealth(math.round((self.owner:GetMaxHealth() - self.owner:GetHealth()) * 0.10), self)
             end,
+
+            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, fighter, battle )
+                self.momentum = self.momentum + 1
+                if self.owner:HasCondition("KINGPIN") then
+                    self.momentum = 0
+                end
+                if self.momentum >= 6 then
+                    local card = Battle.Card( "the_execution", self.owner )
+                    card:TransferCard( self.battle:GetHandDeck() )
+                end
+            end,
+
         }
     },
 }
