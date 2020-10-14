@@ -1914,7 +1914,32 @@ local CARDS =
                 self.owner:AddCondition(posConditions[randomCon3], 1, self)
             end
         end
-    }
+    },
+
+    contaminate = 
+    {
+        name = "Contaminate",
+        anim = "slash_up",
+        desc = "Contaminates an enemy, which grants them stacks of {CONTAMINATION} based on their current health.",
+        icon = "RISE:textures/contamination.png",
+
+        flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
+        cost = 2,
+        rarity = CARD_RARITY.RARE,
+        max_xp = 4,
+
+        min_damage = 4,
+        max_damage = 7,
+
+        OnPostResolve = function( self, battle, attack, card )
+            local enemy_health = 0
+            for i, hit in attack:Hits() do
+                if not attack:CheckHitResult( hit.target, "evaded" ) then
+                    hit.target:AddCondition("CONTAMINATION", math.round(hit.target:GetHealth()) , self)
+                end
+            end
+        end
+    },
 
     -- deceived = 
     -- {
@@ -1996,20 +2021,7 @@ local CARDS =
 
 
 
-         -- contaminate = 
-    -- {
-    --     name = "Contaminate",
-    --     anim = "throw2",
-    --     desc = "Contaminates an enemy, which grants them stacks of {CONTAMINATION} based on their missing health, dealing damage to this enemy will deal damage to enemies as well and decreasing the stacks.",
-            -- when stacks hit 0, all enemies gain {CONTAMINATION}
-    --     icon = "battle/improvise_chug.tex",
 
-    --     flags =  CARD_FLAGS.MELEE,
-    --     cost = 2,
-    --     rarity = CARD_RARITY.UNCOMMON,
-    --     max_xp = 4,
-    --     target_type = TARGET_TYPE.SELF,
-    -- },
    
 
 }
@@ -2056,6 +2068,29 @@ local CONDITIONS =
             
     --     -- end
     -- },
+    CONTAMINATION = 
+    {
+        name = "Contamination",
+        desc = "Dealing damage to this enemy will decrease the stacks of {CONTAMINATION} depending on the damage. When stacks hit 0, deal damage depending on the inflicted user's max health then all enemies gain {CONTAMINATION}.",
+        icon = "battle/conditions/acidic_slime.tex",  
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.ON_HIT] = function(self, battle, attack, hit, target, fighter)
+                if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
+                    self.owner:RemoveCondition( "CONTAMINATION", hit.damage )
+                    if self.owner:GetConditionStacks("CONTAMINATION") <= 1 then
+                        for i, ally in self.owner:GetTeam():Fighters() do
+                            ally:AddCondition("CONTAMINATION", math.round(ally:GetHealth()))
+                            ally:ApplyDamage( math.round(self.owner:GetMaxHealth() * 0.25), math.round(self.owner:GetMaxHealth() * 0.25), self)
+                        end
+                    end
+                end
+            end
+        }
+    },
+
+
     TEMP_SHATTER = 
     {
         name = "Temporary Shatter",
