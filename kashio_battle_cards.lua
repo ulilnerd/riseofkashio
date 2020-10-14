@@ -1945,7 +1945,7 @@ local CARDS =
         name = "Remote Plague",
         anim = "throw2",
         desc = "Contaminates an enemy, which grants them random stacks of {REMOTE_PLAGUE}.",
-        icon = "battle/half_sandwich.tex",
+        icon = "battle/funky_fungi.tex",
 
         flags =  CARD_FLAGS.RANGED,
         cost = 1,
@@ -1979,7 +1979,6 @@ local CARDS =
         flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
         cost = 1,
         rarity = CARD_RARITY.UNIQUE,
-        max_xp = 6,
         target_mod = TARGET_MOD.TEAM,
 
         expunge_damage = 2,
@@ -2001,7 +2000,7 @@ local CARDS =
         end
     },
 
-    remote_blind = 
+    remote_blind = -- WORK IN PROGRESS
     {
         name = "Remote: Blind",
         anim = "taunt",
@@ -2011,7 +2010,6 @@ local CARDS =
         flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
         cost = 1,
         rarity = CARD_RARITY.UNIQUE,
-        max_xp = 6,
         target_mod = TARGET_MOD.TEAM,
 
         PreReq = function( self, minigame )
@@ -2039,7 +2037,6 @@ local CARDS =
         flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
         cost = 1,
         rarity = CARD_RARITY.UNIQUE,
-        max_xp = 6,
         target_mod = TARGET_MOD.TEAM,
 
         PreReq = function( self, minigame )
@@ -2078,6 +2075,63 @@ local CARDS =
             end
         end
     },
+
+    epidemic = 
+    {
+        name = "Epidemic",
+        anim = "throw1",
+        desc = "Deal damage to all enemies and have a chance to inflict enemies with a virus called {EPIDEMIC} for 3 turns. Minimum 1 enemy will be inflicted.",
+        icon = "battle/tendrils.tex",
+
+        flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
+        cost = 2,
+        rarity = CARD_RARITY.RARE,
+        max_xp = 4,
+        target_mod = TARGET_MOD.TEAM,
+
+        enemy_inflicted = false,
+
+        OnPostResolve = function( self, battle, attack)
+            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                if self.enemy_inflicted == false then
+                    enemy:AddCondition("EPIDEMIC", 3, self)
+                    self.enemy_inflicted = true
+                else
+                    local randomChance = math.random(1,4)
+                    if randomChance == 1 then
+                        enemy:AddCondition("EPIDEMIC", 3, self)
+                    end
+                end
+            end
+        end
+    },
+
+    viral_sadism = -- bugged when shuffled into deck; cannot target anyone, but card fully function when brought to hand with debugger
+    {
+        name = "Viral Sadism",
+        anim = "slam",
+        desc = "Only deals damage to enemies with {EPIDEMIC}.",
+        icon = "battle/beast_of_the_bog.tex",
+        
+        cost = 0,
+
+        flags =  CARD_FLAGS.MELEE | CARD_FLAGS.REPLENISH | CARD_FLAGS.EXPEND,
+        rarity = CARD_RARITY.UNIQUE,
+
+        min_damage = 0,
+        max_damage = 0,
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                if card == self and target then
+                    if target:HasCondition("EPIDEMIC") then
+                        dmgt:AddDamage(10,10,self)
+                    end
+                end
+            end,
+        }
+    }
 
     -- deceived = 
     -- {
@@ -2157,11 +2211,6 @@ local CARDS =
     --     target_type = TARGET_TYPE.SELF,
     -- },
 
-
-
-
-   
-
 }
 
 for i, id, carddef in sorted_pairs( CARDS ) do
@@ -2206,6 +2255,33 @@ local CONDITIONS =
             
     --     -- end
     -- },
+
+    EPIDEMIC = -- card draw bugged; shuffles too many viral sadism cards into your discards
+    {
+        name = "The Epidemic", 
+        desc = "Every turn, shuffle a Viral Sadism card into your discard pile for every enemy with this condition then have a chance to spread the virus to an ally.",
+        icon = "battle/conditions/burr_eye_stalk_vision.tex",  
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.END_PLAYER_TURN] = function(self, battle, hit, target, fighter)
+                local virusCount = 0
+                for i, ally in self.owner:GetTeam():Fighters() do
+                    if ally:HasCondition("EPIDEMIC") then
+                        virusCount = virusCount + 1
+                    end
+                end
+                if virusCount > 0 then
+                    for i=1, virusCount, 1 do
+                        local card = Battle.Card( "viral_sadism", self.owner )
+                        battle:DealCard( card, battle:GetDeck( DECK_TYPE.DISCARDS ) )
+                    end
+                end
+                self.owner:RemoveCondition("EPIDEMIC", 1, self)
+            end
+        }
+    },
+
     REMOTE_VIRUS = 
     {
         name = "Remote Virus", 
@@ -2795,17 +2871,19 @@ local CONDITIONS =
 
             -- gain card "the_execution after using the same weapon for 6 actions"
             [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, fighter)
-                if battle:GetDrawDeck():HasCard("the_execution") or battle:GetHandDeck():HasCard("the_execution") or battle:GetDiscardDeck():HasCard("the_execution") then
-                    self.momentum = 0
-                end
-                self.momentum = self.momentum + 1
-                if self.owner:HasCondition("KINGPIN") then
-                    self.momentum = 0
-                end
-                if self.momentum >= 6 then
-                    local card = Battle.Card( "the_execution", self.owner )
-                    card:TransferCard( self.battle:GetHandDeck() )
-                    self.momentum = 0
+                if fighter == self.owner then
+                    if battle:GetDrawDeck():HasCard("the_execution") or battle:GetHandDeck():HasCard("the_execution") or battle:GetDiscardDeck():HasCard("the_execution") then
+                        self.momentum = 0
+                    end
+                    self.momentum = self.momentum + 1
+                    if self.owner:HasCondition("KINGPIN") then
+                        self.momentum = 0
+                    end
+                    if self.momentum >= 6 then
+                        local card = Battle.Card( "the_execution", self.owner )
+                        card:TransferCard( self.battle:GetHandDeck() )
+                        self.momentum = 0
+                    end
                 end
             end,
         }
@@ -2853,17 +2931,19 @@ local CONDITIONS =
 
              -- gain card "the_execution after using the same weapon for 6 actions"
             [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, fighter)
-                if battle:GetDrawDeck():HasCard("the_execution") or battle:GetHandDeck():HasCard("the_execution") or battle:GetDiscardDeck():HasCard("the_execution") then
-                    self.momentum = 0
-                end
-                self.momentum = self.momentum + 1
-                if self.owner:HasCondition("KINGPIN") then
-                    self.momentum = 0
-                end
-                if self.momentum >= 6 then
-                    local card = Battle.Card( "the_execution", self.owner )
-                    card:TransferCard( self.battle:GetHandDeck() )
-                    self.momentum = 0
+                if fighter == self.owner then
+                    if battle:GetDrawDeck():HasCard("the_execution") or battle:GetHandDeck():HasCard("the_execution") or battle:GetDiscardDeck():HasCard("the_execution") then
+                        self.momentum = 0
+                    end
+                    self.momentum = self.momentum + 1
+                    if self.owner:HasCondition("KINGPIN") then
+                        self.momentum = 0
+                    end
+                    if self.momentum >= 6 then
+                        local card = Battle.Card( "the_execution", self.owner )
+                        card:TransferCard( self.battle:GetHandDeck() )
+                        self.momentum = 0
+                    end
                 end
             end,
 
