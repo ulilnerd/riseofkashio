@@ -2026,9 +2026,58 @@ local CARDS =
                     enemy:AddCondition("BLINDED", enemy:GetConditionStacks("REMOTE_PLAGUE"))
                 end
             end
-            
         end
-    }
+    },
+
+    remote_virus = 
+    {
+        name = "Remote: Virus",
+        anim = "taunt",
+        desc = "Enemies with {REMOTE_PLAGUE} will gain {REMOTE_VIRUS} which will inflict a random debuff every turn.",
+        icon = "battle/automech_access_code.tex",
+
+        flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
+        cost = 1,
+        rarity = CARD_RARITY.UNIQUE,
+        max_xp = 6,
+        target_mod = TARGET_MOD.TEAM,
+
+        PreReq = function( self, minigame )
+            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                return enemy:HasCondition("REMOTE_PLAGUE")
+            end
+        end,
+
+        OnPostResolve = function( self, battle, attack)
+            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                if enemy:HasCondition("REMOTE_PLAGUE") then
+                    enemy:AddCondition("REMOTE_VIRUS", 1)
+                end
+            end
+        end
+    },
+
+    blind_grenade = 
+    {
+        name = "Blinding Grenade",
+        anim = "throw1",
+        desc = "Have a small chance to blind all enemies.",
+        icon = "battle/lumin_grenade.tex",
+
+        flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
+        cost = 1,
+        rarity = CARD_RARITY.UNCOMMON,
+        max_xp = 6,
+        target_mod = TARGET_MOD.TEAM,
+
+        OnPostResolve = function( self, battle, attack)
+            local randomChance = math.random(1,4)
+            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                enemy:AddCondition("BLINDED", 1, self)
+                -- need to add random chance
+            end
+        end
+    },
 
     -- deceived = 
     -- {
@@ -2157,24 +2206,48 @@ local CONDITIONS =
             
     --     -- end
     -- },
+    REMOTE_VIRUS = 
+    {
+        name = "Remote Virus", 
+        desc = "Every turn, inflict this target with a random debuff as long as {REMOTE_PLAGUE} is active.",
+        icon = "battle/conditions/eyes_of_the_bog_debuff.tex",  
 
-    BLINDED = 
+        OnApply = function( self, battle )
+            local randomDebuff = math.random(1,3)
+            local debuffList = {"BLEED", "IMPAIR", "DEFECT", "STUN", "WOUND", "TARGETED", "EXPOSED",}
+            if self.owner:HasCondition("REMOTE_PLAGUE") then
+                self.owner:AddCondition(debuffList[randomDebuff], 1, self)
+            end
+        end,
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.BEGIN_PLAYER_TURN] = function(self, battle, attack, hit, target, fighter)
+                local randomDebuff = math.random(1,7)
+                local debuffList = {"BLEED", "IMPAIR", "DEFECT", "STUN", "WOUND", "TARGETED", "EXPOSED",}
+                if self.owner:HasCondition("REMOTE_PLAGUE") then
+                    self.owner:AddCondition(debuffList[randomDebuff], 1, self)
+                else
+                    self.owner:RemoveCondition("REMOTE_VIRUS", self.owner:GetConditionStacks("REMOTE_VIRUS"), self)
+                end
+                
+            end
+        }
+         
+    },
+
+    BLINDED = -- work in progress
     {
         name = "Blinded", 
         desc = "This enemy is blinded and will miss their next attack and following attacks depending on the stacks of {BLINDED}. Remove one stack every attack.",
-        icon = "battle/conditions/acidic_slime.tex",  
+        icon = "battle/conditions/lumin_burnt.tex",  
 
         OnPreDamage = function( self, damage, attacker, battle, source )
-            
+           
         end,
 
-        -- event_handlers = 
-        -- {
-        --     [ BATTLE_EVENT.ON_HIT] = function(self, battle, attack, hit, target, fighter)
-                
-        --     end
-        -- }
-    }
+         
+    },
 
     REMOTE_PLAGUE = 
     {
@@ -2423,7 +2496,6 @@ local CONDITIONS =
         event_handlers =
         {
             [ BATTLE_EVENT.CARD_MOVED ] = function( self, battle, attack, hit )
-                
                 if self.owner:HasCondition("equip_flail") then
                     self.flailCount = 1
                 end
@@ -2699,10 +2771,10 @@ local CONDITIONS =
         {
 
             [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function (self, battle, fighter)
-                
                 self.owner:AddCondition("NEXT_TURN_ACTION", 1, self)
             end,
 
+            -- take roughly 30% more damage and deal 30% more damage
             [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
                 if card.owner == self.owner and card:IsAttackCard() then
                     dmgt:ModifyDamage( math.round(dmgt.min_damage + dmgt.min_damage * 0.3), math.round(dmgt.max_damage + dmgt.max_damage * 0.3), self )
@@ -2712,6 +2784,7 @@ local CONDITIONS =
                 end
             end,
 
+            -- defend for less
             [ BATTLE_EVENT.CALC_MODIFY_STACKS ] = function( self, acc, condition_id, fighter, source )
                 if condition_id == "DEFEND" and fighter == self.owner then
                     if acc.value > 0 then
@@ -2720,11 +2793,19 @@ local CONDITIONS =
                 end
             end,
 
-            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, fighter, battle )
+            -- gain card "the_execution after using the same weapon for 6 actions"
+            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, fighter)
+                if battle:GetDrawDeck():HasCard("the_execution") or battle:GetHandDeck():HasCard("the_execution") or battle:GetDiscardDeck():HasCard("the_execution") then
+                    self.momentum = 0
+                end
                 self.momentum = self.momentum + 1
+                if self.owner:HasCondition("KINGPIN") then
+                    self.momentum = 0
+                end
                 if self.momentum >= 6 then
                     local card = Battle.Card( "the_execution", self.owner )
                     card:TransferCard( self.battle:GetHandDeck() )
+                    self.momentum = 0
                 end
             end,
         }
@@ -2764,13 +2845,17 @@ local CONDITIONS =
                 end      
             end,
 
+            -- defense and healing every turn
             [ BATTLE_EVENT.END_PLAYER_TURN ] = function (self, battle, attack)
-                -- self.owner:AddCondition("DEFEND", math.round(self.owner:GetHealth() * 0.05), self)
-                self.owner:AddCondition("DEFEND", math.round(self.owner:GetHealth() * 0.10), self) -- gains more defense due to less offensive capability and less confusing tooltip
+                self.owner:AddCondition("DEFEND", math.round(self.owner:GetHealth() * 0.05), self)
                 self.owner:HealHealth(math.round((self.owner:GetMaxHealth() - self.owner:GetHealth()) * 0.10), self)
             end,
 
-            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, fighter, battle )
+             -- gain card "the_execution after using the same weapon for 6 actions"
+            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, fighter)
+                if battle:GetDrawDeck():HasCard("the_execution") or battle:GetHandDeck():HasCard("the_execution") or battle:GetDiscardDeck():HasCard("the_execution") then
+                    self.momentum = 0
+                end
                 self.momentum = self.momentum + 1
                 if self.owner:HasCondition("KINGPIN") then
                     self.momentum = 0
@@ -2778,6 +2863,7 @@ local CONDITIONS =
                 if self.momentum >= 6 then
                     local card = Battle.Card( "the_execution", self.owner )
                     card:TransferCard( self.battle:GetHandDeck() )
+                    self.momentum = 0
                 end
             end,
 
