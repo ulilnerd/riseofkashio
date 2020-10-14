@@ -1283,7 +1283,7 @@ local CARDS =
     slice_and_dice = 
     {
         name = "Slice and Dice",
-        desc = "{KINGPIN} 4: Draw Slicer and Dicer into your hand.",
+        desc = "{KINGPIN} 6: Draw Slicer and Dicer into your hand.",
         anim = "spin_attack",
         icon = "RISE:textures/slice_and_dice.png",
 
@@ -1297,7 +1297,7 @@ local CARDS =
 
         OnPostResolve = function( self, battle, attack, card )
             if self.owner:HasCondition("KINGPIN") then
-                if self.owner:GetConditionStacks("KINGPIN") >= 3 then
+                if self.owner:GetConditionStacks("KINGPIN") >= 6 then
                     local card1 = Battle.Card( "slicer", self.owner )
                     local card2 = Battle.Card( "dicer", self.owner )
                     card1:TransferCard( battle:GetHandDeck() )
@@ -1341,7 +1341,7 @@ local CARDS =
     {
         name = "Readied Assault",
         anim = "spin_attack",
-        desc = "{KINGPIN} 7: Deal max damage and gain {DEFEND} equal to your max damage.",
+        desc = "{KINGPIN} 9: Deal max damage and gain {DEFEND} equal to your max damage.",
         icon = "RISE:textures/readied_assault.png",
 
         flags =  CARD_FLAGS.MELEE,
@@ -1356,7 +1356,7 @@ local CARDS =
         {
             [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
                 if self.owner:HasCondition("KINGPIN") then
-                    if self.owner:GetConditionStacks("KINGPIN") >= 4 then
+                    if self.owner:GetConditionStacks("KINGPIN") >= 9 then
                         if self.owner == card.owner then
                             dmgt:ModifyDamage( dmgt.max_damage, dmgt.max_damage, self )
                             self.owner:AddCondition("DEFEND", self.max_damage, self)
@@ -1446,7 +1446,7 @@ local CARDS =
     {
         name = "Irritating Blow",
         anim = "crack",
-        desc = "{KINGPIN} 4: Shuffle a copy of Irritating Blow into your draw pile.",
+        desc = "{KINGPIN} 6: Shuffle a copy of Irritating Blow into your draw pile.",
         icon = "battle/weakness_quick_jab.tex",
 
         flags =  CARD_FLAGS.MELEE,
@@ -1459,7 +1459,7 @@ local CARDS =
 
         OnPostResolve = function( self, battle, attack, card )
             if self.owner:HasCondition("KINGPIN") then
-                if self.owner:GetConditionStacks("KINGPIN") >= 4 then
+                if self.owner:GetConditionStacks("KINGPIN") >= 6 then
                     local card = Battle.Card( "irritating_blow", self.owner )
                     battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
                     -- battle:DrawCards(1)
@@ -1512,7 +1512,7 @@ local CARDS =
     {
         name = "The Great Escape",
         anim = "taunt4",
-        desc = "Gain {EVASION}, {DEFEND}, {EXPOSED}, or {IMPAIR}, {KINGPIN} 23: Gain {EVASION} or {DEFEND}.",
+        desc = "Gain {EVASION}, {DEFEND}, {EXPOSED}, or {IMPAIR}, {KINGPIN} 18: Gain {EVASION} or {DEFEND}.",
         icon = "battle/misdirection.tex",
 
         flags =  CARD_FLAGS.SKILL,
@@ -1527,7 +1527,7 @@ local CARDS =
         OnPostResolve = function( self, battle, attack, card )
             local randomChance = math.random(1,4)
             if self.owner:HasCondition("KINGPIN") then
-                if self.owner:GetConditionStacks("KINGPIN") >= 23 then
+                if self.owner:GetConditionStacks("KINGPIN") >= 18 then
                     randomChance = math.random(1,2)
                 end
             end
@@ -1892,7 +1892,7 @@ local CARDS =
 
         OnPostResolve = function( self, battle, attack, card ) -- sometimes only gives you 2 debuffs
             if self.owner:HasCondition("KINGPIN") then
-                if self.owner:GetConditionStacks("KINGPIN") >= 20 then
+                if self.owner:GetConditionStacks("KINGPIN") >= 21 then
                 
                 else
                     local randomCon1 = math.random(1,5)
@@ -2212,7 +2212,7 @@ local CONDITIONS =
     DEFLECTION = 
     {
         name = "Deflection",
-        desc = "Deal damage to enemies equal to 25% of the damage they will deal to you and gain {DEFEND} equal to that amount {KINGPIN} 10: Deal 50% damage back instead and gain {DEFEND} for the same amount.",
+        desc = "Deal damage to enemies equal to 25% of the damage they will deal to you and gain {DEFEND} equal to that amount {KINGPIN} 12: Deal 50% damage back instead and gain {DEFEND} for the same amount.",
         icon = "battle/conditions/shield_of_hesh.tex",
 
         event_handlers =
@@ -2224,7 +2224,7 @@ local CONDITIONS =
                                 for i, card in ipairs( enemy.prepared_cards ) do
                                     if card:IsAttackCard() then
                                         if self.owner:HasCondition("KINGPIN") then
-                                            if self.owner:GetConditionStacks("KINGPIN") >= 10 then
+                                            if self.owner:GetConditionStacks("KINGPIN") >= 12 then
                                                 self.owner:AddCondition("DEFEND", math.round(card.max_damage / 2), self)
                                             end
                                         else
@@ -2235,7 +2235,7 @@ local CONDITIONS =
                                 end
                             end
                             if self.owner:HasCondition("KINGPIN") then
-                                if self.owner:GetConditionStacks("KINGPIN") >= 10 then
+                                if self.owner:GetConditionStacks("KINGPIN") >= 12 then
                                     enemy:ApplyDamage( math.round(count / 2), math.round(count / 2), self )
                                 end
                             else
@@ -2351,6 +2351,7 @@ local CONDITIONS =
         glaive_equipped = false,
         flail_equipped = false,
 
+        -- not yet implemented:
         -- 10 stacks: gain METALLIC
         -- 20 stacks: Your attacks on an enemy have a small chance of granting you a random buff
         -- 30 stacks: random enemy gains DEFECT every turn
