@@ -9,7 +9,6 @@ local CARDS =
     {
         name = "Smokescreen",
         anim = "throw2",
-        max_xp = 0,
         desc = "Gain {EVASION} then {IMPAIR} self.",
         icon = "RISE:textures/smokescreen.png",
 
@@ -33,7 +32,6 @@ local CARDS =
     {
         name = "Rage",
         anim = "taunt",
-        max_xp = 0,
         target_type = TARGET_TYPE.SELF,
         desc = "Gain {1} {POWER_LOSS} then {WOUND} self.",
         icon = "RISE:textures/rage.png",
@@ -59,7 +57,6 @@ local CARDS =
     {
         name = "Burning Smash",
         anim = "smash",
-        max_xp = 0,
         desc = "Apply {1} {BURN}.",
         icon = "RISE:textures/burningsmash.png",
 
@@ -553,7 +550,7 @@ local CARDS =
     {
         name = "Deflect",
         anim = "taunt3",
-        desc = "Gain {1} {DEFLECTION}, {KINGPIN} 10: Deal half the damage enemies will deal to you instead and defend for the same amount.",
+        desc = "Gain {1} {DEFLECTION}, {KINGPIN} 12: Deal half the damage enemies will deal to you instead and defend for the same amount.",
         icon = "battle/hammer_swing.tex",
 
         flags = CARD_FLAGS.SKILL,
@@ -1316,7 +1313,6 @@ local CARDS =
         flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
         cost = 0,
         rarity = CARD_RARITY.UNIQUE,
-        max_xp = 6,
 
         min_damage = 3,
         max_damage = 3,
@@ -1331,7 +1327,6 @@ local CARDS =
         flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
         cost = 0,
         rarity = CARD_RARITY.UNIQUE,
-        max_xp = 6,
 
         min_damage = 2,
         max_damage = 6,
@@ -1394,7 +1389,7 @@ local CARDS =
     {
         name = "Control CEE",
         anim = "taunt",
-        desc = "Gain {1} {DEFEND}, {KINGPIN} 7: Draw Control VEE into your hand.",
+        desc = "Gain {1} {DEFEND}, {KINGPIN} 6: Draw Control VEE into your hand.",
         icon = "battle/scanner.tex",
 
         flags =  CARD_FLAGS.SKILL,
@@ -1428,7 +1423,6 @@ local CARDS =
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         cost = 0,
         rarity = CARD_RARITY.UNIQUE,
-        max_xp = 6,
         target_type = TARGET_TYPE.SELF,
 
         defend_amount = 4,
@@ -1551,7 +1545,6 @@ local CARDS =
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         cost = 1,
         rarity = CARD_RARITY.UNIQUE,
-        max_xp = 6,
         target_type = TARGET_TYPE.SELF,
         target_mod = TARGET_MOD.TEAM,
 
@@ -1581,7 +1574,6 @@ local CARDS =
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         cost = 1,
         rarity = CARD_RARITY.UNIQUE,
-        max_xp = 6,
         target_type = TARGET_TYPE.SELF,
         target_mod = TARGET_MOD.TEAM,
 
@@ -1612,7 +1604,6 @@ local CARDS =
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         cost = 1,
         rarity = CARD_RARITY.UNIQUE,
-        max_xp = 6,
         target_type = TARGET_TYPE.SELF,
         target_mod = TARGET_MOD.TEAM,
 
@@ -1664,7 +1655,7 @@ local CARDS =
 
         flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
         cost = 1,
-        rarity = CARD_RARITY.UNCOMMON,
+        rarity = CARD_RARITY.RARE,
         max_xp = 4,
 
         min_damage = 1,
@@ -1879,7 +1870,7 @@ local CARDS =
     {
         name = "Call it Even",
         anim = "slam",
-        desc = "Gain 3 random debuffs. {KINGPIN} 20: Don't gain any debuffs.",
+        desc = "Gain 3 random debuffs. {KINGPIN} 21: Don't gain any debuffs.",
         icon = "RISE:textures/ransack.png",
 
         flags =  CARD_FLAGS.MELEE,
@@ -1921,7 +1912,7 @@ local CARDS =
         name = "Contaminate",
         anim = "slash_up",
         desc = "Contaminates an enemy, which grants them stacks of {CONTAMINATION} based on their current health.",
-        icon = "RISE:textures/contamination.png",
+        icon = "battle/giant_stinger.tex",
 
         flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
         cost = 2,
@@ -2089,6 +2080,9 @@ local CARDS =
         max_xp = 4,
         target_mod = TARGET_MOD.TEAM,
 
+        min_damage = 3,
+        max_damage = 6,
+
         enemy_inflicted = false,
 
         OnPostResolve = function( self, battle, attack)
@@ -2137,16 +2131,61 @@ local CARDS =
     {
         name = "Armor of Disease",
         anim = "taunt4",
-        desc = "Only deals damage to enemies with {EPIDEMIC}.",
+        desc = "Gain {ARMOR_OF_DISEASE}.",
         icon = "battle/bough.tex",
         
         cost = 2,
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
-        rarity = CARD_RARITY.UNCOMMON,
+        rarity = CARD_RARITY.RARE,
         target_type = TARGET_TYPE.SELF,
 
         OnPostResolve = function( self, battle, attack)
             self.owner:AddCondition("ARMOR_OF_DISEASE", 1, self)
+        end
+    },
+
+    infestation = 
+    {
+        name = "Infestation",
+        anim = "taunt",
+        desc = "Shuffle 2 common Kashio Bog Cards to your hand and expend a non Kashio Bog Card from your draw and discard pile each.  If any enemies have a Bog Condition, raise a bog creature to your side or the enemy's side.",
+        icon = "RISE:textures/infestation.png",
+        
+        cost = 2,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+        rarity = CARD_RARITY.RARE,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPostResolve = function( self, battle, attack)
+            if battle:GetDrawDeck():CountCards() > 0  then
+                local randomCard1 = battle:GetDrawDeck():PeekRandom()
+                battle:ExpendCard(randomCard1)
+            end
+            if battle:GetDiscardDeck():CountCards() > 0
+                local randomCard2 = battle:GetDiscardDeck():PeekRandom()
+                battle:ExpendCard(randomCard2)
+            end
+           for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                local randomMonster = math.random(1,2) -- change to 1-3 after fixing grout eye
+                if enemy:HasCondition("EPIDEMIC") or enemy:HasCondition("PARASITIC_INFUSION") or enemy:HasCondition("REMOTE_PLAGUE") or enemy:HasCondition("CONTAMINATION") then
+                    if randomMonster == 1 then
+                        local groutKnuckle = Agent( "GROUT_KNUCKLE" )
+                        local fighter = Fighter.CreateFromAgent( groutKnuckle, battle:GetScenario():GetAllyScale() )
+                        self.owner:GetTeam():AddFighter( fighter )
+                        self.owner:GetTeam():ActivateNewFighters()
+                    -- elseif randomMonster == 2 then
+                    --     local groutEye = Agent( "GROUT_EYE" ) -- grout eye bugged; won't appear on screen (game issue?)
+                    --     local fighter = Fighter.CreateFromAgent( groutEye, battle:GetScenario():GetAllyScale() )
+                    --     self.owner:GetTeam():AddFighter( fighter )
+                    --     self.owner:GetTeam():ActivateNewFighters()
+                    elseif randomMonster == 2 then
+                        local sparkMine = Agent( "GROUT_SPARK_MINE" )
+                        local fighter = Fighter.CreateFromAgent( sparkMine, battle:GetScenario():GetAllyScale() )
+                        self.owner:GetEnemyTeam():AddFighter( fighter )
+                        self.owner:GetEnemyTeam():ActivateNewFighters()
+                    end
+                end
+           end
         end
     }
 
@@ -2317,13 +2356,21 @@ local CONDITIONS =
         desc = "Every turn, shuffle a Viral Sadism card into your discard pile for every enemy with this condition then have a chance to spread the virus to an ally.",
         icon = "battle/conditions/burr_eye_stalk_vision.tex",  
 
+        max_stacks = 3,
+
         event_handlers = 
         {
             [ BATTLE_EVENT.END_PLAYER_TURN] = function(self, battle, hit, target, fighter)
                 local virusCount = 0
+                local randomChance = math.random(1,4)
                 for i, ally in self.owner:GetTeam():Fighters() do
                     if ally:HasCondition("EPIDEMIC") then
                         virusCount = virusCount + 1
+                    end
+                    if not ally:HasCondition("EPIDEMIC") then
+                        if randomChance == 1 then
+                            ally:AddCondition("EPIDEMIC", 3, self)
+                        end
                     end
                 end
                 if virusCount > 0 then
@@ -2337,7 +2384,7 @@ local CONDITIONS =
         }
     },
 
-    REMOTE_VIRUS = 
+    REMOTE_VIRUS = -- implement: if enemy with remote virus dies, it is spread to another enemy.
     {
         name = "Remote Virus", 
         desc = "Every turn, inflict this target with a random debuff as long as {REMOTE_PLAGUE} is active.",
@@ -2361,7 +2408,6 @@ local CONDITIONS =
                 else
                     self.owner:RemoveCondition("REMOTE_VIRUS", self.owner:GetConditionStacks("REMOTE_VIRUS"), self)
                 end
-                
             end
         }
          
@@ -2484,8 +2530,8 @@ local CONDITIONS =
                     elseif self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 1 and randomNum == 3 then
                         local groutEye = Agent( "GROUT_EYE" )
                         local fighter = Fighter.CreateFromAgent( groutEye, battle:GetScenario():GetAllyScale() )
-                        self.owner:GetEnemyTeam():AddFighter( fighter )
-                        self.owner:GetEnemyTeam():ActivateNewFighters()
+                        self.owner:GetTeam():AddFighter( fighter )
+                        self.owner:GetTeam():ActivateNewFighters()
                     end
                 end
             end
@@ -2495,7 +2541,7 @@ local CONDITIONS =
     TAG_TEAM = 
     {
         name = "Tag Team",
-        desc = "Your team generates {TAG_TEAM} stacks every time your team makes an action, these stacks can be consumed to use powerful team abilities. After you end your turn, you will shuffle up to 2 Battle Cry cards into your deck if you have less than 2 Battle Cry cards.",
+        desc = "Your team generates {TAG_TEAM} stacks every time your team makes an action, these stacks can be consumed to use powerful team abilities. After you end your turn, you will shuffle 1 Battle Cry card into your deck if you have less than 2 Battle Cry cards.",
         icon = "battle/conditions/ai_spark_baron_goon_buff.tex",
 
         min_stacks = 1,
