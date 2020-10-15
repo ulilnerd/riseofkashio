@@ -2143,7 +2143,7 @@ local CARDS =
         icon = "battle/bough.tex",
         
         cost = 2,
-        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.BOGGERS,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         rarity = CARD_RARITY.RARE,
         target_type = TARGET_TYPE.SELF,
 
@@ -2197,6 +2197,97 @@ local CARDS =
                 end
            end
         end
+    },
+
+    infest = -- not tested
+    {
+        name = "Infest",
+        anim = "crack",
+        desc = "Deal damage and have a chance to inflict an enemy with a bog condition.",
+        -- icon = "RISE:textures/infestation.png",
+        
+        cost = 1,
+        flags =  CARD_FLAGS.MELEE,
+        rarity = CARD_RARITY.UNIQUE,
+        
+        min_damage = 6,
+        max_damage = 8,
+
+        OnPostResolve = function( self, battle, attack)
+            local randomDebuff = math.random(1,4)
+            local debuffList = {"EPIDEMIC", "REMOTE_VIRUS", "PARASITIC_INFUSION", "CONTAMINATION"}
+            local debuffStacks = 0
+
+            -- change stacks inflicted on enemy depending on the condition
+            if randomDebuff == 1 then
+                debuffStacks = 3
+            elseif randomDebuff == 2 then
+                debuffStacks = math.random(3,10)
+                local randomNum = math.random(1,3)
+                local remoteCards = {"remote_expunge", "remote_blind", "remote_virus"}
+                local card = Battle.Card( remoteCards[randomNum], self.owner )
+                card:TransferCard(battle:GetDrawDeck())
+            elseif randomDebuff == 3 then
+                debuffStacks = math.round(attack.attacker:GetMaxHealth() * 0.6)
+            elseif randomDebuff == 4 then
+                randomStacks = math.round(attack.attacker:GetHealth())
+            end
+           
+            for i, hit in attack:Hits() do
+                if not attack:CheckHitResult( hit.target, "evaded" ) then
+                    hit.target:AddCondition(debuffList[randomDebuff], debuffStacks, self)
+                end
+            end
+        end
+    },
+
+    conceal = -- not tested
+    {
+        name = "Conceal",
+        anim = "taunt",
+        desc = "Gather your bog friends around to defend you, gain {1} {DEFEND}.  Gain {2} extra {DEFEND} and have a chance to gain a random buff for every bog monster in the fight.",
+        -- icon = "RISE:textures/infestation.png",
+        
+        cost = 1,
+        flags =  CARD_FLAGS.SKILL,
+        rarity = CARD_RARITY.UNIQUE,
+        
+        desc_fn = function(self, fmt_str)
+            return loc.format(fmt_str, self:CalculateDefendText( self.defend_amount, self.extra_defend ))
+        end,
+
+        defend_amount = 8,
+        extra_defend = 2,
+
+        OnPostResolve = function( self, battle, attack)
+            for i, ally in self.owner:GetTeam():Fighters() do 
+                if ally == "GROUT_KNUCKLE" then
+                    self.defend = self.defend + self.extra_defend
+                end
+                if ally == "GROUT_EYE" then
+                    self.defend = self.defend + self.extra_defend
+                end
+            end
+            for k, enemy in self.owner:GetEnemyTeam():Fighters() do
+                if enemy == "GROUT_SPARK_MINE" then
+                    self.defend = self.defend + self.extra_defend
+                end
+            end
+            self.owner:AddCondition("DEFEND", self.defend_amount, self)
+        end
+    },
+
+    lifestealer = -- not tested
+    {
+        name = "Lifestealer",
+        anim = "slash_up",
+        desc = "Steal health depending on the target's max health.",
+        -- icon = "RISE:textures/infestation.png",
+        
+        cost = 1,
+        flags =  CARD_FLAGS.SKILL,
+        rarity = CARD_RARITY.UNIQUE,
+        
     }
 
     -- deceived = 
