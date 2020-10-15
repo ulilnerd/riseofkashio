@@ -1961,8 +1961,8 @@ local CARDS =
                     hit.target:AddCondition("REMOTE_PLAGUE", randomNum, self)
                 end
             end
-            local randomNum = math.random(1,1)
-            local remoteCards = {"remote_expunge"}
+            local randomNum = math.random(1,3)
+            local remoteCards = {"remote_expunge", "remote_blind", "remote_virus"}
             local card = Battle.Card( remoteCards[randomNum], self.owner )
             card:TransferCard( battle:GetDrawDeck() )
         end
@@ -2131,6 +2131,23 @@ local CARDS =
                 end
             end,
         }
+    },
+
+    armor_of_disease = 
+    {
+        name = "Armor of Disease",
+        anim = "taunt4",
+        desc = "Only deals damage to enemies with {EPIDEMIC}.",
+        icon = "battle/bough.tex",
+        
+        cost = 2,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+        rarity = CARD_RARITY.UNCOMMON,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("ARMOR_OF_DISEASE", 1, self)
+        end
     }
 
     -- deceived = 
@@ -2255,6 +2272,44 @@ local CONDITIONS =
             
     --     -- end
     -- },
+
+    ARMOR_OF_DISEASE = 
+    {
+        name = "Armor Of Disease", 
+        desc = "The next enemy that attacks you, will gain {EPIDEMIC}, {REMOTE_PLAGUE}, {PARASITIC_INFUSION} or {CONTAMINATION}.",
+        icon = "battle/conditions/armored_pet.tex",  
+        
+        max_stacks = 1,
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.ON_HIT] = function(self, battle, attack, hit, target)
+                local randomDebuff = math.random(1,4)
+                local debuffList = {"EPIDEMIC", "REMOTE_VIRUS", "PARASITIC_INFUSION", "CONTAMINATION"}
+                local debuffStacks = 0
+
+                -- change stacks inflicted on enemy depending on the condition
+                if randomDebuff == 1 then
+                    debuffStacks = 3
+                elseif randomDebuff == 2 then
+                    debuffStacks = math.random(3,10)
+                    local randomNum = math.random(1,3)
+                    local remoteCards = {"remote_expunge", "remote_blind", "remote_virus"}
+                    local card = Battle.Card( remoteCards[randomNum], self.owner )
+                    card:TransferCard(battle:GetDrawDeck())
+                elseif randomDebuff == 3 then
+                    debuffStacks = math.round(attack.attacker:GetMaxHealth() * 0.6)
+                elseif randomDebuff == 4 then
+                    randomStacks = math.round(attack.attacker:GetHealth())
+                end
+
+                if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
+                    attack.attacker:AddCondition(debuffList[randomDebuff], debuffStacks, self)
+                    self.owner:RemoveCondition("ARMOR_OF_DISEASE", self.owner:GetConditionStacks("ARMOR_OF_DISEASE"), self)
+                end
+            end
+        }
+    },
 
     EPIDEMIC = -- card draw bugged; shuffles too many viral sadism cards into your discards
     {
