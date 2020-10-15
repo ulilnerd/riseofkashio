@@ -2,6 +2,7 @@ local battle_defs = require "battle/battle_defs"
 local CARD_FLAGS = battle_defs.CARD_FLAGS
 local EVENT = battle_defs.EVENT
 local BATTLE_EVENT = battle_defs.BATTLE_EVENT
+require "eventsystem"
 
 local CARDS =
 {
@@ -1646,33 +1647,6 @@ local CARDS =
         end
     },
 
-    parasite_infusion =
-    {
-        name = "Parasite Infusion", -- bugged when you have more than one copy in your hand: enemies gain more stacks than intended and gain even more stacks while attacking not with this card
-        anim = "throw1",
-        desc = "Infuses an enemy with {PARASITIC_INFUSION}, gaining stacks depending on the target enemy's max health.",
-        icon = "battle/branch.tex",
-
-        flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
-        cost = 1,
-        rarity = CARD_RARITY.RARE,
-        max_xp = 4,
-
-        min_damage = 1,
-        max_damage = 2,
-
-        event_handlers = 
-        {
-            [ BATTLE_EVENT.ON_HIT ] = function( self, card, hit ) 
-                local enemy_health = 0
-                if hit.target ~= self.owner then
-                    enemy_health = math.round(hit.target:GetMaxHealth() * 0.6)
-                    hit.target:AddCondition("PARASITIC_INFUSION", enemy_health)
-                end
-            end
-        }
-    },
-
     bleeding_edge = 
     {
         name = "Bleeding Edge",
@@ -1907,6 +1881,37 @@ local CARDS =
         end
     },
 
+    parasite_infusion =
+    {
+        name = "Parasite Infusion", -- bugged when you have more than one copy in your hand: enemies gain more stacks than intended and gain even more stacks while attacking not with this card
+        anim = "throw1",
+        desc = "Infuses an enemy with {PARASITIC_INFUSION}, gaining stacks depending on the target enemy's max health.",
+        icon = "battle/branch.tex",
+
+        flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
+        cost = 1,
+        rarity = CARD_RARITY.RARE,
+        max_xp = 4,
+
+        min_damage = 1,
+        max_damage = 2,
+
+        OnPostResolve = function( self, battle, attack, card )
+            self.owner:AddCondition("ONE_WITH_THE_BOG", 1, self)
+        end,
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.ON_HIT ] = function( self, card, hit ) 
+                local enemy_health = 0
+                if hit.target ~= self.owner then
+                    enemy_health = math.round(hit.target:GetMaxHealth() * 0.6)
+                    hit.target:AddCondition("PARASITIC_INFUSION", enemy_health)
+                end
+            end
+        }
+    },
+
     contaminate = 
     {
         name = "Contaminate",
@@ -1923,6 +1928,7 @@ local CARDS =
         max_damage = 7,
 
         OnPostResolve = function( self, battle, attack, card )
+            self.owner:AddCondition("ONE_WITH_THE_BOG", 1, self)
             for i, hit in attack:Hits() do
                 if not attack:CheckHitResult( hit.target, "evaded" ) then
                     hit.target:AddCondition("CONTAMINATION", math.round(hit.target:GetHealth()) , self)
@@ -1946,6 +1952,7 @@ local CARDS =
         max_damage = 5,
 
         OnPostResolve = function( self, battle, attack, card )
+            self.owner:AddCondition("ONE_WITH_THE_BOG", 1, self)
             local randomNum = math.random(3,10)
             for i, hit in attack:Hits() do
                 if not attack:CheckHitResult( hit.target, "evaded" ) then
@@ -2086,6 +2093,7 @@ local CARDS =
         enemy_inflicted = false,
 
         OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("ONE_WITH_THE_BOG", 1, self)
             for i, enemy in self.owner:GetEnemyTeam():Fighters() do
                 if self.enemy_inflicted == false then
                     enemy:AddCondition("EPIDEMIC", 3, self)
@@ -2135,11 +2143,12 @@ local CARDS =
         icon = "battle/bough.tex",
         
         cost = 2,
-        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.BOGGERS,
         rarity = CARD_RARITY.RARE,
         target_type = TARGET_TYPE.SELF,
 
         OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("ONE_WITH_THE_BOG", 1, self)
             self.owner:AddCondition("ARMOR_OF_DISEASE", 1, self)
         end
     },
@@ -2157,11 +2166,12 @@ local CARDS =
         target_type = TARGET_TYPE.SELF,
 
         OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("ONE_WITH_THE_BOG", 1, self)
             if battle:GetDrawDeck():CountCards() > 0  then
                 local randomCard1 = battle:GetDrawDeck():PeekRandom()
                 battle:ExpendCard(randomCard1)
             end
-            if battle:GetDiscardDeck():CountCards() > 0
+            if battle:GetDiscardDeck():CountCards() > 0 then
                 local randomCard2 = battle:GetDiscardDeck():PeekRandom()
                 battle:ExpendCard(randomCard2)
             end
@@ -2311,6 +2321,65 @@ local CONDITIONS =
             
     --     -- end
     -- },
+    ONE_WITH_THE_BOG = 
+    {
+        name = "One With The Bog", 
+        desc = "You gain this condition after using a Kashio Bog Ability.  You cannot gain KINGPIN stacks while this is active and cannot equip any weapons. Removes {KINGPIN}, {equip_flail} and {equip_glaive} on activation. Every turn, have a chance to shuffle a Kashio Bog Ability Card into your hand (regardless if you picked up the card) then shuffle a Kashio Bog Card into your draw/discard pile while expending a non Kashio Bog Card in your draw/dicard pile.",
+        icon = "battle/conditions/heart_of_the_bog.tex",  
+        
+        max_stacks = 1,
+
+        OnApply = function( self, battle )
+            -- remove other abilities
+            if self.owner:HasCondition("equip_flail") then
+                self.owner:RemoveCondition("equip_flail", self.owner:GetConditionStacks("equip_flail"), self)
+            end
+            if self.owner:HasCondition("equip_glaive") then
+                self.owner:RemoveCondition("glaive", self.owner:GetConditionStacks("equip_glaive"), self)
+            end
+            if self.owner:HasCondition("KINGPIN") then
+                self.owner:RemoveCondition("KINGPIN", self.owner:GetConditionStacks("KINGPIN"), self)
+            end
+        end,
+
+        event_handlers =
+        {
+            -- cannot have flail, glaive, or kingpin active while this ability is active
+            [ BATTLE_EVENT.CARD_MOVED ] = function( self, battle, attack, hit )
+                if self.owner:HasCondition("equip_flail") then
+                    self.owner:RemoveCondition("equip_flail", self.owner:GetConditionStacks("equip_flail"), self)
+                end
+                if self.owner:HasCondition("equip_glaive") then
+                    self.owner:RemoveCondition("glaive", self.owner:GetConditionStacks("equip_glaive"), self)
+                end
+                if self.owner:HasCondition("KINGPIN") then
+                    self.owner:RemoveCondition("KINGPIN", self.owner:GetConditionStacks("KINGPIN"), self)
+                end
+            end,
+            -- have a chance to gain bog abilities every turn, free until played.
+            [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, attack, hit )
+                local randomCard = math.random(1,6)
+                local randomChance = math.random(1,2)
+                local bogCardList = {"contaminate", "remote_plague", "armor_of_disease", "epidemic", "infestation", "parasite_infusion"}
+                if randomChance == 1 then
+                    local card = Battle.Card( bogCardList[randomCard], self.owner )
+                    card:TransferCard( battle:GetHandDeck() )
+                    card:SetFlags( CARD_FLAGS.FREEBIE )
+                end
+            end,
+            [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit )
+                if battle:GetDrawDeck():CountCards() > 0  then
+                    local randomCard1 = battle:GetDrawDeck():PeekRandom()
+                    battle:ExpendCard(randomCard1)
+                end
+                if battle:GetDiscardDeck():CountCards() > 0 then
+                    local randomCard2 = battle:GetDiscardDeck():PeekRandom()
+                    battle:ExpendCard(randomCard2)
+                end
+            end
+        }
+
+    },
 
     ARMOR_OF_DISEASE = 
     {
@@ -2318,8 +2387,6 @@ local CONDITIONS =
         desc = "The next enemy that attacks you, will gain {EPIDEMIC}, {REMOTE_PLAGUE}, {PARASITIC_INFUSION} or {CONTAMINATION}.",
         icon = "battle/conditions/armored_pet.tex",  
         
-        max_stacks = 1,
-
         event_handlers = 
         {
             [ BATTLE_EVENT.ON_HIT] = function(self, battle, attack, hit, target)
@@ -3055,25 +3122,3 @@ local CONDITIONS =
 for id, def in pairs( CONDITIONS ) do
     Content.AddBattleCondition( id, def )
 end
-
-
--- local FEATURES =
--- {
---     equip_flail = 
---     {
---         name = "Kashio's Flail",
---         desc = "gain {DEFEND} equal to 5% of your current health and {DEFEND} then {HEAL} self for 10% of your missing health every turn. Also have a chance 25% chance to apply a random debuff to an enemy on hit.",
---     },
---     equip_glaive =
---     {
---         name="Kashio's Glaive",
---         desc = "Deal extra damage with your attacks and gain an extra action per turn at the cost of taking more damage and halving {DEFEND}.",
---     },
--- }
-
--- for id, data in pairs( FEATURES ) do
---     local def = BattleFeatureDef(id, data)
---     Content.AddBattleCardFeature(id, def)
---     CARD_FEATURES[id] = def
--- end
-
