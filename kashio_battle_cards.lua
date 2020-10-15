@@ -131,8 +131,8 @@ local CARDS =
         max_xp = 4,
         flags = CARD_FLAGS.MELEE,
         icon = "RISE:textures/flailsmash.png",
-        min_damage = 1,
-        max_damage = 3,
+        min_damage = 2,
+        max_damage = 4,
         anim = "smash",
         desc = "Deal damage then apply {1} {BURN}",
         burn_amount = 1,
@@ -970,7 +970,7 @@ local CARDS =
         max_xp = 6,
 
         min_damage = 1,
-        max_damage = 3,
+        max_damage = 5,
 
         OnPostResolve = function( self, battle, attack)
             local randomNum = math.floor(math.random() * 2)
@@ -1055,7 +1055,7 @@ local CARDS =
         max_xp = 6,
 
         min_damage = 2,
-        max_damage = 3,
+        max_damage = 5,
 
         OnPostResolve = function( self, battle, attack )
             self.owner:AddCondition( "NEXT_TURN_DRAW", self.draw_bonus )
@@ -1290,7 +1290,7 @@ local CARDS =
         rarity = CARD_RARITY.COMMON,
         max_xp = 6,
 
-        min_damage = 1,
+        min_damage = 2,
         max_damage = 4,
 
         OnPostResolve = function( self, battle, attack, card )
@@ -1821,7 +1821,7 @@ local CARDS =
         rarity = CARD_RARITY.COMMON,
         max_xp = 6,
       
-        min_damage = 1,
+        min_damage = 2,
         max_damage = 5, 
 
         evasion_amount = 1,
@@ -1893,8 +1893,8 @@ local CARDS =
         rarity = CARD_RARITY.RARE,
         max_xp = 4,
 
-        min_damage = 1,
-        max_damage = 2,
+        min_damage = 4,
+        max_damage = 7,
 
         OnPostResolve = function( self, battle, attack, card )
             self.owner:AddCondition("ONE_WITH_THE_BOG", 1, self)
@@ -1905,7 +1905,7 @@ local CARDS =
             [ BATTLE_EVENT.ON_HIT ] = function( self, card, hit ) 
                 local enemy_health = 0
                 if hit.target ~= self.owner then
-                    enemy_health = math.round(hit.target:GetMaxHealth() * 0.6)
+                    enemy_health = math.round(hit.target:GetMaxHealth() * 0.40)
                     hit.target:AddCondition("PARASITIC_INFUSION", enemy_health)
                 end
             end
@@ -2199,7 +2199,7 @@ local CARDS =
         end
     },
 
-    infest = -- not tested
+    infest = 
     {
         name = "Infest",
         anim = "crack",
@@ -2230,7 +2230,7 @@ local CARDS =
             elseif randomDebuff == 3 then
                 debuffStacks = math.round(attack.attacker:GetMaxHealth() * 0.6)
             elseif randomDebuff == 4 then
-                randomStacks = math.round(attack.attacker:GetHealth())
+                debuffStacks = math.round(attack.attacker:GetHealth())
             end
            
             for i, hit in attack:Hits() do
@@ -2241,7 +2241,7 @@ local CARDS =
         end
     },
 
-    conceal = -- not tested
+    conceal = -- extra defend not working
     {
         name = "Conceal",
         anim = "taunt",
@@ -2251,9 +2251,10 @@ local CARDS =
         cost = 1,
         flags =  CARD_FLAGS.SKILL,
         rarity = CARD_RARITY.UNIQUE,
+        target_type = TARGET_TYPE.FRIENDLY_OR_SELF,
         
         desc_fn = function(self, fmt_str)
-            return loc.format(fmt_str, self:CalculateDefendText( self.defend_amount, self.extra_defend ))
+            return loc.format(fmt_str, self:CalculateDefendText( self.defend_amount ), self.extra_defend)
         end,
 
         defend_amount = 8,
@@ -2261,15 +2262,15 @@ local CARDS =
 
         OnPostResolve = function( self, battle, attack)
             for i, ally in self.owner:GetTeam():Fighters() do 
-                if ally == "GROUT_KNUCKLE" then
+                if ally.id == "GROUT_KNUCKLE" then
                     self.defend = self.defend + self.extra_defend
                 end
-                if ally == "GROUT_EYE" then
+                if ally.id == "GROUT_EYE" then
                     self.defend = self.defend + self.extra_defend
                 end
             end
             for k, enemy in self.owner:GetEnemyTeam():Fighters() do
-                if enemy == "GROUT_SPARK_MINE" then
+                if enemy.id == "GROUT_SPARK_MINE" then
                     self.defend = self.defend + self.extra_defend
                 end
             end
@@ -2277,18 +2278,121 @@ local CARDS =
         end
     },
 
-    lifestealer = -- not tested
+    lifestealer = 
     {
         name = "Lifestealer",
         anim = "slash_up",
-        desc = "Steal health depending on the target's max health.",
+        desc = "Deal damage and steal health equal to the damage dealt.",
+        -- icon = "RISE:textures/infestation.png",
+        
+        cost = 1,
+        flags =  CARD_FLAGS.MELEE,
+        rarity = CARD_RARITY.UNIQUE,
+
+        min_damage = 5,
+        max_damage = 9,
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
+                if hit.card == self and not hit.evaded then
+                    self.owner:HealHealth( hit.damage, self )
+                end
+            end
+        },
+        
+    },
+
+    exhume = 
+    {
+        name = "Exhume",
+        anim = "taunt",
+        desc = "Deal damage to all enemies and steal one of their buffs.",
         -- icon = "RISE:textures/infestation.png",
         
         cost = 1,
         flags =  CARD_FLAGS.SKILL,
         rarity = CARD_RARITY.UNIQUE,
+        target_mod = TARGET_MOD.TEAM,
+
+        min_damage = 4,
+        max_damage = 6,
+
+        OnPostResolve = function( self, battle, attack)
+            local target_fighter = {}
+            battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
+            for i=1, #target_fighter do
+                for i,condition in pairs(target_fighter[i]:GetConditions()) do
+                    if condition.ctype == CTYPE.BUFF then
+                        self.owner:AddCondition(condition.id, condition.stacks, self)
+                        target_fighter[i]:RemoveCondition(condition.id, condition.stacks, self)
+                    end
+                end
+            end
+        end
+    },
+
+    reconstruction = 
+    {
+        name = "Reconstruction",
+        anim = "taunt4",
+        desc = "Heal health to full then gain 99 stacks of a random debuff.",
+        -- icon = "RISE:textures/infestation.png",
         
-    }
+        cost = 1,
+        flags =  CARD_FLAGS.SKILL,
+        rarity = CARD_RARITY.UNIQUE,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPostResolve = function( self, battle, attack)
+            local debuffs = {"BLEED", "IMPAIR", "STAGGER", "DEFECT", "EXPOSED", "TARGETED", "RICOCHET", "TRAUMA"}
+            local randomDebuff = math.random(1,8)
+            self.owner:HealHealth( self.owner:GetMaxHealth(), self )
+            self.owner:AddCondition(debuffs[randomDebuff], 99, self)
+        end
+    },
+
+    -- gather_their_souls = 
+    -- {
+    --     name = "Gather Their Souls",
+    --     anim = "taunt",
+    --     desc = "Steal a buff every turn then inflict a debuff to a random enemy.",
+    --     -- icon = "RISE:textures/infestation.png",
+        
+    --     cost = 1,
+    --     flags =  CARD_FLAGS.SKILL,
+    --     rarity = CARD_RARITY.UNIQUE,
+    --     target_type = TARGET_TYPE.SELF,
+
+    -- },
+
+    -- their_life_mine = 
+    -- {
+    --     name = "Their Life is Mine",
+    --     anim = "taunt",
+    --     desc = "Steal health from all enemies every turn for 3 turns.",
+    --     -- icon = "RISE:textures/infestation.png",
+        
+    --     cost = 1,
+    --     flags =  CARD_FLAGS.SKILL,
+    --     rarity = CARD_RARITY.UNIQUE,
+    --     target_type = TARGET_TYPE.SELF,
+
+    -- },
+
+    -- bog_regeneration = 
+    -- {
+    --     name = "Bog Regeneration",
+    --     anim = "taunt",
+    --     desc = "Heal health equal to how much damage you took last turn.",
+    --     -- icon = "RISE:textures/infestation.png",
+        
+    --     cost = 1,
+    --     flags =  CARD_FLAGS.SKILL,
+    --     rarity = CARD_RARITY.UNIQUE,
+    --     target_type = TARGET_TYPE.SELF,
+
+    -- },
 
     -- deceived = 
     -- {
@@ -2673,19 +2777,19 @@ local CONDITIONS =
         {
             [ BATTLE_EVENT.ON_HIT] = function(self, battle, attack, hit, target, fighter)
                 if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
-                    self.owner:RemoveCondition( "PARASITIC_INFUSION", attack.card.max_damage )
+                    self.owner:RemoveCondition( "PARASITIC_INFUSION", hit.damage )
                     local randomNum = math.random(1,3)
-                    if self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 1 and randomNum == 1 then
+                    if self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 10 and randomNum == 1 then
                         local sparkMine = Agent( "GROUT_SPARK_MINE" )
                         local fighter = Fighter.CreateFromAgent( sparkMine, battle:GetScenario():GetAllyScale() )
                         self.owner:GetTeam():AddFighter( fighter )
                         self.owner:GetTeam():ActivateNewFighters()
-                    elseif self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 1 and randomNum == 2 then
+                    elseif self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 10 and randomNum == 2 then
                         local groutKnuckle = Agent( "GROUT_KNUCKLE" )
                         local fighter = Fighter.CreateFromAgent( groutKnuckle, battle:GetScenario():GetAllyScale() )
                         self.owner:GetEnemyTeam():AddFighter( fighter )
                         self.owner:GetEnemyTeam():ActivateNewFighters()
-                    elseif self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 1 and randomNum == 3 then
+                    elseif self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 10 and randomNum == 3 then
                         local groutEye = Agent( "GROUT_EYE" )
                         local fighter = Fighter.CreateFromAgent( groutEye, battle:GetScenario():GetAllyScale() )
                         self.owner:GetTeam():AddFighter( fighter )
