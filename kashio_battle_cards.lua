@@ -2157,7 +2157,7 @@ local CARDS =
     {
         name = "Infestation",
         anim = "taunt",
-        desc = "Shuffle 2 common Kashio Bog Cards to your hand and expend a non Kashio Bog Card from your draw and discard pile each.  If any enemies have a Bog Condition, raise a bog creature to your side or the enemy's side.",
+        desc = "Shuffle 2 Bog Cards to your hand and expend a non unique card from your draw and discard pile each.  If any enemies have a Bog Condition, raise a bog creature to your side or the enemy's side.",
         icon = "RISE:textures/infestation.png",
         
         cost = 2,
@@ -2165,15 +2165,38 @@ local CARDS =
         rarity = CARD_RARITY.RARE,
         target_type = TARGET_TYPE.SELF,
 
+        bogCards = {"infest", "conceal", "lifestealer", "exhume", "reconstruction"},
+
         OnPostResolve = function( self, battle, attack)
             self.owner:AddCondition("ONE_WITH_THE_BOG", 1, self)
             if battle:GetDrawDeck():CountCards() > 0  then
                 local randomCard1 = battle:GetDrawDeck():PeekRandom()
-                battle:ExpendCard(randomCard1)
+                for i, card in battle:GetDrawDeck():Cards() do
+                    if randomCard1.rarity == CARD_RARITY.UNIQUE then -- basically doesn't throw away unique rarity cards; items, bog cards.
+                        randomCard1 = battle:GetDrawDeck():PeekRandom()
+                    else
+                        battle:ExpendCard(randomCard1)
+                        -- get bog card below
+                        local bogCard = math.random(1,5)
+                        local card = Battle.Card( self.bogCards[bogCard], self.owner )
+                        battle:DealCard( card, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+                        break
+                    end
+                end
             end
             if battle:GetDiscardDeck():CountCards() > 0 then
                 local randomCard2 = battle:GetDiscardDeck():PeekRandom()
-                battle:ExpendCard(randomCard2)
+                for i, card in battle:GetDiscardDeck():Cards() do
+                    if randomCard2.rarity == CARD_RARITY.UNIQUE then
+                        randomCard2 = battle:GetDiscardDeck():PeekRandom()
+                    else
+                        battle:ExpendCard(randomCard2)
+                        local bogCard = math.random(1,5)
+                        local card = Battle.Card( self.bogCards[bogCard], self.owner )
+                        battle:DealCard( card, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+                        break
+                    end
+                end
             end
            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
                 local randomMonster = math.random(1,2) -- change to 1-3 after fixing grout eye
@@ -2519,10 +2542,13 @@ local CONDITIONS =
     ONE_WITH_THE_BOG = 
     {
         name = "One With The Bog", 
-        desc = "You gain this condition after using a Kashio Bog Ability.  You cannot gain KINGPIN stacks while this is active and cannot equip any weapons. Removes {KINGPIN}, {equip_flail} and {equip_glaive} on activation. Every turn, have a chance to shuffle a Kashio Bog Ability Card into your hand (regardless if you picked up the card) then shuffle a Kashio Bog Card into your draw/discard pile while expending a non Kashio Bog Card in your draw/dicard pile.",
+        desc = "You gain this condition after using a Kashio Bog Ability.  You cannot gain KINGPIN stacks while this is active and cannot equip any weapons. Removes {KINGPIN}, {equip_flail} and {equip_glaive} on activation. Every turn, have a chance to shuffle a Bog ability card into your hand (regardless if you picked up the card) then shuffle a Bog card into your draw/discard pile while expending a non Item/Bog card in your draw/dicard pile.",
         icon = "battle/conditions/heart_of_the_bog.tex",  
         
         max_stacks = 1,
+
+        bogCards = {"infest", "conceal", "lifestealer", "exhume", "reconstruction"},
+        bogCardList = {"contaminate", "remote_plague", "armor_of_disease", "epidemic", "infestation", "parasite_infusion"},
 
         OnApply = function( self, battle )
             -- remove other abilities
@@ -2555,21 +2581,42 @@ local CONDITIONS =
             [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, attack, hit )
                 local randomCard = math.random(1,6)
                 local randomChance = math.random(1,2)
-                local bogCardList = {"contaminate", "remote_plague", "armor_of_disease", "epidemic", "infestation", "parasite_infusion"}
                 if randomChance == 1 then
-                    local card = Battle.Card( bogCardList[randomCard], self.owner )
+                    local card = Battle.Card( self.bogCardList[randomCard], self.owner )
                     card:TransferCard( battle:GetHandDeck() )
                     card:SetFlags( CARD_FLAGS.FREEBIE )
                 end
             end,
+            -- expend 1 card from draw and discard pile, add bog card to draw and discard pile.  Extremely buggy unsurprisingly :/
             [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit )
                 if battle:GetDrawDeck():CountCards() > 0  then
                     local randomCard1 = battle:GetDrawDeck():PeekRandom()
-                    battle:ExpendCard(randomCard1)
+                    for i, card in battle:GetDrawDeck():Cards() do
+                        if randomCard1.rarity == CARD_RARITY.UNIQUE then -- basically doesn't throw away unique rarity cards; items, bog cards.
+                            randomCard1 = battle:GetDrawDeck():PeekRandom()
+                        else
+                            battle:ExpendCard(randomCard1)
+                            -- get bog card below
+                            local bogCard = math.random(1,5)
+                            local card = Battle.Card( self.bogCards[bogCard], self.owner )
+                            battle:DealCard( card, battle:GetDeck( DECK_TYPE.DISCARDS ) )
+                            break
+                        end
+                    end
                 end
                 if battle:GetDiscardDeck():CountCards() > 0 then
                     local randomCard2 = battle:GetDiscardDeck():PeekRandom()
-                    battle:ExpendCard(randomCard2)
+                    for i, card in battle:GetDiscardDeck():Cards() do
+                        if randomCard2.rarity == CARD_RARITY.UNIQUE then
+                            randomCard2 = battle:GetDiscardDeck():PeekRandom()
+                        else
+                            battle:ExpendCard(randomCard2)
+                            local bogCard = math.random(1,5)
+                            local card = Battle.Card( self.bogCards[bogCard], self.owner )
+                            battle:DealCard( card, battle:GetDeck( DECK_TYPE.DISCARDS ) )
+                            break
+                        end
+                    end
                 end
             end
         }
@@ -2601,7 +2648,7 @@ local CONDITIONS =
                 elseif randomDebuff == 3 then
                     debuffStacks = math.round(attack.attacker:GetMaxHealth() * 0.6)
                 elseif randomDebuff == 4 then
-                    randomStacks = math.round(attack.attacker:GetHealth())
+                    debuffStacks = math.round(attack.attacker:GetHealth())
                 end
 
                 if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
@@ -2779,17 +2826,17 @@ local CONDITIONS =
                 if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
                     self.owner:RemoveCondition( "PARASITIC_INFUSION", hit.damage )
                     local randomNum = math.random(1,3)
-                    if self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 10 and randomNum == 1 then
+                    if self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 1 or hit.damage > self.owner:GetConditionStacks("PARASITIC_INFUSION") and randomNum == 1 then
                         local sparkMine = Agent( "GROUT_SPARK_MINE" )
                         local fighter = Fighter.CreateFromAgent( sparkMine, battle:GetScenario():GetAllyScale() )
                         self.owner:GetTeam():AddFighter( fighter )
                         self.owner:GetTeam():ActivateNewFighters()
-                    elseif self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 10 and randomNum == 2 then
+                    elseif self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 1 or hit.damage > self.owner:GetConditionStacks("PARASITIC_INFUSION") and randomNum == 2 then
                         local groutKnuckle = Agent( "GROUT_KNUCKLE" )
                         local fighter = Fighter.CreateFromAgent( groutKnuckle, battle:GetScenario():GetAllyScale() )
                         self.owner:GetEnemyTeam():AddFighter( fighter )
                         self.owner:GetEnemyTeam():ActivateNewFighters()
-                    elseif self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 10 and randomNum == 3 then
+                    elseif self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 1 or hit.damage > self.owner:GetConditionStacks("PARASITIC_INFUSION") and randomNum == 3 then
                         local groutEye = Agent( "GROUT_EYE" )
                         local fighter = Fighter.CreateFromAgent( groutEye, battle:GetScenario():GetAllyScale() )
                         self.owner:GetTeam():AddFighter( fighter )
