@@ -446,7 +446,7 @@ QDEF:AddConvo("gift_from_fssh1", "bartender")
                     StateGraphUtil.AddEndOption(cxt)
                 end)
 
-            StateGraphUtil.AddEndOption(cxt):Fn( function( cxt ) cxt.quest:Complete("gift_from_fssh" ) end )
+            StateGraphUtil.AddEndOption(cxt):Fn( function( cxt ) cxt.quest:Complete("gift_from_fssh1" ) end )
         end)
 
         QDEF:AddObjective{
@@ -582,5 +582,5 @@ QDEF:AddConvo("gift_from_fssh1", "bartender")
                             StateGraphUtil.AddEndOption(cxt)
                         end)
         
-                    StateGraphUtil.AddEndOption(cxt):Fn( function( cxt ) cxt.quest:Complete("gift_from_fssh" ) end )
+                    StateGraphUtil.AddEndOption(cxt):Fn( function( cxt ) cxt.quest:Complete("gift_from_fssh2" ) end )
                 end)

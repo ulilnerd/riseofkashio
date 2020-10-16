@@ -3296,8 +3296,24 @@ local CONDITIONS =
             end,
 
             -- gain card "the_execution after using the same weapon for 6 actions"
-            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, fighter)
-                if fighter == self.owner then
+            -- [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, fighter)
+            --     if fighter == self.owner then
+            --         if battle:GetDrawDeck():HasCard("the_execution") or battle:GetHandDeck():HasCard("the_execution") or battle:GetDiscardDeck():HasCard("the_execution") then
+            --             self.momentum = 0
+            --         end
+            --         self.momentum = self.momentum + 1
+            --         if self.owner:HasCondition("KINGPIN") then
+            --             self.momentum = 0
+            --         end
+            --         if self.momentum >= 6 then
+            --             local card = Battle.Card( "the_execution", self.owner )
+            --             card:TransferCard( self.battle:GetHandDeck() )
+            --             self.momentum = 0
+            --         end
+            --     end
+            -- end,
+            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, fighter, attack, target)
+                if attack.attacker == self.owner then
                     if battle:GetDrawDeck():HasCard("the_execution") or battle:GetHandDeck():HasCard("the_execution") or battle:GetDiscardDeck():HasCard("the_execution") then
                         self.momentum = 0
                     end
@@ -3356,8 +3372,24 @@ local CONDITIONS =
             end,
 
              -- gain card "the_execution after using the same weapon for 6 actions"
-            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, fighter)
-                if fighter == self.owner then
+            -- [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, fighter)
+            --     if fighter == self.owner then
+            --         if battle:GetDrawDeck():HasCard("the_execution") or battle:GetHandDeck():HasCard("the_execution") or battle:GetDiscardDeck():HasCard("the_execution") then
+            --             self.momentum = 0
+            --         end
+            --         self.momentum = self.momentum + 1
+            --         if self.owner:HasCondition("KINGPIN") then
+            --             self.momentum = 0
+            --         end
+            --         if self.momentum >= 6 then
+            --             local card = Battle.Card( "the_execution", self.owner )
+            --             card:TransferCard( self.battle:GetHandDeck() )
+            --             self.momentum = 0
+            --         end
+            --     end
+            -- end,
+            [ BATTLE_EVENT.ON_HIT] = function( self, battle, fighter, attack, target)
+                if attack.attacker == self.owner then
                     if battle:GetDrawDeck():HasCard("the_execution") or battle:GetHandDeck():HasCard("the_execution") or battle:GetDiscardDeck():HasCard("the_execution") then
                         self.momentum = 0
                     end
