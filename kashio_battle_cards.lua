@@ -1042,29 +1042,44 @@ local CARDS =
         
     },
 
-    highground = 
+    bounce_back = 
     {
-        name = "I Have The Highground",
+        name = "Bounce Back",
         anim = "slam",
-        desc = "Draw an extra card next turn then switch to {equip_flail}.",
-        icon = "battle/cataclysm.tex",
+        desc = "Deal damage equal to half the amount of damage the enemy team is intending to inflicting to your team.",
+        icon = "battle/weakness_blind_spot.tex",
 
         flags =  CARD_FLAGS.MELEE | CARD_FLAGS.SKILL,
         cost = 1,
         rarity = CARD_RARITY.COMMON,
         max_xp = 6,
 
-        min_damage = 2,
-        max_damage = 5,
+        min_damage = 0,
+        max_damage = 0,
 
         OnPostResolve = function( self, battle, attack )
-            self.owner:AddCondition( "NEXT_TURN_DRAW", self.draw_bonus )
-            self.owner:AddCondition("equip_flail", 1)
+                   
         end,
 
-        PostPresAnim = function( self, anim_fighter )
-            anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_flail)
-        end
+        event_handlers =
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                if card == self then
+                    local count = 0
+                    for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                        if enemy.prepared_cards then
+                            for i, card in ipairs( enemy.prepared_cards ) do
+                                if card:IsAttackCard() then
+                                    count = count + card.max_damage
+                                end
+                            end
+                        end
+                        dmgt:ModifyDamage( math.round(count/2), math.round(count/2), self )
+                    end
+                end
+            end
+        }
+        
     },
 
     grandslam = 
@@ -1881,6 +1896,7 @@ local CARDS =
         end
     },
 
+    -- BOG CARDS BELOW
     parasite_infusion =
     {
         name = "Parasite Infusion", -- bugged when you have more than one copy in your hand: enemies gain more stacks than intended and gain even more stacks while attacking not with this card
