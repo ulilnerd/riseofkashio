@@ -46,41 +46,58 @@ AddPlayerCharacter(
         end,
     }
 
-    :AddAct{
-        id = "ROOK_BRAWL",
-        unlock_id = "ROOK_BRAWL_PLAYABLE",
-        name = "Rook's Brawl",
-        title = "Working All of the Sides",
-        desc = "Survive an escalating series of Rook's schemes as Kashio.",
+    -- :AddAct{
+    --     id = "ROOK_BRAWL",
+    --     unlock_id = "ROOK_BRAWL_PLAYABLE",
+    --     name = "Rook's Brawl",
+    --     title = "Working All of the Sides",
+    --     desc = "Survive an escalating series of Rook's schemes as Kashio.",
 
-        game_type = GAME_TYPE.BRAWL,
+    --     game_type = GAME_TYPE.BRAWL,
         
-        act_image = engine.asset.Texture("UI/char_2_brawl.tex"),
-        colour_frame = "0xA866F3ff",
+    --     act_image = engine.asset.Texture("UI/char_2_brawl.tex"),
+    --     colour_frame = "0xA866F3ff",
+    --     colour_text = "0xE4BFFFff",
+    --     colour_background = "0xFF31E4ff",
+
+    --     world_region = "brawl_region",
+    --     main_quest = "ROOK_BRAWL",
+    -- }
+
+    --     :AddAct{
+    --         id = "SAL_BRAWL",
+    --         unlock_id = "SAL_BRAWL_PLAYABLE",
+    --         name = "Sal's Brawl",
+    --         title = "Havarian Gig Economy",
+    --         desc = "Survive an escalating series of jobs as Sal works for a living as Kashio.",
+
+    --         act_image = engine.asset.Texture("UI/char_1_brawl.tex"),
+    --         colour_frame = "0xA866F3ff",
+    --         colour_text = "0xE4BFFFff",
+    --         colour_background = "0xFF31E4ff",
+
+    --         world_region = "brawl_region",
+    --         main_quest = "SAL_BRAWL",
+    --         game_type = GAME_TYPE.BRAWL,
+
+    -- }
+
+    :AddAct{
+		id = "KASHIO_BATTLE_BRAWL",
+		name = "Kashio's Battle Brawl",
+		title = "Kashio Battle-Brawl",
+		desc = "Survive endless fighting through the eyes of Kashio.",
+
+		game_type = GAME_TYPE.BRAWL,
+		
+		act_image = engine.asset.Texture("UI/char_1_brawl.tex"),
+		colour_frame = "0xA866F3ff",
         colour_text = "0xE4BFFFff",
         colour_background = "0xFF31E4ff",
 
-        world_region = "brawl_region",
-        main_quest = "ROOK_BRAWL",
-    }
-
-        :AddAct{
-            id = "SAL_BRAWL",
-            unlock_id = "SAL_BRAWL_PLAYABLE",
-            name = "Sal's Brawl",
-            title = "Havarian Gig Economy",
-            desc = "Survive an escalating series of jobs as Sal works for a living as Kashio.",
-
-            act_image = engine.asset.Texture("UI/char_1_brawl.tex"),
-            colour_frame = "0xA866F3ff",
-            colour_text = "0xE4BFFFff",
-            colour_background = "0xFF31E4ff",
-
-            world_region = "brawl_region",
-            main_quest = "SAL_BRAWL",
-            game_type = GAME_TYPE.BRAWL,
-
-    })
+		world_region = "brawl_region",
+		main_quest = "KASHIO_BATTLE_BRAWL",
+	})
 
 local act = GetPlayerActData( "RISE_OF_KASHIO" )
 GetPlayerBackground( "ROOK" ):AddClonedAct( act, "ROOKS_ADVENTURE" )

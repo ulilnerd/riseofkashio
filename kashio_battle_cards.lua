@@ -861,7 +861,7 @@ local CARDS =
         icon = "RISE:textures/theculling.png",
 
         flags = CARD_FLAGS.MELEE,
-        cost = 3,
+        cost = 2,
         rarity = CARD_RARITY.RARE,
         max_xp = 3,
         target_mod = TARGET_MOD.TEAM,
@@ -2243,7 +2243,7 @@ local CARDS =
         name = "Infest",
         anim = "crack",
         desc = "Deal damage and have a chance to inflict an enemy with a bog condition.",
-        -- icon = "RISE:textures/infestation.png",
+        icon = "battle/weakness_infected.tex",
         
         cost = 1,
         flags =  CARD_FLAGS.MELEE,
