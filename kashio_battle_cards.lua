@@ -1042,45 +1042,45 @@ local CARDS =
         
     },
 
-    bounce_back = 
-    {
-        name = "Bounce Back",
-        anim = "slam",
-        desc = "Deal damage equal to half the amount of damage the enemy team is intending to inflicting to your team.",
-        icon = "battle/weakness_blind_spot.tex",
+    -- bounce_back = 
+    -- {
+    --     name = "Bounce Back",
+    --     anim = "slam",
+    --     desc = "Deal damage equal to half the amount of damage the enemy team is intending to inflicting to your team.",
+    --     icon = "battle/weakness_blind_spot.tex",
 
-        flags =  CARD_FLAGS.MELEE | CARD_FLAGS.SKILL,
-        cost = 1,
-        rarity = CARD_RARITY.COMMON,
-        max_xp = 6,
+    --     flags =  CARD_FLAGS.MELEE | CARD_FLAGS.SKILL,
+    --     cost = 1,
+    --     rarity = CARD_RARITY.COMMON,
+    --     max_xp = 6,
 
-        min_damage = 0,
-        max_damage = 0,
+    --     min_damage = 0,
+    --     max_damage = 0,
 
-        OnPostResolve = function( self, battle, attack )
+    --     OnPostResolve = function( self, battle, attack )
                    
-        end,
+    --     end,
 
-        event_handlers =
-        {
-            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
-                if card == self then
-                    local count = 0
-                    for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-                        if enemy.prepared_cards then
-                            for i, card in ipairs( enemy.prepared_cards ) do
-                                if card:IsAttackCard() then
-                                    count = count + card.max_damage
-                                end
-                            end
-                        end
-                        dmgt:ModifyDamage( math.round(count/2), math.round(count/2), self )
-                    end
-                end
-            end
-        }
+    --     event_handlers =
+    --     {
+    --         [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+    --             if card == self then
+    --                 local count = 0
+    --                 for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+    --                     if enemy.prepared_cards then
+    --                         for i, card in ipairs( enemy.prepared_cards ) do
+    --                             if card:IsAttackCard() then
+    --                                 count = count + card.max_damage
+    --                             end
+    --                         end
+    --                     end
+    --                     dmgt:ModifyDamage( math.round(count/2), math.round(count/2), self )
+    --                 end
+    --             end
+    --         end
+    --     }
         
-    },
+    -- },
 
     grandslam = 
     {
@@ -2364,7 +2364,7 @@ local CARDS =
                 for i,condition in pairs(target_fighter[i]:GetConditions()) do
                     if condition.ctype == CTYPE.BUFF then
                         self.owner:AddCondition(condition.id, condition.stacks, self)
-                        target_fighter[i]:RemoveCondition(condition.id, condition.stacks, self)
+                        target_fighter[1]:RemoveCondition(condition.id, condition.stacks)
                     end
                 end
             end
