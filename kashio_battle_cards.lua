@@ -80,6 +80,159 @@ local CARDS =
         end
     },
 
+    improvise_invincible = 
+    {
+        name = "Invincible",
+        anim = "taunt",
+        desc = "The next attack on you will deal 0 damage, but the next attack after that will deal double damage.",
+        icon = "battle/bring_it_on.tex",
+
+        rarity = CARD_RARITY.UNIQUE,
+        cost = 0,
+        flags = CARD_FLAGS.EXPEND | CARD_FLAGS.SKILL,
+        burn_amount = 3,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("INVINCIBLE", 1, self)
+            if self.owner:HasCondition("INVINCIBLE") then
+                self.owner:AddCondition("DEFECT", self.owner:GetConditionStacks("INVINCIBLE") + 1)
+            end
+        end,
+    },
+
+    improvise_weird_colored_flask =
+    {
+        name = "Weird Colored Flask",
+        anim = "taunt",
+        desc = "Gain a random buff or debuff.",
+        icon = "battle/oshnu_bile.tex",
+
+        flags =  CARD_FLAGS.SKILL,
+        cost = 0,
+        rarity = CARD_RARITY.UNIQUE,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPostResolve = function( self, battle, attack)
+            local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
+            local posPosConditions = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "METALLIC", "EVASION"}
+            local randomCon = math.random(1,2)
+            local randomNum = math.random(1,6)
+            if randomCon == 1 then
+                self.owner:AddCondition(posConditions[randomNum], 1, self)
+            elseif randomCon == 2 then
+                self.owner:AddCondition(posPosConditions[randomNum], 1, self)
+            end
+        end
+    },
+
+    improvise_drink = 
+    {
+        name = "Hand Me A Drink",
+        anim = "taunt",
+        desc = "Shuffle 2 random drink cards into your deck.",
+        icon = "battle/slam.tex",
+
+        flags =  CARD_FLAGS.SKILL,
+        cost = 0,
+        rarity = CARD_RARITY.UNIQUE,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPostResolve = function( self, battle, attack)
+            local drinkCards = {"green_flask", "red_flask", "purple_flask"}
+            local randomCard1 = math.random(1,3)
+            local randomCard2 = math.random(1,3)
+
+            local card1 = Battle.Card( drinkCards[randomCard1], self.owner )
+            battle:DealCard( card1, battle:GetDeck( DECK_TYPE.DRAW ) )
+
+            local card2 = Battle.Card( drinkCards[randomCard2], self.owner )
+            battle:DealCard( card2, battle:GetDeck( DECK_TYPE.DRAW ) )
+        end
+    },
+    green_flask = 
+    {
+        name = "Green Flask",
+        anim = "taunt",
+        desc = "Heal {1}.",
+        icon = "battle/lean_green.tex",
+
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.REPLENISH | CARD_FLAGS.HEAL,
+        cost = 0,
+        rarity = CARD_RARITY.UNIQUE,
+        target_type = TARGET_TYPE.SELF,
+
+        heal_amount = 2,
+
+        desc_fn = function(self, fmt_str)
+            return loc.format(fmt_str, self:CalculateDefendText( self.heal_amount ))
+        end,
+
+        OnPostResolve = function( self, battle, attack)
+            self.owner:HealHealth(self.heal_amount, self)
+        end
+    },
+    red_flask = 
+    {
+        name = "Red Flask",
+        anim = "taunt",
+        desc = "Deal Damage.",
+        icon = "battle/speed_tonic.tex",
+
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.REPLENISH,
+        cost = 0,
+        rarity = CARD_RARITY.UNIQUE,
+      
+        min_damage = 1,
+        max_damage = 2,
+    },
+    purple_flask = 
+    {
+        name = "Purple Flask",
+        anim = "taunt",
+        desc = "Allies gain {POWER_LOSS}.",
+        icon = "battle/vial_of_slurry.tex",
+
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.REPLENISH,
+        cost = 0,
+        rarity = CARD_RARITY.UNIQUE,
+        target_mod = TARGET_MOD.TEAM,
+       
+        OnPostResolve = function( self, battle, attack, fighter)
+            for i, ally in self.owner:GetTeam():Fighters() do
+                if fighter ~= self.owner then
+                    ally:AddCondition("POWER", 1, self)
+                    ally:AddCondition("POWER_LOSS", 1, self)
+                end
+            end
+        end
+    },
+
+    dodge_and_compromise = 
+    {
+        name = "Dodge and Compromise",
+        anim = "taunt3",
+        desc = "Gain {EVASION} and {1} {IMPAIR}.",
+        icon = "RISE:textures/unrelenting.png",
+
+        flags =  CARD_FLAGS.SKILL,
+        cost = 1,
+        rarity = CARD_RARITY.BASIC,
+        target_mod = TARGET_MOD.TEAM,
+        target_type = TARGET_TYPE.FRIENDLY_OR_SELF,
+
+        impair_amount = 2,
+
+        desc_fn = function(self, fmt_str)
+            return loc.format(fmt_str, self:CalculateDefendText( self.impair_amount))
+        end,
+
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("EVASION", 1, self)
+            self.owner:AddCondition("IMPAIR", self.impair_amount, self)
+        end
+    },
+
     flail_crack = 
     {
         name = "Flail Crack",
@@ -299,7 +452,7 @@ local CARDS =
 
         pool_size = 3,
 
-        pool_cards = {"improvise_rage", "improvise_burningsmash", "improvise_smokescreen" },
+        pool_cards = {"improvise_rage", "improvise_burningsmash", "improvise_smokescreen", "improvise_invincible", "improvise_weird_colored_flask", "improvise_drink" },
 
         OnPostResolve = function( self, battle, attack)
             local cards = ObtainWorkTable()
@@ -2384,8 +2537,8 @@ local CARDS =
         target_type = TARGET_TYPE.SELF,
 
         OnPostResolve = function( self, battle, attack)
-            local debuffs = {"BLEED", "IMPAIR", "STAGGER", "DEFECT", "EXPOSED", "TARGETED", "RICOCHET", "TRAUMA"}
-            local randomDebuff = math.random(1,8)
+            local debuffs = {"IMPAIR", "STAGGER", "DEFECT", "EXPOSED", "TARGETED", "RICOCHET", "TRAUMA"}
+            local randomDebuff = math.random(1,7)
             self.owner:HealHealth( self.owner:GetMaxHealth(), self )
             self.owner:AddCondition(debuffs[randomDebuff], 99, self)
         end
@@ -2555,6 +2708,37 @@ local CONDITIONS =
             
     --     -- end
     -- },
+
+    INVINCIBLE = 
+    {
+        name = "Invincible", 
+        desc = "The next attack on you will deal 0 damage.",
+        icon = "battle/conditions/shield_of_hesh.tex",  
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
+                if attack.attacker ~= self.owner then
+                    self.owner:RemoveCondition("INVINCIBLE", 1, self)
+                end
+            end,
+
+            [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit )
+                for i, enemy in ipairs(self.owner:GetEnemyTeam():GetFighters()) do
+                    if enemy.prepared_cards then
+                        for i, card in ipairs( enemy.prepared_cards ) do
+                            card.min_damage = 0
+                            card.max_damage = 0
+                        end
+                    end
+                end
+                if self.owner:HasCondition("INVINCIBLE") then
+                    self.owner:RemoveCondition("INVINCIBLE", 1, self)
+                end
+            end
+        }
+    },
+
     ONE_WITH_THE_BOG = 
     {
         name = "One With The Bog", 
@@ -3109,7 +3293,7 @@ local CONDITIONS =
         {
             [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, fighter )
                 self.owner:AddCondition("KINGPIN", 1, self)
-
+                -- check which weapon is equipped
                 if self.owner:HasCondition("equip_glaive") then
                     self.glaive_equipped = true
                 end
@@ -3117,6 +3301,7 @@ local CONDITIONS =
                     self.flail_equipped = true
                 end
                 
+                -- remove all stacks of kingpin if you switch weapons
                 if self.glaive_equipped == true and self.flail_equipped == true and self.owner:GetConditionStacks("KINGPIN") >= 2 then
                     self.owner:RemoveCondition("KINGPIN", self.owner:GetConditionStacks("KINGPIN"))
                     if not self.owner:HasCondition("equip_glaive") then
@@ -3126,7 +3311,32 @@ local CONDITIONS =
                         self.flail_equipped = false
                     end
                 end
+
+                -- 10 stacks: gain metallic and remove all current stacks of bleed and wound // NOT YET TESTED
+                if self.owner:GetConditionStacks("KINGPIN") >= 10 then
+                    if not self.owner:HasCondition("METALLIC") then
+                        self.owner:AddCondition("METALLIC", 1, self)
+                        if self.owner:HasCondition("BLEED") then
+                            self.owner:RemoveCondition("BLEED", self.owner:GetConditionStacks("BLEED"))
+                        end
+                        if self.owner:HasCondition("WOUND") then
+                            self.owner:RemoveCondition("WOUND", self.owner:GetConditionStacks("WOUND"))
+                        end
+                    end
+                end
             end,
+
+            -- 20 stacks: have a chance to gain a random buff on each attack
+            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, fighter, attack, target )
+                local randomBuffs = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "EVASION"}
+                local randomNum = math.random(1,5)
+                local randomChance = math.random(1,4)
+                if attack.attacker == self.owner then
+                    if self.owner:GetConditionStacks("KINGPIN") >= 20 and randomChance == 1 then
+                        self.owner:AddCondition(randomBuffs[randomNum], 1, self)
+                    end
+                end
+            end
         }
     },
 
@@ -3294,24 +3504,6 @@ local CONDITIONS =
                     end
                 end
             end,
-
-            -- gain card "the_execution after using the same weapon for 6 actions"
-            -- [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, fighter)
-            --     if fighter == self.owner then
-            --         if battle:GetDrawDeck():HasCard("the_execution") or battle:GetHandDeck():HasCard("the_execution") or battle:GetDiscardDeck():HasCard("the_execution") then
-            --             self.momentum = 0
-            --         end
-            --         self.momentum = self.momentum + 1
-            --         if self.owner:HasCondition("KINGPIN") then
-            --             self.momentum = 0
-            --         end
-            --         if self.momentum >= 6 then
-            --             local card = Battle.Card( "the_execution", self.owner )
-            --             card:TransferCard( self.battle:GetHandDeck() )
-            --             self.momentum = 0
-            --         end
-            --     end
-            -- end,
             [ BATTLE_EVENT.ON_HIT ] = function( self, battle, fighter, attack, target)
                 if attack.attacker == self.owner then
                     if battle:GetDrawDeck():HasCard("the_execution") or battle:GetHandDeck():HasCard("the_execution") or battle:GetDiscardDeck():HasCard("the_execution") then
@@ -3372,22 +3564,6 @@ local CONDITIONS =
             end,
 
              -- gain card "the_execution after using the same weapon for 6 actions"
-            -- [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, fighter)
-            --     if fighter == self.owner then
-            --         if battle:GetDrawDeck():HasCard("the_execution") or battle:GetHandDeck():HasCard("the_execution") or battle:GetDiscardDeck():HasCard("the_execution") then
-            --             self.momentum = 0
-            --         end
-            --         self.momentum = self.momentum + 1
-            --         if self.owner:HasCondition("KINGPIN") then
-            --             self.momentum = 0
-            --         end
-            --         if self.momentum >= 6 then
-            --             local card = Battle.Card( "the_execution", self.owner )
-            --             card:TransferCard( self.battle:GetHandDeck() )
-            --             self.momentum = 0
-            --         end
-            --     end
-            -- end,
             [ BATTLE_EVENT.ON_HIT] = function( self, battle, fighter, attack, target)
                 if attack.attacker == self.owner then
                     if battle:GetDrawDeck():HasCard("the_execution") or battle:GetHandDeck():HasCard("the_execution") or battle:GetDiscardDeck():HasCard("the_execution") then

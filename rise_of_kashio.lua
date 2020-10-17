@@ -117,11 +117,12 @@ local decks =
     BattleDeck("battle_basic", "KASHIO_PLAYER")
         :AddCards{ 
             flail_crack = 3,
-            flail_smash = 3,
+            flail_smash = 2,
             flail_slam = 1,
-            safeguard = 3,
+            safeguard = 2,
             devise = 1,
-            swap_weapon = 1
+            swap_weapon = 1,
+            dodge_and_compromise = 1,
         },
 }
 

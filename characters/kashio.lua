@@ -15,7 +15,7 @@ local def = CharacterDef("KASHIO_PLAYER",
         [GRAFT_TYPE.NEGOTIATION] = 4,
     },
 
-    max_resolve = 25,
+    max_resolve = 35,
 
     fight_data = 
     {
