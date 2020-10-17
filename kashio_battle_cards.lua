@@ -2049,6 +2049,44 @@ local CARDS =
         end
     },
 
+    under_pressure = 
+    {
+        name = "Excel Under Pressure",
+        anim = "spin_attack",
+        desc = "Deal 1 extra damage for each enemy in the fight.  If {equip_glaive} is active and there are more than 2 enemies, gain invincible.",
+        icon = "battle/garbage_day.tex",
+
+        flags =  CARD_FLAGS.MELEE,
+        cost = 1,
+        rarity = CARD_RARITY.COMMON,
+        max_xp = 6,
+      
+        min_damage = 2,
+        max_damage = 3, 
+
+        OnPostResolve = function( self, battle, attack, card ) 
+            local enemycount = 0
+            for i, enemy in self.owner:GetEnemyTeam():GetFighters() do
+                count = count + 1
+            end
+            if self.owner:HasCondition("equip_glaive") and enemyCount > 2 then
+                self.owner:AddCondition("INVINCIBLE", 1)
+            end
+        end,
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                local enemyCount = 0
+                for i, enemy in self.owner:GetEnemyTeam():GetFighters() do
+                    count = count + 1
+                end
+                dmgt:AddDamage(count,count,self)
+            end,
+        }
+        
+    },
+
     -- BOG CARDS BELOW
     parasite_infusion =
     {
