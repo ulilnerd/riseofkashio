@@ -263,26 +263,26 @@ local CARDS =
             DEFEND = 2,
         }
     },
-    safeguard_plus2 = 
-    {
-        name = "Offensive Safeguard",
-        desc = "<#UPGRADE>Apply {1} {DEFEND} then equip {equip_glaive}</>.",
+    -- safeguard_plus2 = 
+    -- {
+    --     name = "Offensive Safeguard",
+    --     desc = "<#UPGRADE>Apply {1} {DEFEND} then equip {equip_glaive}</>.",
             
-        manual_desc = true,
-        equip_flail = 0,
+    --     manual_desc = true,
+    --     equip_flail = 0,
 
-        desc_fn = function(self, fmt_str)
-            return loc.format(fmt_str, self:CalculateDefendText( self.features.DEFEND ))
-        end,
+    --     desc_fn = function(self, fmt_str)
+    --         return loc.format(fmt_str, self:CalculateDefendText( self.features.DEFEND ))
+    --     end,
 
-        OnPostResolve = function( self, battle, attack )
-            self.owner:AddCondition("equip_glaive", 1, self)
-        end,
+    --     OnPostResolve = function( self, battle, attack )
+    --         self.owner:AddCondition("equip_glaive", 1, self)
+    --     end,
 
-        PostPresAnim = function( self, anim_fighter )
-            anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
-        end
-    },
+    --     PostPresAnim = function( self, anim_fighter )
+    --         anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
+    --     end
+    -- },
 
     devise = 
     {
@@ -2068,27 +2068,27 @@ local CARDS =
         end
     },
 
-    blind_grenade = 
-    {
-        name = "Blinding Grenade",
-        anim = "throw1",
-        desc = "Have a small chance to blind all enemies.",
-        icon = "battle/lumin_grenade.tex",
+    -- blind_grenade = 
+    -- {
+    --     name = "Blinding Grenade",
+    --     anim = "throw1",
+    --     desc = "Have a small chance to blind all enemies.",
+    --     icon = "battle/lumin_grenade.tex",
 
-        flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
-        cost = 1,
-        rarity = CARD_RARITY.UNCOMMON,
-        max_xp = 6,
-        target_mod = TARGET_MOD.TEAM,
+    --     flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
+    --     cost = 1,
+    --     rarity = CARD_RARITY.UNCOMMON,
+    --     max_xp = 6,
+    --     target_mod = TARGET_MOD.TEAM,
 
-        OnPostResolve = function( self, battle, attack)
-            local randomChance = math.random(1,4)
-            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-                enemy:AddCondition("BLINDED", 1, self)
-                -- need to add random chance
-            end
-        end
-    },
+    --     OnPostResolve = function( self, battle, attack)
+    --         local randomChance = math.random(1,4)
+    --         for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+    --             enemy:AddCondition("BLINDED", 1, self)
+    --             -- need to add random chance
+    --         end
+    --     end
+    -- },
 
     epidemic = 
     {
@@ -2243,7 +2243,7 @@ local CARDS =
         name = "Infest",
         anim = "crack",
         desc = "Deal damage and have a chance to inflict an enemy with a bog condition.",
-        icon = "battle/weakness_infected.tex",
+        icon = "RISE:textures/infest.png",
         
         cost = 1,
         flags =  CARD_FLAGS.MELEE,
@@ -2285,7 +2285,7 @@ local CARDS =
         name = "Conceal",
         anim = "taunt",
         desc = "Gather your bog friends around to defend you, gain {1} {DEFEND}.  Gain {2} extra {DEFEND} and have a chance to gain a random buff for every bog monster in the fight.",
-        -- icon = "RISE:textures/infestation.png",
+        icon = "RISE:textures/conceal.png",
         
         cost = 1,
         flags =  CARD_FLAGS.SKILL,
