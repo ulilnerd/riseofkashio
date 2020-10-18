@@ -108,7 +108,7 @@ local CARDS =
         desc = "Gain a random buff or debuff.",
         icon = "battle/oshnu_bile.tex",
 
-        flags =  CARD_FLAGS.SKILL,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         cost = 0,
         rarity = CARD_RARITY.UNIQUE,
         target_type = TARGET_TYPE.SELF,
@@ -133,7 +133,7 @@ local CARDS =
         desc = "Shuffle 2 random drink cards into your deck.",
         icon = "battle/slam.tex",
 
-        flags =  CARD_FLAGS.SKILL,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         cost = 0,
         rarity = CARD_RARITY.UNIQUE,
         target_type = TARGET_TYPE.SELF,
@@ -655,7 +655,7 @@ local CARDS =
         icon = "battle/krill_ichor.tex",
 
         flags = CARD_FLAGS.SKILL | CARD_FLAGS.REPLENISH | CARD_FLAGS.EXPEND,
-        cost = 0,
+        cost = 1,
         rarity = CARD_RARITY.RARE,
         max_xp = 4,
         target_type = TARGET_TYPE.SELF,
@@ -833,7 +833,7 @@ local CARDS =
 
         target_type = TARGET_TYPE.SELF,
         flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
-        cost = 0,
+        cost = 2,
         rarity = CARD_RARITY.RARE,
         max_xp = 4,
 
@@ -947,7 +947,7 @@ local CARDS =
     {
         name = "Crippling Slice",
         anim = "slash_up",
-        desc = "Apply {1} {IMPAIR} to target enemy if you have Taste of Blood in your hand.",
+        desc = "Apply {1} {IMPAIR} to target enemy if you have Taste of Blood in your hand.  {KINGPIN} 6: Apply {1} {IMPAIR}.",
         icon = "battle/weakness_old_injury.tex",
 
         flags = CARD_FLAGS.MELEE,
@@ -966,6 +966,16 @@ local CARDS =
         end,
 
         OnPostResolve = function( self, battle, attack)
+            if self.owner:HasCondition("KINGPIN") then
+                if self.owner:GetConditionStacks("KINGPIN") >= 6 then
+                    for i, hit in attack:Hits() do
+                        local target = hit.target
+                        if not hit.evaded then 
+                            target:AddCondition("IMPAIR", self.impair_amount, self)
+                        end
+                    end
+                end
+            end
             for i, card in battle:GetHandDeck():Cards() do
                 if card.id == "taste_of_blood" then
                     self.hasTOB = true
@@ -2007,8 +2017,8 @@ local CARDS =
         rarity = CARD_RARITY.UNCOMMON,
         max_xp = 6,
       
-        min_damage = 15,
-        max_damage = 15, 
+        min_damage = 10,
+        max_damage = 10, 
 
         OnPostResolve = function( self, battle, attack, card ) -- sometimes only gives you 2 debuffs
             if self.owner:HasCondition("KINGPIN") then
@@ -2040,7 +2050,7 @@ local CARDS =
     {
         name = "Excel Under Pressure",
         anim = "spin_attack",
-        desc = "Deal 1 extra damage for each enemy in the fight.  If {equip_glaive} is active and there are more than 2 enemies, gain invincible.",
+        desc = "Deal 1 extra damage for each enemy in the fight.  If {equip_glaive} is active and there are more than 2 enemies, gain {INVINCIBLE}.",
         icon = "battle/garbage_day.tex",
 
         flags =  CARD_FLAGS.MELEE,
@@ -2359,7 +2369,7 @@ local CARDS =
         rarity = CARD_RARITY.RARE,
         target_type = TARGET_TYPE.SELF,
 
-        bogCards = {"infest", "conceal", "lifestealer", "exhume", "reconstruction"},
+        bogCards =  {"infest", "conceal", "lifestealer", "exhume", "reconstruction", "gather_their_souls", "nightmare_blade", "bog_regeneration", "viral_outbreak", "evolve", "relentless_predator"},
 
         OnPostResolve = function( self, battle, attack)
             self.owner:AddCondition("ONE_WITH_THE_BOG", 1, self)
@@ -2371,7 +2381,7 @@ local CARDS =
                     else
                         battle:ExpendCard(randomCard1)
                         -- get bog card below
-                        local bogCard = math.random(1,5)
+                        local bogCard = math.random(1,11)
                         local card = Battle.Card( self.bogCards[bogCard], self.owner )
                         battle:DealCard( card, battle:GetDeck( DECK_TYPE.IN_HAND ) )
                         break
@@ -2385,7 +2395,7 @@ local CARDS =
                         randomCard2 = battle:GetDiscardDeck():PeekRandom()
                     else
                         battle:ExpendCard(randomCard2)
-                        local bogCard = math.random(1,5)
+                        local bogCard = math.random(1,11)
                         local card = Battle.Card( self.bogCards[bogCard], self.owner )
                         battle:DealCard( card, battle:GetDeck( DECK_TYPE.IN_HAND ) )
                         break
@@ -2393,19 +2403,19 @@ local CARDS =
                 end
             end
            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-                local randomMonster = math.random(1,2) -- change to 1-3 after fixing grout eye
+                local randomMonster = math.random(1,3) -- change to 1-3 after fixing grout eye
                 if enemy:HasCondition("EPIDEMIC") or enemy:HasCondition("PARASITIC_INFUSION") or enemy:HasCondition("REMOTE_PLAGUE") or enemy:HasCondition("CONTAMINATION") then
                     if randomMonster == 1 then
                         local groutKnuckle = Agent( "GROUT_KNUCKLE" )
                         local fighter = Fighter.CreateFromAgent( groutKnuckle, battle:GetScenario():GetAllyScale() )
                         self.owner:GetTeam():AddFighter( fighter )
                         self.owner:GetTeam():ActivateNewFighters()
-                    -- elseif randomMonster == 2 then
-                    --     local groutEye = Agent( "GROUT_EYE" ) -- grout eye bugged; won't appear on screen (game issue?)
-                    --     local fighter = Fighter.CreateFromAgent( groutEye, battle:GetScenario():GetAllyScale() )
-                    --     self.owner:GetTeam():AddFighter( fighter )
-                    --     self.owner:GetTeam():ActivateNewFighters()
                     elseif randomMonster == 2 then
+                        local groutEye = Agent( "GROUT_EYE" ) -- grout eye bugged; won't appear on screen (game issue?)
+                        local fighter = Fighter.CreateFromAgent( groutEye, battle:GetScenario():GetAllyScale() )
+                        self.owner:GetTeam():AddFighter( fighter )
+                        self.owner:GetTeam():ActivateNewFighters()
+                    elseif randomMonster == 3 then
                         local sparkMine = Agent( "GROUT_SPARK_MINE" )
                         local fighter = Fighter.CreateFromAgent( sparkMine, battle:GetScenario():GetAllyScale() )
                         self.owner:GetEnemyTeam():AddFighter( fighter )
@@ -2992,7 +3002,7 @@ local CONDITIONS =
         
         max_stacks = 1,
 
-        bogCards = {"infest", "conceal", "lifestealer", "exhume", "reconstruction"},
+        bogCards = {"infest", "conceal", "lifestealer", "exhume", "reconstruction", "gather_their_souls", "nightmare_blade", "bog_regeneration", "viral_outbreak", "evolve", "relentless_predator"},
         bogCardList = {"contaminate", "remote_plague", "armor_of_disease", "epidemic", "infestation", "parasite_infusion"},
 
         damageTaken = 0,
@@ -3019,7 +3029,7 @@ local CONDITIONS =
                     self.owner:RemoveCondition("equip_flail", self.owner:GetConditionStacks("equip_flail"), self)
                 end
                 if self.owner:HasCondition("equip_glaive") then
-                    self.owner:RemoveCondition("glaive", self.owner:GetConditionStacks("equip_glaive"), self)
+                    self.owner:RemoveCondition("equip_glaive", self.owner:GetConditionStacks("equip_glaive"), self)
                 end
                 if self.owner:HasCondition("KINGPIN") then
                     self.owner:RemoveCondition("KINGPIN", self.owner:GetConditionStacks("KINGPIN"), self)
@@ -3046,7 +3056,7 @@ local CONDITIONS =
                         else
                             battle:ExpendCard(randomCard1)
                             -- get bog card below
-                            local bogCard = math.random(1,5)
+                            local bogCard = math.random(1,11)
                             local card = Battle.Card( self.bogCards[bogCard], self.owner )
                             battle:DealCard( card, battle:GetDeck( DECK_TYPE.DISCARDS ) )
                             break
@@ -3060,7 +3070,7 @@ local CONDITIONS =
                             randomCard2 = battle:GetDiscardDeck():PeekRandom()
                         else
                             battle:ExpendCard(randomCard2)
-                            local bogCard = math.random(1,5)
+                            local bogCard = math.random(1,11)
                             local card = Battle.Card( self.bogCards[bogCard], self.owner )
                             battle:DealCard( card, battle:GetDeck( DECK_TYPE.DISCARDS ) )
                             break
@@ -3256,7 +3266,7 @@ local CONDITIONS =
     {
         name = "Bleeding Edge",
         desc = "Gives an enemy stacks of {BLEEDING_EDGE} depending on their health, if the target has bleed, they start with lower stacks, attacking this target will decrease stacks, deal massive damage and heal after stacks have depleted to 0.",
-        icon = "battle/conditions/brain_of_the_bog_debuff.tex",
+        icon = "battle/conditions/bloodbath.tex",
 
         event_handlers = 
         {
@@ -3264,8 +3274,8 @@ local CONDITIONS =
                 if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
                     self.owner:RemoveCondition( "BLEEDING_EDGE", attack.card.max_damage )
                     if self.owner:GetConditionStacks("BLEEDING_EDGE") <= 1 then
-                        self.owner:ApplyDamage( math.round(self.owner:GetMaxHealth() * 0.40), 10, self )
-                        attack.attacker:HealHealth(math.round(self.owner:GetMaxHealth() * 0.40), self)
+                        self.owner:ApplyDamage( math.round(self.owner:GetMaxHealth() * 0.25), 10, self )
+                        attack.attacker:HealHealth(math.round(self.owner:GetMaxHealth() * 0.25), self)
                     end
                 end
             end
@@ -3525,15 +3535,16 @@ local CONDITIONS =
         name = "Kingpin",
         desc = "Gain {KINGPIN} by making 6 actions using the same weapon consecutively. {KINGPIN} can unlock the full potential of certain cards, every action generates {KINGPIN}.  Swapping weapons resets {KINGPIN} to 1 stack. Every 10 stacks of {KINGPIN} triggers a special ability",
         icon = "battle/conditions/burr_boss_enrage.tex",
-        max_stacks = 30,
+        
         min_stacks = 1,
 
         glaive_equipped = false,
         flail_equipped = false,
 
-        -- not yet implemented:
         -- 10 stacks: gain METALLIC
         -- 20 stacks: Your attacks on an enemy have a small chance of granting you a random buff
+
+        -- not yet implemented:
         -- 30 stacks: random enemy gains DEFECT every turn
         -- 40 stacks: your attacks have a chance to inflict an enemy with PARASITIC_INFUSION or BLEEDING_EDGE
         -- 50 stacks: every turn a random enemy gains all of your current debuffs
