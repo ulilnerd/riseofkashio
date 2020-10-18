@@ -1195,45 +1195,45 @@ local CARDS =
         
     },
 
-    -- bounce_back = 
-    -- {
-    --     name = "Bounce Back",
-    --     anim = "slam",
-    --     desc = "Deal damage equal to half the amount of damage the enemy team is intending to inflicting to your team.",
-    --     icon = "battle/weakness_blind_spot.tex",
+    bounce_back = 
+    {
+        name = "Bounce Back",
+        anim = "slam",
+        desc = "Deal damage equal to half the amount of damage the enemy team is intending to inflict to your team.",
+        icon = "battle/weakness_blind_spot.tex",
 
-    --     flags =  CARD_FLAGS.MELEE | CARD_FLAGS.SKILL,
-    --     cost = 1,
-    --     rarity = CARD_RARITY.COMMON,
-    --     max_xp = 6,
+        flags =  CARD_FLAGS.MELEE,
+        cost = 1,
+        rarity = CARD_RARITY.UNCOMMON,
+        max_xp = 6,
 
-    --     min_damage = 0,
-    --     max_damage = 0,
+        min_damage = 0,
+        max_damage = 0,
 
-    --     OnPostResolve = function( self, battle, attack )
+        OnPostResolve = function( self, battle, attack )
                    
-    --     end,
+        end,
 
-    --     event_handlers =
-    --     {
-    --         [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
-    --             if card == self then
-    --                 local count = 0
-    --                 for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-    --                     if enemy.prepared_cards then
-    --                         for i, card in ipairs( enemy.prepared_cards ) do
-    --                             if card:IsAttackCard() then
-    --                                 count = count + card.max_damage
-    --                             end
-    --                         end
-    --                     end
-    --                     dmgt:ModifyDamage( math.round(count/2), math.round(count/2), self )
-    --                 end
-    --             end
-    --         end
-    --     }
+        event_handlers =
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                if card == self then
+                    local count = 0
+                    for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                        if enemy.prepared_cards then
+                            for i, card in ipairs( enemy.prepared_cards ) do
+                                if card:IsAttackCard() then
+                                    count = count + card.max_damage
+                                end
+                            end
+                        end
+                        dmgt:ModifyDamage( math.floor(count/2), math.floor(count/2), self )
+                    end
+                end
+            end
+        }
         
-    -- },
+    },
 
     grandslam = 
     {
@@ -1853,7 +1853,7 @@ local CARDS =
     {
         name = "Run it Back", -- won't hit twice
         anim = "slam",
-        desc = "If {equip_flail} is active, attack twice instead and draw a card.",
+        desc = "If {equip_flail} is active, have a chance to stun the target and draw a card.",
         icon = "battle/the_sledge.tex",
 
         flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
@@ -1862,36 +1862,23 @@ local CARDS =
         max_xp = 6,
       
         min_damage = 2,
-        max_damage = 3,
-
-        PreReq = function( self, battle )
-            if self.owner:HasCondition("equip_flail") then
-                self.hit_count = 2
-                return true
-            else
-                self.hit_count = 1
-                return false
-            end
-        end,
+        max_damage = 5,
 
         OnPostResolve = function( self, battle, attack, card )
+            local randomNum = math.random(1,2)
             if self.owner:HasCondition("equip_flail") then
                 battle:DrawCards(1)
+                for i, hit in attack:Hits() do
+                    if not attack:CheckHitResult( hit.target, "evaded" ) then
+                        if randomNum == 1 then
+                            hit.target:AddCondition("STUN", 1, self)
+                        end
+                    end
+                end
             end
         end,
 
-        event_handlers =
-        {
-            [ BATTLE_EVENT.START_RESOLVE ] = function( self, battle, card )
-                if card == self then
-                    if self.owner:HasCondition("equip_flail") then
-                        self.hit_count = 2
-                    else
-                        self.hit_count = 1
-                    end
-                end
-            end,
-        },
+        
     },
 
     finish_them =
@@ -2065,9 +2052,9 @@ local CARDS =
         max_damage = 3, 
 
         OnPostResolve = function( self, battle, attack, card ) 
-            local enemycount = 0
-            for i, enemy in self.owner:GetEnemyTeam():GetFighters() do
-                count = count + 1
+            local enemyCount = 0
+            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                enemyCount = enemyCount + 1
             end
             if self.owner:HasCondition("equip_glaive") and enemyCount > 2 then
                 self.owner:AddCondition("INVINCIBLE", 1)
@@ -2078,10 +2065,10 @@ local CARDS =
         {
             [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
                 local enemyCount = 0
-                for i, enemy in self.owner:GetEnemyTeam():GetFighters() do
-                    count = count + 1
+                for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                    enemyCount = enemyCount + 1
                 end
-                dmgt:AddDamage(count,count,self)
+                dmgt:AddDamage(enemyCount,enemyCount,self)
             end,
         }
         
@@ -2513,7 +2500,7 @@ local CARDS =
         name = "Lifestealer",
         anim = "slash_up",
         desc = "Deal damage and steal health equal to the damage dealt.",
-        -- icon = "RISE:textures/infestation.png",
+        icon = "RISE:textures/lifestealer.png",
         
         cost = 1,
         flags =  CARD_FLAGS.MELEE,
@@ -2567,7 +2554,7 @@ local CARDS =
         name = "Reconstruction",
         anim = "taunt4",
         desc = "Heal health to full then gain 99 stacks of a random debuff.",
-        -- icon = "RISE:textures/infestation.png",
+        icon = "RISE:textures/reconstruction.png",
         
         cost = 1,
         flags =  CARD_FLAGS.SKILL,
@@ -2582,46 +2569,157 @@ local CARDS =
         end
     },
 
-    -- gather_their_souls = 
-    -- {
-    --     name = "Gather Their Souls",
-    --     anim = "taunt",
-    --     desc = "Steal a buff every turn then inflict a debuff to a random enemy.",
-    --     -- icon = "RISE:textures/infestation.png",
+    gather_their_souls = 
+    {
+        name = "Gather Their Souls",
+        anim = "taunt",
+        desc = "Steal a buff every turn then inflict a debuff to a random enemy.",
+        -- icon = "RISE:textures/infestation.png",
         
-    --     cost = 1,
-    --     flags =  CARD_FLAGS.SKILL,
-    --     rarity = CARD_RARITY.UNIQUE,
-    --     target_type = TARGET_TYPE.SELF,
+        cost = 1,
+        flags =  CARD_FLAGS.SKILL,
+        rarity = CARD_RARITY.UNIQUE,
+        target_type = TARGET_TYPE.SELF,
 
-    -- },
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("GATHER_THEIR_SOULS", 3, self)
+        end
+    },
 
-    -- their_life_mine = 
-    -- {
-    --     name = "Their Life is Mine",
-    --     anim = "taunt",
-    --     desc = "Steal health from all enemies every turn for 3 turns.",
-    --     -- icon = "RISE:textures/infestation.png",
+    nightmare_blade = 
+    {
+        name = "Nightmare Blade",
+        anim = "spin_attack",
+        desc = "Incept a {NIGHTMARE} into an enemy, a {NIGHTMARE} inflicted enemy will take more damage from all sources and deal less damage.  All allies gain {TARGETED}.",
+        -- icon = "RISE:textures/infestation.png",
         
-    --     cost = 1,
-    --     flags =  CARD_FLAGS.SKILL,
-    --     rarity = CARD_RARITY.UNIQUE,
-    --     target_type = TARGET_TYPE.SELF,
+        cost = 1,
+        flags =  CARD_FLAGS.MELEE,
+        rarity = CARD_RARITY.UNIQUE,
 
-    -- },
+        min_damage = 4,
+        max_damage = 10,
 
-    -- bog_regeneration = 
-    -- {
-    --     name = "Bog Regeneration",
-    --     anim = "taunt",
-    --     desc = "Heal health equal to how much damage you took last turn.",
-    --     -- icon = "RISE:textures/infestation.png",
+        OnPostResolve = function( self, battle, attack, fighter)
+            for i, ally in self.owner:GetTeam():Fighters() do
+                if not fighter == self then
+                    ally:AddCondition("TARGETED", 2, self)
+                end
+            end
+            for i, hit in attack:Hits() do
+                local target = hit.target
+                if not hit.evaded then 
+                    target:AddCondition("NIGHTMARE", 3, self)
+                end
+            end
+        end
+    },
+
+    bog_regeneration = 
+    {
+        name = "Bog Regeneration",
+        anim = "taunt",
+        desc = "Heal health equal to half the damage you took last turn.",
+        -- icon = "RISE:textures/infestation.png",
         
-    --     cost = 1,
-    --     flags =  CARD_FLAGS.SKILL,
-    --     rarity = CARD_RARITY.UNIQUE,
-    --     target_type = TARGET_TYPE.SELF,
+        cost = 1,
+        flags =  CARD_FLAGS.SKILL,
+        rarity = CARD_RARITY.UNIQUE,
+        target_type = TARGET_TYPE.SELF,
 
+        OnPostResolve = function( self, battle, attack)
+            if self.owner:HasCondition("ONE_WITH_THE_BOG") then
+                self.owner:HealHealth(self.owner:GetCondition("ONE_WITH_THE_BOG").damageTaken, self)
+            end
+        end
+    },
+
+    viral_outbreak = 
+    {
+        name = "Viral Outbreak",
+        anim = "slash_up",
+        desc = "Deal bonus damage equal to half the damage you took last turn then apply {PARASITIC_INFUSION} to an enemy, the stacks gained are equal to damage dealt to you last turn.",
+        -- icon = "RISE:textures/infestation.png",
+        
+        cost = 1,
+        flags =  CARD_FLAGS.MELEE,
+        rarity = CARD_RARITY.UNIQUE,
+
+        min_damage = 3,
+        max_damage = 6,
+
+        OnPostResolve = function( self, battle, attack)
+            for i, hit in attack:Hits() do
+                local target = hit.target
+                if not hit.evaded then 
+                    target:AddCondition("PARASITIC_INFUSION",self.owner:GetCondition("ONE_WITH_THE_BOG").damageTaken , self)
+                end
+            end
+        end,
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt, hit )
+                if card.owner == self.owner then
+                    if self.owner:HasCondition("ONE_WITH_THE_BOG") then
+                        dmgt:AddDamage(  self.owner:GetCondition("ONE_WITH_THE_BOG").damageTaken,
+                                            self.owner:GetCondition("ONE_WITH_THE_BOG").damageTaken,
+                                        self )
+                    end
+                end
+            end,
+        }
+        
+    },
+
+    evolve = 
+    {
+        name = "Evolve",
+        anim = "taunt",
+        desc = "Evolve, gaining Regeneration and {DEFEND} per turn equal to 10% total damage dealt this fight.",
+        -- icon = "RISE:textures/infestation.png",
+        
+        cost = 1,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+        rarity = CARD_RARITY.UNIQUE,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPostResolve = function( self, battle, attack)
+            if self.owner:HasCondition("ONE_WITH_THE_BOG") then
+                self.owner:AddCondition("EVOLUTION", 1, self)
+            end
+        end,
+    },
+
+    relentless_predator = 
+    {
+        name = "Relentless Predator",
+        anim = "taunt",
+        desc = "Gain 25% bonus damage on your attacks for every enemy slain, this counts for enemies that have already fallen.",
+        -- icon = "RISE:textures/infestation.png",
+        
+        cost = 1,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+        rarity = CARD_RARITY.UNIQUE,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("RELENTLESS_PREDATOR", 1, self)
+        end,
+    },
+
+        -- gravemind = 
+    -- {
+    --     name = "Gravemind",
+    --     anim = "taunt",
+    --     desc = "have a chance to inflict all enemies with deceive, this will cause their next attack to miss and you will counter their missed attack.",
+    --     icon = "battle/improvise_chug.tex",
+
+    --     flags =  CARD_FLAGS.SKILL,
+    --     cost = 2,
+    --     rarity = CARD_RARITY.UNCOMMON,
+    --     max_xp = 4,
+    --     target_type = TARGET_TYPE.SELF,
     -- },
 
     -- deceived = 
@@ -2746,6 +2844,115 @@ local CONDITIONS =
             
     --     -- end
     -- },
+    RELENTLESS_PREDATOR = 
+    {
+        name = "Relentless Predator", 
+        desc = "Gain 25% bonus damage on your attacks when you slay an enemy, this counts for enemies that have already fallen.",
+        icon = "battle/conditions/annihilation.tex",   
+
+        slainEnemies = 0,
+
+        OnApply = function( self, battle )
+            self.slainEnemies = self.owner:GetEnemyTeam():NumFighters() - self.owner:GetEnemyTeam():NumActiveFighters()
+        end,
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt, hit )
+                if card.owner == self.owner then
+                    if self.slainEnemies > 0 then
+                        dmgt:ModifyDamage( math.round( dmgt.min_damage + (self.slainEnemies * 0.25) ),
+                        math.round( dmgt.max_damage + (self.slainEnemies * 0.25) ),
+                        self )
+                    end
+                end
+            end,
+            [ BATTLE_EVENT.CARD_MOVED ] = function( self, card, target )
+                self.slainEnemies = self.owner:GetEnemyTeam():NumFighters() - self.owner:GetEnemyTeam():NumActiveFighters()
+            end
+        }  
+    },
+
+    EVOLUTION = 
+    {
+        name = "Evolution", 
+        desc = "Gain Regeneration and {DEFEND} per turn equal to 10% total damage dealt this fight. At 100 damage, gain an extra action per turn.",
+        icon = "battle/conditions/blood_bind.tex",   
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, card, target, dmgt, hit )
+                self.owner:AddCondition("DEFEND", math.round(self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt / 10), self)
+                self.owner:HealHealth(math.round(self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt / 10), self)
+                if self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt >= 20 then
+                    self.owner:AddCondition("NEXT_TURN_ACTION", 1 , self)
+                end
+            end
+        }  
+    },
+
+    NIGHTMARE = 
+    {
+        name = "NIGHTMARE", 
+        desc = "Enemies inflicted with {NIGHTMARE} take more damage from all sources and deal less damage.",
+        icon = "battle/conditions/cruelty.tex",   
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt, hit )
+                if target == self.owner then
+                    dmgt:AddDamage( math.round(dmgt.min_damage * 0.5), math.round(dmgt.max_damage * 0.5), self )
+                end
+                if card.owner == self.owner then
+                    dmgt:ModifyDamage( math.round( dmgt.min_damage * 0.5 ),
+                                       math.round( dmgt.max_damage * 0.5 ),
+                                       self )
+                end
+            end,
+
+            [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, card, target, dmgt, hit )
+                self.owner:RemoveCondition("NIGHTMARE", 1, self)
+            end
+        }
+    },
+
+    GATHER_THEIR_SOULS = 
+    {
+        name = "Gather Their Souls", 
+        desc = "Steal a buff from a random enemy and inflict them with a random debuff.",
+        icon = "battle/conditions/shield_of_hesh.tex",  
+
+        OnApply = function( self, battle )
+            local target_fighter = {}
+            local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
+            battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
+            for i=1, #target_fighter do
+                for k, condition in pairs(target_fighter[i]:GetConditions()) do
+                    self.owner:AddCondition(condition.id, 1, self)
+                    target_fighter[1]:RemoveCondition(condition.id, 1)
+                    target_fighter[1]:AddCondition(posConditions[randomcon])
+                end
+            end
+        end,
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit )
+                local target_fighter = {}
+                local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
+                local randomCon = math.random(1,6)
+                battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
+                for i=1, #target_fighter do
+                    for k, condition in pairs(target_fighter[i]:GetConditions()) do
+                        self.owner:AddCondition(condition.id, 1, self)
+                        target_fighter[1]:RemoveCondition(condition.id, 1)
+                        target_fighter[1]:AddCondition(posConditions[randomcon])
+                        self.owner:RemoveCondition("GATHER_THEIR_SOULS", 1, self)
+                    end
+                end
+            end
+        }
+    },
 
     INVINCIBLE = 
     {
@@ -2788,6 +2995,9 @@ local CONDITIONS =
         bogCards = {"infest", "conceal", "lifestealer", "exhume", "reconstruction"},
         bogCardList = {"contaminate", "remote_plague", "armor_of_disease", "epidemic", "infestation", "parasite_infusion"},
 
+        damageTaken = 0,
+        damageDealt = 0,
+
         OnApply = function( self, battle )
             -- remove other abilities
             if self.owner:HasCondition("equip_flail") then
@@ -2817,6 +3027,7 @@ local CONDITIONS =
             end,
             -- have a chance to gain bog abilities every turn, free until played.
             [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, attack, hit )
+                -- self.damageTaken = 0
                 local randomCard = math.random(1,6)
                 local randomChance = math.random(1,2)
                 if randomChance == 1 then
@@ -2856,6 +3067,15 @@ local CONDITIONS =
                         end
                     end
                 end
+            end,
+            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit, target )
+                if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
+                    self.damageTaken = self.damageTaken + math.round(hit.damage / 2)
+                end
+                if attack.attacker == self.owner and attack.card:IsAttackCard() and not hit.evaded then
+                    self.damageDealt = self.damageDealt + hit.damage
+                end
+                
             end
         }
 

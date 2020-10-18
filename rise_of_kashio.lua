@@ -122,7 +122,7 @@ local decks =
             safeguard = 2,
             devise = 1,
             swap_weapon = 1,
-            dodge_and_compromise = 1,
+            dodge_and_compromise = 2,
         },
 }
 
