@@ -84,7 +84,8 @@ local CARDS =
     {
         name = "Invincible",
         anim = "taunt",
-        desc = "The next attack on you will deal 0 damage, but the next attack after that will deal double damage.",
+        desc = "The next attack on you will deal 0 damage.",
+        -- , but the next attack after that will deal double damage
         icon = "battle/bring_it_on.tex",
 
         rarity = CARD_RARITY.UNIQUE,
@@ -96,7 +97,7 @@ local CARDS =
         OnPostResolve = function( self, battle, attack)
             self.owner:AddCondition("INVINCIBLE", 1, self)
             if self.owner:HasCondition("INVINCIBLE") then
-                self.owner:AddCondition("DEFECT", self.owner:GetConditionStacks("INVINCIBLE") + 1)
+                -- self.owner:AddCondition("DEFECT", self.owner:GetConditionStacks("INVINCIBLE") + 1)
             end
         end,
     },
@@ -582,7 +583,7 @@ local CARDS =
     flail_swap =
     {
         name = "Kashio's Flail",
-        desc = "Equip {equip_flail} and gain {DEFEND} equal to 5% of your maximum health and current defend then {HEAL} self for 10% of your missing health every turn. Also have a chance a 25% chance to apply a random debuff to an enemy on hit.",
+        desc = "Equip {equip_flail} and gain {DEFEND} equal to 5% of your maximum health and current defend then {HEAL} self for 10% of your missing health every turn. Also have a 25% chance to apply a random debuff to an enemy on hit.",
         icon = "battle/overloaded_spark_hammer.tex",
         anim = "taunt",
 
@@ -1353,7 +1354,7 @@ local CARDS =
     {
         name = "Rentorian Force Field",
         anim = "taunt",
-        desc = "Gain {FORCE_FIELD} if {equip_glaive} is active, gain 3 stacks of Rentorian Force Field.",
+        desc = "Gain {FORCE_FIELD}. If {equip_glaive} is active, gain 3 stacks of {FORCE_FIELD}.",
         icon = "battle/arc_deflection.tex",
 
         flags =  CARD_FLAGS.SKILL,
@@ -2745,7 +2746,7 @@ local CARDS =
         name = "Relentless Predator",
         anim = "taunt",
         desc = "Gain 25% bonus damage on your attacks for every enemy slain, this counts for enemies that have already fallen.",
-        -- icon = "RISE:textures/infestation.png",
+        icon = "RISE:textures/relentlesspredator.png",
         
         cost = 1,
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -2974,12 +2975,13 @@ local CONDITIONS =
         OnApply = function( self, battle )
             local target_fighter = {}
             local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
+            local randomCon = math.random(1,6)
             battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
             for i=1, #target_fighter do
-                for k, condition in pairs(target_fighter[i]:GetConditions()) do
+                for i, condition in pairs(target_fighter[1]:GetConditions()) do
                     self.owner:AddCondition(condition.id, 1, self)
                     target_fighter[1]:RemoveCondition(condition.id, 1)
-                    target_fighter[1]:AddCondition(posConditions[randomcon])
+                    target_fighter[1]:AddCondition(posConditions[randomCon], 1)
                 end
             end
         end,
@@ -2992,10 +2994,10 @@ local CONDITIONS =
                 local randomCon = math.random(1,6)
                 battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
                 for i=1, #target_fighter do
-                    for k, condition in pairs(target_fighter[i]:GetConditions()) do
+                    for i, condition in pairs(target_fighter[1]:GetConditions()) do
                         self.owner:AddCondition(condition.id, 1, self)
                         target_fighter[1]:RemoveCondition(condition.id, 1)
-                        target_fighter[1]:AddCondition(posConditions[randomcon])
+                        target_fighter[1]:AddCondition(posConditions[randomCon], 1)
                         self.owner:RemoveCondition("GATHER_THEIR_SOULS", 1, self)
                     end
                 end
@@ -3618,7 +3620,7 @@ local CONDITIONS =
                     end
                 end
 
-                -- 10 stacks: gain metallic and remove all current stacks of bleed and wound // NOT YET TESTED
+                -- 10 stacks: gain metallic 
                 if self.owner:GetConditionStacks("KINGPIN") >= 10 then
                     if not self.owner:HasCondition("METALLIC") then
                         self.owner:AddCondition("METALLIC", 1, self)
