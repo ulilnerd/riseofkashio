@@ -24,7 +24,7 @@ local CARDS =
         evasion_amt = 1,
 
         OnPostResolve = function( self, battle, attack)
-            self.owner:AddCondition("IMPAIR", 1 )
+            self.owner:AddCondition("IMPAIR", 2 )
             self.owner:AddCondition("EVASION", self.evasion_amt, self)
         end
     },
@@ -41,7 +41,7 @@ local CARDS =
         cost = 0,
         flags = CARD_FLAGS.SKILL| CARD_FLAGS.EXPEND,
         power_amt = 2,
-        wound_amt = 1,
+        wound_amt = 2,
 
         desc_fn = function(self, fmt_str)
             return loc.format(fmt_str, self:CalculateDefendText( self.power_amt ))
@@ -84,7 +84,7 @@ local CARDS =
     {
         name = "Invincible",
         anim = "taunt",
-        desc = "The next attack on you will deal 0 damage, but the next attack after that will deal double damage.",
+        desc = "An attack from an enemy on you will deal 0 damage, Gain 2 {DEFECT}.",
         icon = "battle/bring_it_on.tex",
 
         rarity = CARD_RARITY.UNIQUE,
@@ -586,7 +586,7 @@ local CARDS =
         icon = "battle/overloaded_spark_hammer.tex",
         anim = "taunt",
 
-        flags = CARD_FLAGS.BUFF | CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+        flags = CARD_FLAGS.BUFF | CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.REPLENISH,
         target_type = TARGET_TYPE.SELF,
         cost = 0,
         rarity = CARD_RARITY.UNIQUE,
@@ -610,7 +610,7 @@ local CARDS =
         icon = "battle/rentorian_force_glaive.tex",
         anim = "transition1",
 
-        flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+        flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.REPLENISH,
         target_type = TARGET_TYPE.SELF,
         cost = 0,
         rarity = CARD_RARITY.UNIQUE,
@@ -1409,7 +1409,7 @@ local CARDS =
     {
         name = "Blade Dance",
         anim = "transition1",
-        desc = "Gain stacks of {BLADE_DANCE} depending on a random enemy's current health, switch to {equip_glaive}.",
+        desc = "Gain stacks of {BLADE_DANCE} depending on a random enemy's current health, place {flail_swap} or {glaive_swap} into your hand depending on what weapon is currently equipped.",
         icon = "battle/blade_fury.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -1417,10 +1417,6 @@ local CARDS =
         rarity = CARD_RARITY.RARE,
         max_xp = 4,
         target_type = TARGET_TYPE.SELF,
-
-        PostPresAnim = function( self, anim_fighter )
-            anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
-        end,
 
         OnPostResolve = function(self, battle, attack, card)
             self.owner:AddCondition("equip_glaive", 1)
@@ -1432,6 +1428,14 @@ local CARDS =
                 end
                 randomEnemyHealth = math.round(randomEnemyHealth * 0.60)
             self.owner:AddCondition("BLADE_DANCE", randomEnemyHealth, self)
+            local weapons = {"flail_swap", "glaive_swap"}
+            if self.owner:HasCondition("equip_glaive") then
+                local card = Battle.Card( weapons[1], self.owner )
+                battle:DealCard( card, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+            elseif self.owner:HasCondition("equip_flail") then
+                local card = Battle.Card( weapons[2], self.owner )
+                battle:DealCard( card, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+            end
         end
     },
 
@@ -1584,7 +1588,7 @@ local CARDS =
     {
         name = "Ultimate Hunter",
         anim = "taunt",
-        desc = "Whenever you swap weapons, gain {DEFEND}. Swap to next weapon.",
+        desc = "Gain {ULTIMATE_HUNTER} then place {flail_swap} or {glaive_swap} in your hand depending on which weapon you currently have equipped.",
         icon = "battle/butcher_of_the_bog.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -1595,11 +1599,19 @@ local CARDS =
 
         OnPostResolve = function( self, battle, attack, card )
             self.owner:AddCondition("ULTIMATE_HUNTER", 1, self)
-            if self.owner:HasCondition("equip_flail") then
-                self.owner:AddCondition("equip_glaive", 1 , self)
-            elseif self.owner:HasCondition("equip_glaive") then
-                self.owner:AddCondition("equip_flail", 1, self)
-            end
+            -- if self.owner:HasCondition("equip_flail") then
+            --     self.owner:AddCondition("equip_glaive", 1 , self)
+            -- elseif self.owner:HasCondition("equip_glaive") then
+            --     self.owner:AddCondition("equip_flail", 1, self)
+            -- end
+            local weapons = {"flail_swap", "glaive_swap"}
+                if self.owner:HasCondition("equip_glaive") then
+                    local card = Battle.Card( weapons[1], self.owner )
+                    battle:DealCard( card, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+                elseif self.owner:HasCondition("equip_flail") then
+                    local card = Battle.Card( weapons[2], self.owner )
+                    battle:DealCard( card, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+                end
         end
     },
 
@@ -1845,7 +1857,7 @@ local CARDS =
     {
         name = "Tag Team",
         anim = "transition1",
-        desc = "Gain {TAG_TEAM} and swap to {equip_glaive}.",
+        desc = "Gain {TAG_TEAM} and place {flail_swap} or {glaive_swap} into your hand depending on the current weapon equipped.",
         icon = "battle/baron_expedition.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -1854,13 +1866,16 @@ local CARDS =
         max_xp = 6,
         target_type = TARGET_TYPE.SELF,
 
-        PostPresAnim = function( self, anim_fighter )
-            anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
-        end,
-
         OnPostResolve = function( self, battle, attack, card )
-            self.owner:AddCondition("equip_glaive", 1, self)
             self.owner:AddCondition("TAG_TEAM", 1, self)
+            local weapons = {"flail_swap", "glaive_swap"}
+            if self.owner:HasCondition("equip_glaive") then
+                local card = Battle.Card( weapons[1], self.owner )
+                battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
+            elseif self.owner:HasCondition("equip_flail") then
+                local card = Battle.Card( weapons[2], self.owner )
+                battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
+            end
         end
     },
 
@@ -1905,7 +1920,7 @@ local CARDS =
         desc = "If {equip_flail} is active, have a chance to stun the target and draw a card.",
         icon = "battle/the_sledge.tex",
 
-        flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
+        flags =  CARD_FLAGS.MELEE,
         cost = 1,
         rarity = CARD_RARITY.COMMON,
         max_xp = 6,
@@ -1914,7 +1929,7 @@ local CARDS =
         max_damage = 5,
 
         OnPostResolve = function( self, battle, attack, card )
-            local randomNum = math.random(1,2)
+            local randomNum = math.random(1,3)
             if self.owner:HasCondition("equip_flail") then
                 battle:DrawCards(1)
                 for i, hit in attack:Hits() do
@@ -2089,7 +2104,7 @@ local CARDS =
     {
         name = "Excel Under Pressure",
         anim = "spin_attack",
-        desc = "Deal 1 extra damage for each enemy in the fight.  If {equip_glaive} is active and there are more than 1 enemy, gain {INVINCIBLE}.",
+        desc = "Deal 1 extra damage for each enemy in the fight.  If {equip_glaive} is active and there is more than 1 enemy, gain {INVINCIBLE}.",
         icon = "battle/garbage_day.tex",
 
         flags =  CARD_FLAGS.MELEE,
@@ -2401,7 +2416,7 @@ local CARDS =
         name = "Infestation",
         anim = "taunt",
         desc = "Shuffle 2 Bog Cards to your hand and expend a non unique card from your draw and discard pile each.  If any enemies have a Bog Condition, raise a bog creature to your side or the enemy's side.",
-        icon = "RISE:textures/infestation.png",
+        icon = "negotiation/voices.tex",
         
         cost = 2,
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -3529,7 +3544,7 @@ local CONDITIONS =
     ULTIMATE_HUNTER = 
     {
         name = "Ultimate Hunter",
-        desc = "Gain {DEFEND} whenever you swap weapons.",
+        desc = "Gain {DEFEND} whenever you swap weapons. Shuffle {equip_flail} or {equip_glaive} into your draw pile after every turn end depending on which weapon you have equipped.",
         icon = "battle/conditions/vroc_howl.tex",
 
         flailCount = 0,
@@ -3548,6 +3563,17 @@ local CONDITIONS =
                     self.flailCount = 0
                     self.glaiveCount = 0
                     self.owner:AddCondition("DEFEND", 5, self)
+                end
+            end,
+
+            [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit )
+                local weapons = {"flail_swap", "glaive_swap"}
+                if self.owner:HasCondition("equip_glaive") then
+                    local card = Battle.Card( weapons[1], self.owner )
+                    battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
+                elseif self.owner:HasCondition("equip_flail") then
+                    local card = Battle.Card( weapons[2], self.owner )
+                    battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
                 end
             end
         }
@@ -3585,7 +3611,7 @@ local CONDITIONS =
     BLADE_DANCE = 
     {
         name = "Blade Dance",
-        desc = "Gain stacks of {BLADE_DANCE} depending on a random enemy's health which will decrease the stacks for every point of damage you deal, when the stacks reach 0, gain evade.",
+        desc = "Gain stacks of {BLADE_DANCE} depending on a random enemy's health which will decrease the stacks for every point of damage you deal, when the stacks reach 0, gain evade and place {glaive_swap} or {flail_swap} into your hand.",
         icon = "battle/conditions/sharpened_blades.tex",
 
         min_stacks = 1,
@@ -3600,6 +3626,16 @@ local CONDITIONS =
                     end
                     end
                     if self.owner:GetConditionStacks("BLADE_DANCE") <= 1 then
+                        -- get new weapon cards
+                        local weapons = {"flail_swap", "glaive_swap"}
+                        if self.owner:HasCondition("equip_glaive") then
+                            local card = Battle.Card( weapons[1], self.owner )
+                            battle:DealCard( card, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+                        elseif self.owner:HasCondition("equip_flail") then
+                            local card = Battle.Card( weapons[2], self.owner )
+                            battle:DealCard( card, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+                        end
+                        -- get evasion
                         local randomEnemyHealth = 0
                         local target_fighter = {}
                         battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
@@ -3685,8 +3721,8 @@ local CONDITIONS =
 
             -- 20 stacks: have a chance to gain a random buff on each attack
             [ BATTLE_EVENT.ON_HIT ] = function( self, battle, fighter, attack, target )
-                local randomBuffs = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "EVASION"}
-                local randomNum = math.random(1,5)
+                local randomBuffs = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "EVASION", "DEFLECT", "FORCE_FIELD", "FLURRY", "BLADE_DANCE", "TAG_TEAM"}
+                local randomNum = math.random(1,10)
                 local randomChance = math.random(1,4)
                 if attack.attacker == self.owner then
                     if self.owner:GetConditionStacks("KINGPIN") >= 20 and randomChance == 1 then
