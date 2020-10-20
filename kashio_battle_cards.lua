@@ -2143,7 +2143,7 @@ local CARDS =
     {
         name = "Parasite Infusion", -- bugged when you have more than one copy in your hand: enemies gain more stacks than intended and gain even more stacks while attacking not with this card
         anim = "throw1",
-        desc = "Infuses an enemy with {PARASITIC_INFUSION}, gaining stacks depending on the target enemy's max health.",
+        desc = "Infuses an enemy with {PARASITIC_INFUSION}, gaining stacks depending on the target enemy's max health. {BOG_ABILITY}.",
         icon = "battle/branch.tex",
 
         flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
@@ -2176,7 +2176,7 @@ local CARDS =
     {
         name = "Contaminate",
         anim = "slash_up",
-        desc = "Contaminates an enemy, which grants them stacks of {CONTAMINATION} based on their current health.",
+        desc = "Contaminates an enemy, which grants them stacks of {CONTAMINATION} based on their current health. {BOG_ABILITY}.",
         icon = "battle/giant_stinger.tex",
 
         flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
@@ -2190,7 +2190,7 @@ local CARDS =
         OnPostResolve = function( self, battle, attack, card )
             self.owner:AddCondition("ONE_WITH_THE_BOG", 1, self)
             for i, hit in attack:Hits() do
-                if not attack:CheckHitResult( hit.target, "evaded" ) then
+                if not attack:CheckHitResult( hit.target, "evaded" ) and not hit.target:HasCondition("CONTAMINATION") then
                     hit.target:AddCondition("CONTAMINATION", math.round(hit.target:GetHealth()) , self)
                 end
             end
@@ -2201,7 +2201,7 @@ local CARDS =
     {
         name = "Remote Plague",
         anim = "throw2",
-        desc = "Contaminates an enemy, which grants them random stacks of {REMOTE_PLAGUE}.",
+        desc = "Contaminates an enemy, which grants them random stacks of {REMOTE_PLAGUE}. {BOG_ABILITY}.",
         icon = "battle/funky_fungi.tex",
 
         flags =  CARD_FLAGS.RANGED,
@@ -2312,33 +2312,13 @@ local CARDS =
         end
     },
 
-    -- blind_grenade = 
-    -- {
-    --     name = "Blinding Grenade",
-    --     anim = "throw1",
-    --     desc = "Have a small chance to blind all enemies.",
-    --     icon = "battle/lumin_grenade.tex",
 
-    --     flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
-    --     cost = 1,
-    --     rarity = CARD_RARITY.UNCOMMON,
-    --     max_xp = 6,
-    --     target_mod = TARGET_MOD.TEAM,
-
-    --     OnPostResolve = function( self, battle, attack)
-    --         local randomChance = math.random(1,4)
-    --         for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-    --             enemy:AddCondition("BLINDED", 1, self)
-    --             -- need to add random chance
-    --         end
-    --     end
-    -- },
 
     epidemic = 
     {
         name = "Epidemic",
         anim = "throw1",
-        desc = "Deal damage to all enemies and have a chance to inflict enemies with a virus called {EPIDEMIC} for 3 turns. Minimum 1 enemy will be inflicted.",
+        desc = "Deal damage to all enemies and have a chance to inflict enemies with a virus called {EPIDEMIC} for 3 turns. Minimum 1 enemy will be inflicted. {BOG_ABILITY}.",
         icon = "battle/tendrils.tex",
 
         flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
@@ -2399,7 +2379,7 @@ local CARDS =
     {
         name = "Armor of Disease",
         anim = "taunt4",
-        desc = "Gain {ARMOR_OF_DISEASE}.",
+        desc = "Gain {ARMOR_OF_DISEASE}. {BOG_ABILITY}.",
         icon = "battle/bough.tex",
         
         cost = 2,
@@ -2417,7 +2397,7 @@ local CARDS =
     {
         name = "Infestation",
         anim = "taunt",
-        desc = "Shuffle 2 Bog Cards to your hand and expend a non unique card from your draw and discard pile each.  If any enemies have a Bog Condition, raise a bog creature to your side or the enemy's side.",
+        desc = "Shuffle 2 Bog Cards to your hand and expend a non unique card from your draw and discard pile each.  If any enemies have a Bog Condition, raise a bog creature to your side or the enemy's side. {BOG_ABILITY}.",
         icon = "negotiation/voices.tex",
         
         cost = 2,
@@ -2486,7 +2466,7 @@ local CARDS =
     {
         name = "Infest",
         anim = "crack",
-        desc = "Deal damage and have a chance to inflict an enemy with a bog condition.",
+        desc = "Deal damage and have a chance to inflict an enemy with a bog condition. <i>{BEE}</i>.",
         icon = "RISE:textures/infest.png",
         
         cost = 1,
@@ -2532,7 +2512,7 @@ local CARDS =
     {
         name = "Conceal",
         anim = "taunt",
-        desc = "Gather your bog friends around to defend you, gain {1} {DEFEND}.  Gain {2} extra {DEFEND} and have a chance to gain a random buff for every bog monster in the fight.",
+        desc = "Gather your bog friends around to defend you, gain {1} {DEFEND}.  Gain {2} extra {DEFEND} and have a chance to gain a random buff for every bog monster in the fight. <i>{BEE}</i>.",
         icon = "RISE:textures/conceal.png",
         
         cost = 1,
@@ -2575,7 +2555,7 @@ local CARDS =
     {
         name = "Lifestealer",
         anim = "slash_up",
-        desc = "Deal damage and steal health equal to the damage dealt.",
+        desc = "Deal damage and steal health equal to the damage dealt. <i>{BEE}</i>.",
         icon = "RISE:textures/lifestealer.png",
         
         cost = 1,
@@ -2600,7 +2580,7 @@ local CARDS =
     {
         name = "Exhume",
         anim = "taunt",
-        desc = "Deal damage to all enemies and steal one of their buffs.",
+        desc = "Deal damage to all enemies and steal one of their buffs. <i>{BEE}</i>.",
         icon = "RISE:textures/exhume.png",
         
         cost = 1,
@@ -2630,7 +2610,7 @@ local CARDS =
     {
         name = "Reconstruction",
         anim = "taunt4",
-        desc = "Heal health to full then gain 99 stacks of a random debuff.",
+        desc = "Heal health to full then gain 99 stacks of a random debuff. <i>{BEE}</i>.",
         icon = "RISE:textures/reconstruction.png",
         
         cost = 1,
@@ -2650,7 +2630,7 @@ local CARDS =
     {
         name = "Gather Their Souls",
         anim = "taunt",
-        desc = "Steal a buff every turn then inflict a debuff to a random enemy.",
+        desc = "Steal a buff every turn then inflict a debuff to a random enemy. <i>{BEE}</i>.",
         icon = "RISE:textures/gathertheirsouls.png",
         
         cost = 1,
@@ -2667,7 +2647,7 @@ local CARDS =
     {
         name = "Nightmare Blade",
         anim = "spin_attack",
-        desc = "Incept a {NIGHTMARE} into an enemy, a {NIGHTMARE} inflicted enemy will take more damage from all sources and deal less damage.  All allies gain {TARGETED}.",
+        desc = "Incept a {NIGHTMARE} into an enemy, a {NIGHTMARE} inflicted enemy will take more damage from all sources and deal less damage.  All allies gain {TARGETED}. <i>{BEE}</i>.",
         -- icon = "RISE:textures/infestation.png",
         
         cost = 1,
@@ -2696,7 +2676,7 @@ local CARDS =
     {
         name = "Bog Regeneration",
         anim = "taunt",
-        desc = "Heal health equal to half the damage you took last turn.",
+        desc = "Heal health equal to half the damage you took last turn. <i>{BEE}</i>.",
         icon = "RISE:textures/bogregeneration.png",
         
         cost = 1,
@@ -2711,11 +2691,11 @@ local CARDS =
         end
     },
 
-    viral_outbreak = 
+    viral_outbreak = -- will crash if you don't have ONE WITH THE BOG unsurprisingly // due to damageTaken doesn't exist without it
     {
         name = "Viral Outbreak",
         anim = "slash_up",
-        desc = "Deal bonus damage equal to half the damage you took last turn then apply {PARASITIC_INFUSION} to an enemy, the stacks gained are equal to damage dealt to you last turn.",
+        desc = "Deal bonus damage equal to half the damage you took last turn then apply {PARASITIC_INFUSION} to an enemy, the stacks gained are equal to damage dealt to you last turn. <i>{BEE}</i>.",
         icon = "RISE:textures/viraloutbreak.png",
         
         cost = 1,
@@ -2757,7 +2737,7 @@ local CARDS =
     {
         name = "Evolve",
         anim = "taunt",
-        desc = "Evolve, gaining Regeneration and {DEFEND} per turn equal to 10% total damage dealt this fight. Add 10 to your damage dealt counter if you already have {EVOLUTION}.",
+        desc = "Evolve, gaining Regeneration and {DEFEND} per turn equal to 10% total damage dealt this fight. Add 10 to your damage dealt counter if you already have {EVOLUTION}. <i>{BEE}</i>.",
         icon = "RISE:textures/evolve.png",
         
         cost = 1,
@@ -2780,7 +2760,7 @@ local CARDS =
     {
         name = "Relentless Predator",
         anim = "spin_attack",
-        desc = "Gain 25% bonus damage on your attacks for every enemy slain, this counts for enemies that have already fallen.",
+        desc = "Gain 25% bonus damage on your attacks for every enemy slain, this counts for enemies that have already fallen. <i>{BEE}</i>.",
         icon = "RISE:textures/relentlesspredator.png",
 
         min_damage = 7,
@@ -2794,6 +2774,83 @@ local CARDS =
             self.owner:AddCondition("RELENTLESS_PREDATOR", 1, self)
         end,
     },
+
+    transform_bog_one = 
+    {
+        name = "Transform: The Bog One",
+        anim = "taunt3",
+        desc = "Transform in into the ultimate monstrocity, all of your non unique cards are expended and replaced with the all powerful bog cards!  (All non ability bog card <i>{BEE}</i>).",
+        icon = "negotiation/hyperactive.tex",
+
+        cost = 2,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.BURNOUT | CARD_FLAGS.AMBUSH,
+        rarity = CARD_RARITY.UNIQUE,
+        target_type = TARGET_TYPE.SELF,
+
+        bogCards =  {"infest", "conceal", "lifestealer", "exhume", "reconstruction", "gather_their_souls", "nightmare_blade", "bog_regeneration", "viral_outbreak", "evolve", "relentless_predator"},
+
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("ONE_WITH_THE_BOG", 1, self)
+
+            if battle:GetDrawDeck():CountCards() > 0  then
+                for i, card in battle:GetDrawDeck():Cards() do
+                    if card.rarity == CARD_RARITY.UNIQUE then -- basically doesn't throw away unique rarity cards; items, bog cards.
+                        
+                    else
+                        battle:ExpendCard(card)
+                        local bogCard = math.random(1,11)
+                        local card = Battle.Card( self.bogCards[bogCard], self.owner )
+                        battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
+                    end
+                end
+            end
+            if battle:GetDiscardDeck():CountCards() > 0 then
+                for i, card in battle:GetDiscardDeck():Cards() do
+                    if card.rarity == CARD_RARITY.UNIQUE then
+                       
+                    else
+                        battle:ExpendCard(card)
+                        local bogCard = math.random(1,11)
+                        local card = Battle.Card( self.bogCards[bogCard], self.owner )
+                        battle:DealCard( card, battle:GetDeck( DECK_TYPE.DISCARDS ) )
+                    end
+                end
+            end
+            if battle:GetHandDeck():CountCards() > 0 then
+                for i, card in battle:GetHandDeck():Cards() do
+                    if card.rarity == CARD_RARITY.UNIQUE then
+                       
+                    else
+                        battle:ExpendCard(card)
+                        local bogCard = math.random(1,11)
+                        local card = Battle.Card( self.bogCards[bogCard], self.owner )
+                        battle:DealCard( card, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+                    end
+                end
+            end
+        end,
+    }
+        -- blind_grenade = 
+    -- {
+    --     name = "Blinding Grenade",
+    --     anim = "throw1",
+    --     desc = "Have a small chance to blind all enemies.",
+    --     icon = "battle/lumin_grenade.tex",
+
+    --     flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
+    --     cost = 1,
+    --     rarity = CARD_RARITY.UNCOMMON,
+    --     max_xp = 6,
+    --     target_mod = TARGET_MOD.TEAM,
+
+    --     OnPostResolve = function( self, battle, attack)
+    --         local randomChance = math.random(1,4)
+    --         for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+    --             enemy:AddCondition("BLINDED", 1, self)
+    --             -- need to add random chance
+    --         end
+    --     end
+    -- },
 
         -- gravemind = 
     -- {
@@ -2931,6 +2988,19 @@ local CONDITIONS =
             
     --     -- end
     -- },
+    BOG_ABILITY = 
+    {
+        name = "Bog Ability", 
+        desc = "Bog Ability cards trigger {ONE_WITH_THE_BOG}.",
+    },
+
+    BEE = 
+    {
+        name = "Art made by Bee", 
+        desc = "This card art was designed and drawn by Bee. You can check Bee out at: ",
+     
+    },
+
     RELENTLESS_PREDATOR = 
     {
         name = "Relentless Predator", 
@@ -2938,6 +3008,8 @@ local CONDITIONS =
         icon = "battle/conditions/annihilation.tex",   
 
         ctype = CTYPE.BUFF,
+
+        max_stacks = 1,
 
         slainEnemies = 0,
 
@@ -2969,6 +3041,7 @@ local CONDITIONS =
         icon = "battle/conditions/blood_bind.tex",   
 
         ctype = CTYPE.BUFF,
+        max_stacks = 1,
 
         event_handlers = 
         {
