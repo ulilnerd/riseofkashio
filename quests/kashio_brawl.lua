@@ -202,6 +202,7 @@ data.MakeBrawlSchedule = function(data)
     local bs = BrawlSchedule()
     bs:SetCurrentHome("home_hq")
     bs:SetDifficulty(1)
+    
         :Merchants(data.merchant_list)
         :QuestPhase("starting_kashio")
         :Quest(table.remove(day_1_quests))
@@ -333,7 +334,7 @@ QDEF:AddConvo("starting_kashio")
                         !left
 						!palm
 					* Just another ordinary day working with the Spark Barons.
-					** Hello and welcome to the Kashio Battle Brawl Demo.
+					** Welcome to the Kashio Battle Brawl Demo.
 					** This is a highly work in progress project and nothing in the current build is final.
                     ** So far, the mod has 80+ battle cards that are made purely from curiosity and are not tested to be balanced and the cards may or may not flow well together.  Despite the high battle card count, this mod does not contain a single custom negotiation card.
                     ** As for as the brawl mode goes, it does have negotiation but is unnecessary to complete the brawl (ie, convince patron to help you fight a boss).  I've provided a few of Sal's basic cards to help with that.
@@ -376,7 +377,7 @@ QDEF:AddConvo("gift_from_fssh1", "bartender")
             DIALOG_INTRO = [[
                 agent:
                     !right 
-                    Hello Kashio, I've brought you a gift.
+                    Hello {player}, I've brought you a gift.
                 player:
                     !left
                     Thanks Fssh.
@@ -451,7 +452,7 @@ QDEF:AddConvo("gift_from_fssh1", "bartender")
                     DIALOG_INTRO = [[
                         agent:
                             !right 
-                            Hello Kashio, I've brought you a gift.
+                            Hello {player}, I've brought you a gift.
                         player:
                             !left
                             Thanks Fssh.
@@ -550,6 +551,7 @@ QDEF:AddConvo("gift_from_fssh1", "bartender")
                     StateGraphUtil.AddEndOption(cxt):Fn( function( cxt ) cxt.quest:Complete("gift_from_fssh2" ) end )
                 end)
 
+                
                 QDEF:AddObjective{
                     id = "strange_request",
                     desc = "",
@@ -563,13 +565,13 @@ QDEF:AddConvo("gift_from_fssh1", "bartender")
                             DIALOG_INTRO = [[
                                 agent:
                                     !right 
-                                    Psssst, hey you! Wanna try some good stuff?
+                                    Hey {player} I was doing a little snooping around the bar and this shady guy left this at one of the tables. I'm sure you'll have a use for it. 
                                 player:
                                     !left
                                     Uh I don't do drugs...
                                 agent:
                                     !right
-                                    Take it or leave it.
+                                    Me neither.
                             ]],
                             OPT_TRANSFORM = "Obtain {1#card}",
                         

@@ -2493,12 +2493,12 @@ local CARDS =
             elseif randomDebuff == 3 then
                 debuffStacks = math.round(attack.attacker:GetMaxHealth() * 0.50)
             elseif randomDebuff == 4 then
-                debuffStacks = math.round(attack.attacker:GetHealth())
+                debuffStacks = math.round(attack.attacker:GetHealth() * 0.80)
             end
            
             for i, hit in attack:Hits() do
                 if not attack:CheckHitResult( hit.target, "evaded" ) then
-                    if randomDebuff == 3 and hit.target:HasCondition("PARASITIC_INFUSION") then
+                    if hit.target:HasCondition("PARASITIC_INFUSION") or hit.target:HasCondition("CONTAMINATION") then
 
                     else
                         hit.target:AddCondition(debuffList[randomDebuff], debuffStacks, self)
@@ -2512,7 +2512,8 @@ local CARDS =
     {
         name = "Conceal",
         anim = "taunt",
-        desc = "Gather your bog friends around to defend you, gain {1} {DEFEND}.  Gain {2} extra {DEFEND} and have a chance to gain a random buff for every bog monster in the fight. <i>{BEE}</i>.",
+        desc = "Gather your bog friends around to defend you, gain 6-12 {DEFEND}. <i>{BEE}</i>.",
+        -- Gain {2} extra {DEFEND} and have a chance to gain a random buff for every bog monster in the fight
         icon = "RISE:textures/conceal.png",
         
         cost = 1,
@@ -2528,25 +2529,27 @@ local CARDS =
         extra_defend = 2,
 
         OnPostResolve = function( self, battle, attack)
-            local posPosConditions = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "METALLIC", "EVASION"}
-            local randomBuff = math.random(1,6)
-            local randomChance = math.random(1,2)
-            for i, ally in self.owner:GetTeam():Fighters() do 
-                if ally.id == "GROUT_KNUCKLE" or ally.id == "GROUT_EYE" then
-                    self.defend_amount = self.defend_amount + self.extra_defend
-                    if randomChance == 1 then
-                        self.owner:AddCondition(posPosConditions[randomBuff], 1, self)
-                    end
-                end
-            end
-            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-                if enemy.id == "GROUT_SPARK_MINE" then
-                    self.defend_amount = self.defend_amount + self.extra_defend
-                    if randomChance == 1 then
-                        self.owner:AddCondition(posPosConditions[randomBuff], 1, self)
-                    end
-                end
-            end
+            local randomDefend = math.random(6,12)
+            self.defend_amount = randomDefend
+            -- local posPosConditions = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "METALLIC", "EVASION"}
+            -- local randomBuff = math.random(1,6)
+            -- local randomChance = math.random(1,2)
+            -- for i, ally in self.owner:GetTeam():Fighters() do 
+            --     if ally.id == "GROUT_KNUCKLE" or ally.id == "GROUT_EYE" then
+            --         self.defend_amount = self.defend_amount + self.extra_defend
+            --         if randomChance == 1 then
+            --             self.owner:AddCondition(posPosConditions[randomBuff], 1, self)
+            --         end
+            --     end
+            -- end
+            -- for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+            --     if enemy.id == "GROUT_SPARK_MINE" then
+            --         self.defend_amount = self.defend_amount + self.extra_defend
+            --         if randomChance == 1 then
+            --             self.owner:AddCondition(posPosConditions[randomBuff], 1, self)
+            --         end
+            --     end
+            -- end
             self.owner:AddCondition("DEFEND", self.defend_amount, self)
         end
     },
@@ -2760,7 +2763,7 @@ local CARDS =
     {
         name = "Relentless Predator",
         anim = "spin_attack",
-        desc = "Gain 25% bonus damage on your attacks for every enemy slain, this counts for enemies that have already fallen. <i>{BEE}</i>.",
+        desc = "Gain {RELENTLESS_PREDATOR}. <i>{BEE}</i>.",
         icon = "RISE:textures/relentlesspredator.png",
 
         min_damage = 7,
@@ -3004,33 +3007,29 @@ local CONDITIONS =
     RELENTLESS_PREDATOR = 
     {
         name = "Relentless Predator", 
-        desc = "Gain 25% bonus damage on your attacks when you slay an enemy, this counts for enemies that have already fallen.",
+        desc = "Gain 1 bonus damage on your attacks for every 3 stacks of {RELENTLESS_PREDATOR}.",
         icon = "battle/conditions/annihilation.tex",   
 
         ctype = CTYPE.BUFF,
 
-        max_stacks = 1,
-
-        slainEnemies = 0,
-
-        OnApply = function( self, battle )
-            self.slainEnemies = self.owner:GetEnemyTeam():NumFighters() - self.owner:GetEnemyTeam():NumActiveFighters()
-        end,
+        damageAccumulated = 0,
 
         event_handlers = 
         {
             [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt, hit )
                 if card.owner == self.owner then
-                    if self.slainEnemies > 0 then
-                        dmgt:ModifyDamage( math.round( dmgt.min_damage + (self.slainEnemies * 0.25) ),
-                        math.round( dmgt.max_damage + (self.slainEnemies * 0.25) ),
-                        self )
-                    end
+                    dmgt:ModifyDamage(  dmgt.min_damage + math.floor(self.owner:GetConditionStacks("RELENTLESS_PREDATOR") / 3),
+                     dmgt.max_damage + math.floor(self.owner:GetConditionStacks("RELENTLESS_PREDATOR") / 3),
+                    self )
                 end
             end,
-            [ BATTLE_EVENT.CARD_MOVED ] = function( self, card, target )
-                self.slainEnemies = self.owner:GetEnemyTeam():NumFighters() - self.owner:GetEnemyTeam():NumActiveFighters()
-            end
+
+            -- [ BATTLE_EVENT.POST_RESOLVE ] = function( self, card, target, dmgt, hit )
+            --     local stacksDamage = math.round(self.owner:GetConditionStacks("RELENTLESS_PREDATOR") / 2)
+            --     if stacksDamage == 0 then
+            --         self.damageAccumulated = self.damageAccumulated + 1
+            --     end
+            -- end
         }  
     },
 
@@ -3048,7 +3047,7 @@ local CONDITIONS =
             [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, card, target, dmgt, hit )
                 self.owner:AddCondition("DEFEND", math.round(self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt / 10), self)
                 self.owner:HealHealth(math.round(self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt / 10), self)
-                if self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt >= 20 then
+                if self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt >= 100 then
                     self.owner:AddCondition("NEXT_TURN_ACTION", 1 , self)
                 end
             end
@@ -3116,12 +3115,15 @@ local CONDITIONS =
                 battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
                 for i=1, #target_fighter do
                     for i, condition in pairs(target_fighter[1]:GetConditions()) do
-                        self.owner:AddCondition(condition.id, 1, self)
-                        target_fighter[1]:RemoveCondition(condition.id, 1)
-                        target_fighter[1]:AddCondition(posConditions[randomCon], 1)
-                        self.owner:RemoveCondition("GATHER_THEIR_SOULS", 1, self)
+                        if condition.ctype == CTYPE.BUFF then
+                            self.owner:AddCondition(condition.id, 1, self)
+                            target_fighter[1]:RemoveCondition(condition.id, 1)
+                            target_fighter[1]:AddCondition(posConditions[randomCon], 1)
+                            break
+                        end
                     end
                 end
+                self.owner:RemoveCondition("GATHER_THEIR_SOULS", 1, self)
             end
         }
     },
@@ -3299,7 +3301,7 @@ local CONDITIONS =
         }
     },
 
-    EPIDEMIC = -- card draw bugged; shuffles too many viral sadism cards into your discards
+    EPIDEMIC = 
     {
         name = "The Epidemic", 
         desc = "Every turn, shuffle a Viral Sadism card into your discard pile for every enemy with this condition then have a chance to spread the virus to an ally.",
