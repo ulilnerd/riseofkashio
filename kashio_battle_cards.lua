@@ -2163,8 +2163,10 @@ local CARDS =
             [ BATTLE_EVENT.ON_HIT ] = function( self, card, hit ) 
                 local enemy_health = 0
                 if hit.target ~= self.owner then
-                    enemy_health = math.round(hit.target:GetMaxHealth() * 0.40)
-                    hit.target:AddCondition("PARASITIC_INFUSION", enemy_health)
+                    if not hit.target:HasCondition("PARASITIC_INFUSION") then
+                        enemy_health = math.round(hit.target:GetMaxHealth() * 0.40)
+                        hit.target:AddCondition("PARASITIC_INFUSION", enemy_health)
+                    end
                 end
             end
         }
@@ -2504,8 +2506,8 @@ local CARDS =
                 debuffStacks = 3
             elseif randomDebuff == 2 then
                 debuffStacks = math.random(3,10)
-                local randomNum = math.random(1,3)
-                local remoteCards = {"remote_expunge", "remote_blind", "remote_virus"}
+                local randomNum = math.random(1,2)
+                local remoteCards = {"remote_expunge", "remote_virus", "remote_blind"}
                 local card = Battle.Card( remoteCards[randomNum], self.owner )
                 card:TransferCard(battle:GetDrawDeck())
             elseif randomDebuff == 3 then
@@ -2516,7 +2518,11 @@ local CARDS =
            
             for i, hit in attack:Hits() do
                 if not attack:CheckHitResult( hit.target, "evaded" ) then
-                    hit.target:AddCondition(debuffList[randomDebuff], debuffStacks, self)
+                    if randomDebuff == 3 and hit.target:HasCondition("PARASITIC_INFUSION") then
+
+                    else
+                        hit.target:AddCondition(debuffList[randomDebuff], debuffStacks, self)
+                    end
                 end
             end
         end
@@ -2645,7 +2651,7 @@ local CARDS =
         name = "Gather Their Souls",
         anim = "taunt",
         desc = "Steal a buff every turn then inflict a debuff to a random enemy.",
-        -- icon = "RISE:textures/infestation.png",
+        icon = "RISE:textures/gathertheirsouls.png",
         
         cost = 1,
         flags =  CARD_FLAGS.SKILL,
@@ -2710,7 +2716,7 @@ local CARDS =
         name = "Viral Outbreak",
         anim = "slash_up",
         desc = "Deal bonus damage equal to half the damage you took last turn then apply {PARASITIC_INFUSION} to an enemy, the stacks gained are equal to damage dealt to you last turn.",
-        -- icon = "RISE:textures/infestation.png",
+        icon = "RISE:textures/viraloutbreak.png",
         
         cost = 1,
         flags =  CARD_FLAGS.MELEE,
@@ -2723,7 +2729,11 @@ local CARDS =
             for i, hit in attack:Hits() do
                 local target = hit.target
                 if not hit.evaded then 
-                    target:AddCondition("PARASITIC_INFUSION",self.owner:GetCondition("ONE_WITH_THE_BOG").damageTaken , self)
+                    if not target:HasCondition("PARASITIC_INFUSION") then
+                        if self.owner:GetCondition("ONE_WITH_THE_BOG").damageTaken > 0 then
+                            target:AddCondition("PARASITIC_INFUSION",self.owner:GetCondition("ONE_WITH_THE_BOG").damageTaken , self)
+                        end
+                    end
                 end
             end
         end,
