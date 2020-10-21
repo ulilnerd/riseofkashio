@@ -2191,7 +2191,7 @@ local CARDS =
             self.owner:AddCondition("ONE_WITH_THE_BOG", 1, self)
             for i, hit in attack:Hits() do
                 if not attack:CheckHitResult( hit.target, "evaded" ) and not hit.target:HasCondition("CONTAMINATION") then
-                    hit.target:AddCondition("CONTAMINATION", math.round(hit.target:GetHealth()) , self)
+                    hit.target:AddCondition("CONTAMINATION", math.round(hit.target:GetHealth() * 0.80) , self)
                 end
             end
         end
@@ -2491,9 +2491,9 @@ local CARDS =
                 local card = Battle.Card( remoteCards[randomNum], self.owner )
                 card:TransferCard(battle:GetDrawDeck())
             elseif randomDebuff == 3 then
-                debuffStacks = math.round(attack.attacker:GetMaxHealth() * 0.50)
+                debuffStacks = math.round(attack.attacker:GetMaxHealth() * 0.60)
             elseif randomDebuff == 4 then
-                debuffStacks = math.round(attack.attacker:GetHealth() * 0.80)
+                debuffStacks = math.round(attack.attacker:GetHealth() * 0.75)
             end
            
             for i, hit in attack:Hits() do
@@ -3285,12 +3285,12 @@ local CONDITIONS =
                     debuffStacks = math.random(3,10)
                     local randomNum = math.random(1,3)
                     local remoteCards = {"remote_expunge", "remote_blind", "remote_virus"}
-                    local card = Battle.Card( remoteCards[randomNum], self.owner )
+                    local card = Battle.Card( remoteCards[randomNum], battle:GetPlayerFighter()  )
                     card:TransferCard(battle:GetDrawDeck())
                 elseif randomDebuff == 3 then
                     debuffStacks = math.round(attack.attacker:GetMaxHealth() * 0.6)
                 elseif randomDebuff == 4 then
-                    debuffStacks = math.round(attack.attacker:GetHealth())
+                    debuffStacks = math.round(attack.attacker:GetHealth() * 0.80)
                 end
 
                 if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
@@ -3328,7 +3328,7 @@ local CONDITIONS =
                 end
                 if virusCount > 0 then
                     for i=1, virusCount, 1 do
-                        local card = Battle.Card( "viral_sadism", self.owner )
+                        local card = Battle.Card( "viral_sadism", battle:GetPlayerFighter() )
                         battle:DealCard( card, battle:GetDeck( DECK_TYPE.DISCARDS ) )
                         virusCount = 0
                     end
@@ -3418,7 +3418,7 @@ local CONDITIONS =
             [ BATTLE_EVENT.ON_HIT] = function(self, battle, attack, hit, target, fighter)
                 if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
                     self.owner:RemoveCondition( "CONTAMINATION", hit.damage )
-                    if self.owner:GetConditionStacks("CONTAMINATION") <= 1 then
+                    if self.owner:GetConditionStacks("CONTAMINATION") <= 1 or hit.damage >= self.owner:GetConditionStacks("CONTAMINATION") then
                         for i, ally in self.owner:GetTeam():Fighters() do
                             ally:AddCondition("CONTAMINATION", math.round(ally:GetHealth()))
                             ally:ApplyDamage( math.round(self.owner:GetMaxHealth() * 0.25), math.round(self.owner:GetMaxHealth() * 0.25), self)
@@ -3458,7 +3458,7 @@ local CONDITIONS =
             [ BATTLE_EVENT.ON_HIT] = function(self, battle, attack, hit, target, fighter)
                 if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
                     self.owner:RemoveCondition( "BLEEDING_EDGE", attack.card.max_damage )
-                    if self.owner:GetConditionStacks("BLEEDING_EDGE") <= 1 then
+                    if self.owner:GetConditionStacks("BLEEDING_EDGE") <= 1 or hit.damage >= self.owner:GetConditionStacks("BLEEDING_EDGE") then
                         self.owner:ApplyDamage( math.round(self.owner:GetMaxHealth() * 0.25), 10, self )
                         attack.attacker:HealHealth(math.round(self.owner:GetMaxHealth() * 0.25), self)
                     end
