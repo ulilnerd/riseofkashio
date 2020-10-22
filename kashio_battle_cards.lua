@@ -10,7 +10,7 @@ local CARDS =
     {
         name = "Smokescreen",
         anim = "throw2",
-        desc = "Gain {EVASION} then {IMPAIR} self.",
+        desc = "Gain {EVASION} and 2 {IMPAIR}.",
         icon = "RISE:textures/smokescreen.png",
 
         min_damage =  0,
@@ -28,13 +28,35 @@ local CARDS =
             self.owner:AddCondition("EVASION", self.evasion_amt, self)
         end
     },
+    improvise_smokescreen_upgraded = 
+    {
+        name = "Boosted Smokescreen",
+        anim = "throw2",
+        desc = "Gain {EVASION} and {IMPAIR} self.",
+        icon = "RISE:textures/smokescreen.png",
+
+        min_damage =  1,
+        max_damage =  1,
+        
+        rarity = CARD_RARITY.UNIQUE,
+        cost = 0,
+        flags = CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND, 
+        target_mod = TARGET_MOD.TEAM,
+        
+        evasion_amt = 1,
+
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("IMPAIR", 1 )
+            self.owner:AddCondition("EVASION", self.evasion_amt, self)
+        end
+    },
 
     improvise_rage = 
     {
         name = "Rage",
         anim = "taunt",
         target_type = TARGET_TYPE.SELF,
-        desc = "Gain {1} {POWER_LOSS} then {WOUND} self.",
+        desc = "Gain {1} {POWER_LOSS} and 2 {WOUND} .",
         icon = "RISE:textures/rage.png",
 
         rarity = CARD_RARITY.UNIQUE,
@@ -51,6 +73,28 @@ local CARDS =
             self.owner:AddCondition("POWER_LOSS", self.power_amt )
             self.owner:AddCondition("POWER", self.power_amt )
             self.owner:AddCondition("WOUND", self.wound_amt )
+        end
+    },
+    improvise_rage_upgraded = 
+    {
+        name = "Boosted Rage",
+        anim = "taunt",
+        target_type = TARGET_TYPE.SELF,
+        desc = "Gain {1} {POWER_LOSS}.",
+        icon = "RISE:textures/rage.png",
+
+        rarity = CARD_RARITY.UNIQUE,
+        cost = 0,
+        flags = CARD_FLAGS.SKILL| CARD_FLAGS.EXPEND,
+        power_amt = 2,
+
+        desc_fn = function(self, fmt_str)
+            return loc.format(fmt_str, self:CalculateDefendText( self.power_amt ))
+        end,
+
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("POWER_LOSS", self.power_amt )
+            self.owner:AddCondition("POWER", self.power_amt )
         end
     },
 
@@ -79,6 +123,31 @@ local CARDS =
             end
         end
     },
+    improvise_burningsmash_upgraded = 
+    {
+        name = "Boosted Burning Smash",
+        anim = "smash",
+        desc = "Apply {1} {BURN}.",
+        icon = "RISE:textures/burningsmash.png",
+
+        rarity = CARD_RARITY.UNIQUE,
+        cost = 0,
+        flags = CARD_FLAGS.EXPEND | CARD_FLAGS.MELEE,
+        burn_amount = 5,
+
+        desc_fn = function(self, fmt_str)
+            return loc.format(fmt_str, self:CalculateDefendText( self.burn_amount ))
+        end,
+        
+        OnPostResolve = function( self, battle, attack)
+            for i, hit in attack:Hits() do
+                local target = hit.target
+                if not hit.evaded then 
+                    target:AddCondition("BURN", self.burn_amount, self)
+                end
+            end
+        end
+    },
 
     improvise_invincible = 
     {
@@ -90,7 +159,6 @@ local CARDS =
         rarity = CARD_RARITY.UNIQUE,
         cost = 0,
         flags = CARD_FLAGS.EXPEND | CARD_FLAGS.SKILL,
-        burn_amount = 3,
         target_type = TARGET_TYPE.SELF,
 
         OnPostResolve = function( self, battle, attack)
@@ -98,6 +166,22 @@ local CARDS =
             if self.owner:HasCondition("INVINCIBLE") then
                 self.owner:AddCondition("DEFECT", self.owner:GetConditionStacks("INVINCIBLE") + 1)
             end
+        end,
+    },
+    improvise_invincible_upgraded = 
+    {
+        name = "Boosted Invincible",
+        anim = "taunt",
+        desc = "An attack from an enemy on you will deal 0 damage.",
+        icon = "battle/bring_it_on.tex",
+
+        rarity = CARD_RARITY.UNIQUE,
+        cost = 0,
+        flags = CARD_FLAGS.EXPEND | CARD_FLAGS.SKILL,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("INVINCIBLE", 1, self)
         end,
     },
 
@@ -125,6 +209,24 @@ local CARDS =
             end
         end
     },
+    improvise_weird_colored_flask_upgraded =
+    {
+        name = "Boosted Weird Colored Flask",
+        anim = "taunt",
+        desc = "Gain a random buff.",
+        icon = "battle/oshnu_bile.tex",
+
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+        cost = 0,
+        rarity = CARD_RARITY.UNIQUE,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPostResolve = function( self, battle, attack)
+            local posPosConditions = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "METALLIC", "EVASION"}
+            local randomNum = math.random(1,6)
+            self.owner:AddCondition(posPosConditions[randomNum], 1, self)
+        end
+    },
 
     improvise_drink = 
     {
@@ -148,6 +250,38 @@ local CARDS =
 
             local card2 = Battle.Card( drinkCards[randomCard2], self.owner )
             battle:DealCard( card2, battle:GetDeck( DECK_TYPE.DRAW ) )
+        end
+    },
+    improvise_drink_upgraded = 
+    {
+        name = "Boosted Hand Me A Drink",
+        anim = "taunt",
+        desc = "Shuffle 4 random drink cards into your deck.",
+        icon = "battle/slam.tex",
+
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+        cost = 0,
+        rarity = CARD_RARITY.UNIQUE,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPostResolve = function( self, battle, attack)
+            local drinkCards = {"green_flask", "red_flask", "purple_flask"}
+            local randomCard1 = math.random(1,3)
+            local randomCard2 = math.random(1,3)
+            local randomCard3 = math.random(1,3)
+            local randomCard4 = math.random(1,3)
+
+            local card1 = Battle.Card( drinkCards[randomCard1], self.owner )
+            battle:DealCard( card1, battle:GetDeck( DECK_TYPE.DRAW ) )
+
+            local card2 = Battle.Card( drinkCards[randomCard2], self.owner )
+            battle:DealCard( card2, battle:GetDeck( DECK_TYPE.DRAW ) )
+
+            local card3 = Battle.Card( drinkCards[randomCard3], self.owner )
+            battle:DealCard( card3, battle:GetDeck( DECK_TYPE.DRAW ) )
+
+            local card4 = Battle.Card( drinkCards[randomCard4], self.owner )
+            battle:DealCard( card4, battle:GetDeck( DECK_TYPE.DRAW ) )
         end
     },
     green_flask = 
@@ -261,7 +395,7 @@ local CARDS =
         flags = CARD_FLAGS.SKILL | CARD_FLAGS.CONSUME,
         features = 
         {
-            EVASION = 2,
+            EVASION = 3,
         }
     },
     dodge_and_compromise_plus4 = 
@@ -272,7 +406,7 @@ local CARDS =
         flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
         features = 
         {
-            EVASION = 1,
+            EVASION = 2,
         }
     },
     dodge_and_compromise_plus5 = 
@@ -282,6 +416,8 @@ local CARDS =
         manual_desc = true,
         OnPostResolve = function( self, battle, attack)
             battle:DrawCards(1)
+            self.owner:AddCondition("EVASION", 1, self)
+            self.owner:AddCondition("IMPAIR", self.impair_amount, self)
         end
     },
     dodge_and_compromise_plus6 = 
@@ -291,7 +427,7 @@ local CARDS =
         manual_desc = true,
         features = 
         {
-            TEMP_POWER = 1,
+            POWER_LOSS = 1,
             POWER = 1,
         }
     },
@@ -422,7 +558,7 @@ local CARDS =
         flags = CARD_FLAGS.MELEE,
         icon = "RISE:textures/flailsmash.png",
         min_damage = 2,
-        max_damage = 4,
+        max_damage = 3,
         anim = "smash",
         desc = "Deal damage then apply {1} {BURN}",
         burn_amount = 1,
@@ -803,6 +939,7 @@ local CARDS =
         flags = CARD_FLAGS.SKILL,
         cost = 1,
         has_checked = false,
+        max_xp = 6,
 
         pool_size = 3,
 
@@ -818,6 +955,18 @@ local CARDS =
             battle:ImproviseCards( cards, 1 )
             ReleaseWorkTable(cards)
         end
+    },
+    devise_plus =
+    {
+        name = "Promoted Devise",
+        desc = "{IMPROVISE} a card from a pool of <#UPGRADE>upgraded</> special cards.",
+        pool_cards = {"improvise_rage_upgraded", "improvise_burningsmash_upgraded", "improvise_smokescreen_upgraded", "improvise_invincible_upgraded", "improvise_weird_colored_flask_upgraded", "improvise_drink_upgraded" },
+    },
+    devise_plus2 =
+    {
+        name = "Boosted Devise",
+        desc = "{IMPROVISE} a card from a pool of <#UPGRADE>upgraded</> special cards.",
+        pool_size = 5,
     },
 
     quickdraw = 
@@ -893,7 +1042,7 @@ local CARDS =
     {
         name = "Spinning Slash",
         anim = "spin_attack",
-        desc = "{KINGPIN} 10: Deal bonus for every 5 {KINGPIN} stacks.",
+        desc = "{KINGPIN} 10: Deal bonus damage for every 5 {KINGPIN} stacks.",
         icon = "RISE:textures/spinningslash.png",
 
         min_damage = 4,
@@ -929,6 +1078,7 @@ local CARDS =
         rarity = CARD_RARITY.BASIC,
         flags = CARD_FLAGS.SKILL,
         target_type = TARGET_TYPE.SELF,
+        max_xp = 5,
 
         cost = 1,
 
