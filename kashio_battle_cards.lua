@@ -2847,11 +2847,11 @@ local CARDS =
         end
     },
 
-    remote_blind = -- WORK IN PROGRESS
+    remote_contaminate = 
     {
-        name = "Remote: Blind",
+        name = "Remote: Contaminate",
         anim = "taunt",
-        desc = "Enemies with {REMOTE_PLAGUE} will gain stacks of {BLINDED} depending on their stacks of {REMOTE_PLAGUE}.",
+        desc = "Enemies with {REMOTE_PLAGUE} spread a {CONTAMINATION} virus to all of their allies without {REMOTE_PLAGUE}.",
         icon = "battle/automech_access_code.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -2867,8 +2867,8 @@ local CARDS =
 
         OnPostResolve = function( self, battle, attack)
             for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-                if enemy:HasCondition("REMOTE_PLAGUE") then
-                    enemy:AddCondition("BLINDED", enemy:GetConditionStacks("REMOTE_PLAGUE"))
+                if not enemy:HasCondition("REMOTE_PLAGUE") then
+                    enemy:AddCondition("CONTAMINATION", math.round(enemy:GetHealth() * 0.80))
                 end
             end
         end
@@ -3421,8 +3421,8 @@ local CARDS =
                 end
             end
         end,
-    }
-        -- blind_grenade = 
+    },
+    --     blind_grenade = 
     -- {
     --     name = "Blinding Grenade",
     --     anim = "throw1",
@@ -3958,25 +3958,21 @@ local CONDITIONS =
          
     },
 
-    BLINDED = -- work in progress
-    {
-        name = "Blinded", 
-        desc = "This enemy is blinded and will miss their next attack and following attacks depending on the stacks of {BLINDED}. Remove one stack every attack.",
-        icon = "battle/conditions/lumin_burnt.tex",  
-        ctype = CTYPE.DEBUFF,
+    -- BLINDED = -- work in progress
+    -- {
+    --     name = "Blinded", 
+    --     desc = "This enemy is blinded and will miss their next attack and following attacks depending on the stacks of {BLINDED}. Remove one stack every attack.",
+    --     icon = "battle/conditions/lumin_burnt.tex",  
+    --     ctype = CTYPE.DEBUFF,
 
-        OnPreDamage = function( self, damage, attacker, battle, source )
-           
-        end,
 
-         
-    },
+    -- },
 
     REMOTE_PLAGUE = 
     {
         name = "Remotely Plagued", -- using an OnApply to give a remote card to you is bugged (use Remote Plague card instead)
         desc = "Shuffle a Plague Remote into your deck which will do certain effects depending on the remote.  Every turn reduce this condition by 1",
-        icon = "battle/conditions/acidic_slime.tex",  
+        icon = "battle/conditions/arterial_scanner.tex",  
 
         ctype = CTYPE.DEBUFF,
 
