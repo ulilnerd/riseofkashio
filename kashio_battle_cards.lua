@@ -232,6 +232,90 @@ local CARDS =
             self.owner:AddCondition("IMPAIR", self.impair_amount, self)
         end
     },
+    dodge_and_compromise_plus = 
+    {
+        name = "Dodge and Don't Compromise",
+        desc = "Gain {EVASION}.",
+        manual_desc = true,
+    
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("EVASION", 1, self)
+        end
+    },
+    dodge_and_compromise_plus2 = 
+    {
+        name = "Double Dodge and Compromise",
+        desc = "Gain <#UPGRADE>2</> {EVASION} and {IMPAIR}.",
+        manual_desc = true,
+    
+       features = 
+       {
+            EVASION = 1,
+       }
+    },
+    dodge_and_compromise_plus3 = 
+    {
+        name = "Dodge and Compromise of Clarity",
+        desc = "Gain <#UPGRADE>4</> {EVASION} and {IMPAIR} <#UPGRADE>{CONSUME}</>.",
+        manual_desc = true,
+        flags = CARD_FLAGS.SKILL | CARD_FLAGS.CONSUME,
+        features = 
+        {
+            EVASION = 2,
+        }
+    },
+    dodge_and_compromise_plus4 = 
+    {
+        name = "Dodge and Compromise of Lucidity",
+        desc = "Gain <#UPGRADE>3</> {EVASION} and {IMPAIR} <#UPGRADE>{EXPEND}</>.",
+        manual_desc = true,
+        flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+        features = 
+        {
+            EVASION = 1,
+        }
+    },
+    dodge_and_compromise_plus5 = 
+    {
+        name = "Dodge and Compromise of Vision",
+        desc = "Gain {EVASION} and {IMPAIR}. <#UPGRADE>Draw a card</>.",
+        manual_desc = true,
+        OnPostResolve = function( self, battle, attack)
+            battle:DrawCards(1)
+        end
+    },
+    dodge_and_compromise_plus6 = 
+    {
+        name = "Dodge and Compromise of Power",
+        desc = "Gain {EVASION}, {IMPAIR} and <#UPGRADE>{TEMP_POWER} </>.",
+        manual_desc = true,
+        features = 
+        {
+            TEMP_POWER = 1,
+            POWER = 1,
+        }
+    },
+    dodge_and_compromise_plus7 = 
+    {
+        name = "Spiked Dodge and Compromise",
+        desc = "Gain {EVASION}, {IMPAIR} and <#UPGRADE>3 {RIPOSTE} </>.",
+        manual_desc = true,
+        features = 
+        {
+            RIPOSTE = 3,
+        }
+    },
+    dodge_and_compromise_plus8 = 
+    {
+        name = "Dodge and Compromise of Health",
+        desc = "Gain {EVASION}, {IMPAIR} and <#UPGRADE>Heal for 2 health </>.",
+        manual_desc = true,
+        OnPostResolve = function( self, battle, attack )
+            self.owner:HealHealth(2, self)
+            self.owner:AddCondition("EVASION", 1, self)
+            self.owner:AddCondition("IMPAIR", self.impair_amount, self)
+        end,
+    },
 
     flail_crack = 
     {
@@ -254,26 +338,79 @@ local CARDS =
     },
     flail_crack_plus2 = 
     {
-        name = "Burning Flail Crack",
-        desc = "<#UPGRADE>Apply {1} {BURN}.</>",
-        desc_fn = function(self, fmt_str)
-            return loc.format(fmt_str, self:CalculateDefendText( self.features.BURN ))
-        end,
+        name = "Mirrored Flail Crack",
+        desc = "<#UPGRADE>Attack twice</>.",
+        hit_anim = true,
         manual_desc = true,
-        features = 
-        {
-            BURN = 1,
-        }
+        hit_count = 2,
     },
     flail_crack_plus3 = 
     {
         name = "Flail Crack of Clarity",
-        desc = "<#UPGRADE>{CONSUME}</>",
+        desc = "<#UPGRADE>{CONSUME}</>.",
         manual_desc = true,
         flags = CARD_FLAGS.MELEE | CARD_FLAGS.CONSUME,
         
-        min_damage = 7,
-        max_damage = 7,
+        min_damage = 8,
+        max_damage = 8,
+    },
+    flail_crack_plus4 = 
+    {
+        name = "Flail Crack of Lucidity",
+        desc = "<#UPGRADE>{EXPEND}</>.",
+        manual_desc = true,
+        flags = CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
+        
+        min_damage = 6,
+        max_damage = 6,
+    },
+    flail_crack_plus5 = 
+    {
+        name = "Flail Crack of Stone",
+        desc = "<#UPGRADE>Gain 2 {DEFEND}</>.",
+        manual_desc = true,
+        flags = CARD_FLAGS.MELEE,
+    
+        features = 
+        {
+            DEFEND = 2,
+        }
+    },
+    flail_crack_plus6 = 
+    {
+        name = "Flail Crack of Wounding",
+        desc = "<#UPGRADE>Apply 1 {WOUND}</>.",
+        manual_desc = true,
+        flags = CARD_FLAGS.MELEE,
+        features = 
+        {
+            WOUND = 1,
+        }
+    },
+    flail_crack_plus7 = 
+    {
+        name = "Flail Crack of Crippling",
+        desc = "<#UPGRADE>Apply 1 {IMPAIR}</>.",
+        manual_desc = true,
+        flags = CARD_FLAGS.MELEE,
+        features = 
+        {
+            IMPAIR = 1,
+        }
+    },
+    flail_crack_plus8 = 
+    {
+        name = "Flail Crack of Opportunity",
+        desc = "<#UPGRADE>Shuffle a random weapon card into your draw pile</>.",
+        manual_desc = true,
+        flags = CARD_FLAGS.MELEE,
+        OnPostResolve = function( self, battle, attack)
+            local weaponCards = {"flail_swap", "glaive_swap"}
+            local randomCard = math.random(1,2)
+            local card = Battle.Card( weaponCards[randomCard], self.owner )
+            battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
+        end
+        
     },
 
     flail_smash = 
@@ -294,7 +431,6 @@ local CARDS =
             return loc.format(fmt_str, self:CalculateDefendText( self.burn_amount ))
         end,
         
-
         OnPostResolve = function( self, battle, attack)
             for i, hit in attack:Hits() do
                 local target = hit.target
@@ -307,7 +443,7 @@ local CARDS =
     flail_smash_plus =
     {
         name = "Burning Flail Smash",
-        desc = "<#UPGRADE>Apply {1} {BURN}.</>",
+        desc = "Apply <#UPGRADE>{1}</> {BURN}.",
         desc_fn = function(self, fmt_str)
             return loc.format(fmt_str, self:CalculateDefendText( self.features.BURN ))
         end,
@@ -324,8 +460,74 @@ local CARDS =
         manual_desc = true,
         flags = CARD_FLAGS.MELEE | CARD_FLAGS.CONSUME,
         
+        min_damage = 8,
+        max_damage = 8,
+    },
+    flail_smash_plus3 =
+    {
+        name = "Flail Smash of Lucidity",
+        desc = "<#UPGRADE>{EXPEND}</>",
+        manual_desc = true,
+        flags = CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
+        
         min_damage = 6,
         max_damage = 6,
+    },
+    flail_smash_plus4 =
+    {
+        name = "Flail Smash of Stone",
+        desc = "<#UPGRADE>Gain 2 {DEFEND}</>",
+        manual_desc = true,
+        flags = CARD_FLAGS.MELEE,
+        
+       features = 
+       {
+        DEFEND = 2,
+       }
+    },
+    flail_smash_plus5 =
+    {
+        name = "Boosted Flail Smash",
+        flags = CARD_FLAGS.MELEE,
+        
+        min_damage = 3,
+        max_damage = 5,
+    },
+    flail_smash_plus6 =
+    {
+        name = "Flail Smash of Opportunity",
+        desc = "<#UPGRADE>Shuffle a random weapon card into your deck.</>",
+        manual_desc = true,
+        flags = CARD_FLAGS.MELEE,
+        
+        OnPostResolve = function( self, battle, attack)
+            local weaponCards = {"glaive_swap", "flail_swap"}
+            local randomCard = math.random(1,2)
+            local card = Battle.Card( weaponCards[randomCard], self.owner )
+            battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
+        end
+    },
+    flail_smash_plus7 =
+    {
+        name = "Spiked Flail Smash",
+        desc = "<#UPGRADE>Gain 3 {RIPOSTE}.</>",
+        manual_desc = true,
+        flags = CARD_FLAGS.MELEE,
+        
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("RIPOSTE", 3, self)
+        end
+    },
+    flail_smash_plus8 =
+    {
+        name = "Flail Smash of Vision",
+        desc = "<#UPGRADE>Draw a card.</>",
+        manual_desc = true,
+        flags = CARD_FLAGS.MELEE,
+        
+        OnPostResolve = function( self, battle, attack )
+            battle:DrawCards(1)
+        end,
     },
 
     flail_slam = 
@@ -357,21 +559,79 @@ local CARDS =
     flail_slam_plus = 
     {
         name = "Flail Slam of Crippling",
-        desc = "<#UPGRADE>Apply {WOUND} and {IMPAIR} then {WOUND} self</>.",   
+        desc = "Apply {WOUND} and <#UPGRADE>{IMPAIR}</> then {WOUND} self.",   
         manual_desc = true,
         features = 
         {
             IMPAIR = 1,
+            WOUND = 1,
         }
     },
     flail_slam_plus2 = 
     {
         name = "Boosted Flail Slam",
-        desc = "<#UPGRADE>Apply {WOUND} then {WOUND} self</>.",   
+        desc = "Apply {WOUND} then {WOUND} self.",   
         manual_desc = true,
         
         min_damage = 5,
         max_damage = 6,
+    },
+    flail_slam_plus3 = 
+    {
+        name = "Flail Slam of Wounding",
+        desc = "Apply <#UPGRADE>2</> {WOUND} then {WOUND} self.",   
+        manual_desc = true,
+
+        desc_fn = function(self, fmt_str)
+            return loc.format(fmt_str, self:CalculateDefendText( self.features.WOUND ))
+        end,
+
+        features = 
+        {
+            WOUND = 2,
+        }
+    },
+    flail_slam_plus4 = 
+    {
+        name = "Flail Slam of Lucidity",
+        desc = "Apply {WOUND} then {WOUND} self <#UPGRADE>{EXPEND}</>.",   
+        manual_desc = true,
+
+        flags = CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
+
+        min_damage = 8,
+        max_damage = 10,
+
+    },
+    flail_slam_plus5 = 
+    {
+        name = "Flail Slam of Vision",
+        desc = "Apply {WOUND} then {WOUND} self. <#UPGRADE>Draw a Card</>.",   
+        manual_desc = true,
+
+        flags = CARD_FLAGS.MELEE,
+
+        OnPostResolve = function( self, battle, attack )
+            battle:DrawCards(1)
+        end,
+    },
+    flail_slam_plus6 = 
+    {
+        name = "Flail Slam of Normalty",
+        desc = "<#UPGRADE>Apply {WOUND}</>.",   
+        manual_desc = true,
+
+        flags = CARD_FLAGS.MELEE,
+
+        OnPostResolve = function( self, battle, attack )
+            for i, hit in attack:Hits() do
+                local target = hit.target
+                if not hit.evaded then 
+                    -- target:AddCondition("IMPAIR", 1, self)
+                    target:AddCondition("WOUND", 1, self)
+                end
+            end
+        end,
     },
 
     safeguard = 
@@ -406,36 +666,130 @@ local CARDS =
     safeguard_plus = 
     {
         name = "Boosted Safeguard",
-        desc = "<#UPGRADE>Apply 6 {DEFEND} then equip {equip_flail}</>.",
+        desc = "Apply 6 {DEFEND} then <#UPGRADE>equip {equip_flail}</>.",
+        
+        manual_desc = true,
+
         desc_fn = function(self, fmt_str)
             return loc.format(fmt_str, self:CalculateDefendText( self.features.DEFEND ))
         end,    
-        manual_desc = true,
+
         features = 
         {
             DEFEND = 2,
         }
     },
-    -- safeguard_plus2 = 
-    -- {
-    --     name = "Offensive Safeguard",
-    --     desc = "<#UPGRADE>Apply {1} {DEFEND} then equip {equip_glaive}</>.",
-            
-    --     manual_desc = true,
-    --     equip_flail = 0,
+    safeguard_plus2 = 
+    {
+        name = "Safeguard of Opportunity",
+        desc = "Apply 4 {DEFEND} then <#UPGRADE>equip {equip_glaive}</>.",
+        manual_desc = true,
+        anim = "transition1",
 
-    --     desc_fn = function(self, fmt_str)
-    --         return loc.format(fmt_str, self:CalculateDefendText( self.features.DEFEND ))
-    --     end,
+        OnPostResolve = function( self, battle, attack )
+            attack:AddCondition( "DEFEND", self.defend_amount, self )
+            self.owner:AddCondition("equip_glaive", 1, self)
+        end,
 
-    --     OnPostResolve = function( self, battle, attack )
-    --         self.owner:AddCondition("equip_glaive", 1, self)
-    --     end,
+        PostPresAnim = function( self, anim_fighter )
+            anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
+        end
+    },
+    safeguard_plus3 = 
+    {
+        name = "Safeguard of Clarity",
+        desc = "Apply <#UPGRADE>10</> {DEFEND} and gain {equip_flail}. <#UPGRADE>{CONSUME}</>.",
+        flags = CARD_FLAGS.SKILL | CARD_FLAGS.CONSUME,
 
-    --     PostPresAnim = function( self, anim_fighter )
-    --         anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
-    --     end
-    -- },
+        manual_desc = true,
+
+        features = 
+        {
+            DEFEND = 6,
+        }
+    },
+    safeguard_plus4 = 
+    {
+        name = "Safeguard of Lucidity",
+        desc = "Apply <#UPGRADE>8</> {DEFEND} and gain {equip_flail}. <#UPGRADE>{EXPEND}</>.",
+        flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+
+        manual_desc = true,
+
+        features = 
+        {
+            DEFEND = 4,
+        }
+    },
+    safeguard_plus5 = 
+    {
+        name = "Safeguard of Vision",
+        desc = "Apply 6 {DEFEND}. <#UPGRADE>Draw a card</> and gain {equip_flail}.",
+        flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+
+        manual_desc = true,
+
+        OnPostResolve = function( self, battle, attack )
+            attack:AddCondition( "DEFEND", self.defend_amount, self )
+            battle:DrawCards(1)
+        end,
+    },
+    safeguard_plus5 = 
+    {
+        name = "Spiked Safeguard",
+        desc = "Apply 4 {DEFEND}. <#UPGRADE>Gain 2 {RIPOSTE}</> and gain {equip_flail}.",
+        flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+
+        manual_desc = true,
+
+        OnPostResolve = function( self, battle, attack )
+            self.owner:AddCondition("RIPOSTE", 2, self)
+        end,
+    },
+    safeguard_plus6 = 
+    {
+        name = "Safeguard of Hesh",
+        desc = "Apply {1} {DEFEND}.\n<#UPGRADE>Remove a random debuff and gain {equip_flail}</>.",
+        flags = CARD_FLAGS.SKILL,
+
+        OnPostResolve = function( self, battle, attack )
+            attack.target:AddCondition("DEFEND", self.defend_amount, self)
+            attack.target:RemoveDebuff()
+        end,
+    },
+    safeguard_plus7 = 
+    {
+        name = "Safeguard of Variety",
+        desc = "Apply {1} {DEFEND}.\n<#UPGRADE>Shuffle a random weapon card into your draw pile and gain {equip_flail}</>.",
+        flags = CARD_FLAGS.SKILL,
+
+        OnPostResolve = function( self, battle, attack )
+            attack:AddCondition( "DEFEND", self.defend_amount, self )
+            local weaponCards = {"glaive_swap", "flail_swap"}
+            local randomCard = math.random(1,2)
+            local card = Battle.Card( weaponCards[randomCard], self.owner )
+            battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
+        end,
+    },
+    safeguard_plus8 = 
+    {
+        name = "Safeguard of Wealth",
+        desc = "Apply {1} {DEFEND}.\n<#UPGRADE>Shuffle 2 drink cards into your draw pile and gain {equip_flail}</>.",
+        flags = CARD_FLAGS.SKILL,
+
+        OnPostResolve = function( self, battle, attack )
+            attack:AddCondition( "DEFEND", self.defend_amount, self )
+            local drinkCards = {"green_flask", "red_flask", "purple_flask"}
+            local randomCard1 = math.random(1,3)
+            local randomCard2 = math.random(1,3)
+
+            local card1 = Battle.Card( drinkCards[randomCard1], self.owner )
+            battle:DealCard( card1, battle:GetDeck( DECK_TYPE.DRAW ) )
+
+            local card2 = Battle.Card( drinkCards[randomCard2], self.owner )
+            battle:DealCard( card2, battle:GetDeck( DECK_TYPE.DRAW ) )
+        end,
+    },
 
     devise = 
     {
@@ -584,6 +938,83 @@ local CARDS =
                 Battle.Card( "glaive_swap", self.owner ),
             }
             battle:ChooseCardsForHand( cards )
+        end,
+    },
+    swap_weapon_plus = 
+    {
+        name = "Weapon Swap of Opportunity",
+        desc = "<#UPGRADE>Shuffle 4 random weapon swap cards into your draw or discard pile</>.",
+       
+        OnPostResolve = function( self, battle, attack )
+            local cards = {"glaive_swap", "flail_swap"}
+            local deckType = { "DISCARDS", "DRAW" }
+            for i=1,4,1 do
+                local randomCard = math.random(1,2)
+                local randomDeck = math.random(1,2)
+                local card = Battle.Card( cards[randomCard], self.owner )
+                battle:DealCard( card, battle:GetDeck( deckType[randomDeck] ) )
+            end
+        end,
+    },
+    swap_weapon_plus2 = 
+    {
+        name = "Weapon Swap of Precision",
+        desc = "Insert {flail_swap} or {glaive_swap} into your hand then <#UPGRADE>shuffle the opposite weapon card you have equipped to your draw pile</>.",
+       
+        OnPostResolve = function( self, battle, attack )
+            local cards = {
+                Battle.Card( "flail_swap", self.owner ),
+                Battle.Card( "glaive_swap", self.owner ),
+            }
+            battle:ChooseCardsForHand( cards )
+            if self.owner:HasCondition("equip_glaive") then
+                local card = Battle.Card( "flail_swap", self.owner )
+                battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
+            elseif self.owner:HasCondition("equip_flail") then 
+                local card = Battle.Card( "glaive_swap", self.owner )
+                battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
+            end
+        end,
+    },
+    swap_weapon_plus3 = 
+    {
+        name = "Weapon Swap of the Gods",
+        desc = "<#UPGRADE>Swap to the next weapon, then shuffle 2 weapon cards of the same weapon you were using</>.",
+
+        PostPresAnim = function( self, anim_fighter )
+            if self.owner:HasCondition("equip_flail") then
+                anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
+            elseif self.owner:HasCondition("equip_glaive") then
+                anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_flail)
+            end
+        end,
+       
+        OnPostResolve = function( self, battle, attack )
+            if self.owner:HasCondition("equip_glaive") then
+                self.owner:AddCondition("equip_flail", 1, self)
+                for i=1,2,1 do
+                    local card = Battle.Card( "glaive_swap", self.owner )
+                    battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
+                end
+            elseif self.owner:HasCondition("equip_flail") then
+                self.owner:AddCondition("equip_glaive", 1, self)
+                for i=1,2,1 do
+                    local card = Battle.Card( "flail_swap", self.owner )
+                    battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
+                end
+            end
+
+        end,
+    },
+    swap_weapon_plus4 = 
+    {
+        name = "Glory to Rentoria",
+        desc = "<#UPGRADE>Gain 5 {KINGPIN} and 5 {DEFEND}</>.",
+        icon = "battle/assassins_mark.tex",
+
+        OnPostResolve = function( self, battle, attack )
+            self.owner:AddCondition("KINGPIN", 5, self)
+            self.owner:AddCondition("DEFEND", 5, self)
         end,
     },
 
