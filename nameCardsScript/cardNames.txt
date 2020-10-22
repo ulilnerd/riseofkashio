@@ -101,9 +101,12 @@ name = "Bog Regeneration" ,
 name = "Viral Outbreak" ,
 name = "Evolve" ,
 name = "Relentless Predator" ,
+name = "Transform: The Bog One" ,
 
 CONDITIONS
 ,
+name = "Bog Ability" ,
+name = "Art made by Bee" ,
 name = "Relentless Predator" ,
 name = "Evolution" ,
 name = "NIGHTMARE" ,

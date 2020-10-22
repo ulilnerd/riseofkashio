@@ -501,33 +501,35 @@ local CARDS =
     {
         name = "Slice Up",
         anim = "slash_up",
-        desc = "Slice an enemy inflicting {1} {BLEED} and  {1} {BURN}.",
+        desc = "{KINGPIN} 10: Apply random debuffs, random stacks of the debuff and a random amount of debuffs to enemies.",
         icon = "RISE:textures/sliceup1.png",
         
         min_damage = 5,
         max_damage = 7,
-        cost = 2,
+        cost = 1,
         max_xp = 6,
         flags = CARD_FLAGS.MELEE,
         rarity = CARD_RARITY.UNCOMMON,
 
-        bleed_amount = 4,
-        burn_amount = 4,
-
-        desc_fn = function(self, fmt_str)
-            return loc.format(fmt_str, self:CalculateDefendText( self.bleed_amount ))
-        end,
-
-        desc_fn = function(self, fmt_str)
-            return loc.format(fmt_str, self:CalculateDefendText( self.burn_amount ))
-        end,
+        -- desc_fn = function(self, fmt_str)
+        --     return loc.format(fmt_str, self:CalculateDefendText( self.bleed_amount ))
+        -- end,
 
         OnPostResolve = function( self, battle, attack)
-            for i, hit in attack:Hits() do
-                local target = hit.target
-                if not hit.evaded then 
-                    target:AddCondition("BURN", self.burn_amount, self)
-                    target:AddCondition("BLEED", self.bleed_amount, self)
+            if self.owner:HasCondition("KINGPIN") then
+                if self.owner:GetConditionStacks("KINGPIN") >= 10 then
+                    local randomDebuffList = {"SHATTER", "EXPOSED", "TARGETED", "WOUND", "DEFECT", "IMPAIR", "BLEED"}
+                    local amountOfDebuffs = math.random(1,3)
+                    for i, hit in attack:Hits() do
+                        local target = hit.target
+                        if not hit.evaded then 
+                            for i=1, amountOfDebuffs, 1 do
+                                local randomDebuff = math.random(1,7)
+                                local randomStacks = math.random(1,3)
+                                target:AddCondition(randomDebuffList[randomDebuff], randomStacks, self)
+                            end
+                        end
+                    end
                 end
             end
         end
@@ -537,7 +539,7 @@ local CARDS =
     {
         name = "Spinning Slash",
         anim = "spin_attack",
-        desc = "Deal bonus damage equal to the number of stacks of {BLEED} and {BURN}.",
+        desc = "{KINGPIN} 10: Deal bonus for every 5 {KINGPIN} stacks.",
         icon = "RISE:textures/spinningslash.png",
 
         min_damage = 4,
@@ -548,13 +550,19 @@ local CARDS =
         rarity = CARD_RARITY.UNCOMMON,
         bonus_damage = 1,
 
-        OnPostResolve = function( self, battle, attack)
-            for i, hit in attack:Hits() do
-                if not attack:CheckHitResult( hit.target, "evaded" ) then
-                    hit.target:ApplyDamage( hit.target:GetConditionStacks("BLEED") + hit.target:GetConditionStacks("BURN"), attack.attacker, hit, self.piercing )
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                if card == self then
+                    if self.owner:HasCondition("KINGPIN") then
+                        if self.owner:GetConditionStacks("KINGPIN") >= 10 then
+                            dmgt:AddDamage(math.floor(self.owner:GetConditionStacks("KINGPIN") / 5), math.floor(self.owner:GetConditionStacks("KINGPIN") / 5), self)
+                        end
+                    end
                 end
             end
-        end,
+        }
+        
     },
 
     swap_weapon = 
@@ -2698,7 +2706,7 @@ local CARDS =
     {
         name = "Viral Outbreak",
         anim = "slash_up",
-        desc = "Deal bonus damage equal to half the damage you took last turn then apply {PARASITIC_INFUSION} to an enemy, the stacks gained are equal to damage dealt to you last turn. <i>{BEE}</i>.",
+        desc = "Deal bonus damage equal to 10% of the total damage you took then apply {PARASITIC_INFUSION} to an enemy, the stacks gained are equal to half the total damage you took. <i>{BEE}</i>.",
         icon = "RISE:textures/viraloutbreak.png",
         
         cost = 1,
@@ -2714,7 +2722,7 @@ local CARDS =
                 if not hit.evaded then 
                     if not target:HasCondition("PARASITIC_INFUSION") then
                         if self.owner:GetCondition("ONE_WITH_THE_BOG").damageTaken > 0 then
-                            target:AddCondition("PARASITIC_INFUSION",self.owner:GetCondition("ONE_WITH_THE_BOG").damageTaken , self)
+                            target:AddCondition("PARASITIC_INFUSION",self.owner:GetCondition("ONE_WITH_THE_BOG").damageTaken, self)
                         end
                     end
                 end
@@ -2724,10 +2732,10 @@ local CARDS =
         event_handlers = 
         {
             [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt, hit )
-                if card.owner == self.owner then
+                if card.owner == self.owner and card == self then
                     if self.owner:HasCondition("ONE_WITH_THE_BOG") then
-                        dmgt:AddDamage(  self.owner:GetCondition("ONE_WITH_THE_BOG").damageTaken,
-                                            self.owner:GetCondition("ONE_WITH_THE_BOG").damageTaken,
+                        dmgt:AddDamage(  math.round(self.owner:GetCondition("ONE_WITH_THE_BOG").damageTaken / 10),
+                                            math.round(self.owner:GetCondition("ONE_WITH_THE_BOG").damageTaken / 10),
                                         self )
                     end
                 end
@@ -3000,7 +3008,7 @@ local CONDITIONS =
     BEE = 
     {
         name = "Art made by Bee", 
-        desc = "This card art was designed and drawn by Bee. You can check Bee out at: ",
+        desc = "This card art was designed and drawn by Bee. You can check Bee out at: https://twitter.com/OneTinyBeeDraws",
      
     },
 
@@ -3209,7 +3217,7 @@ local CONDITIONS =
             end,
             -- have a chance to gain bog abilities every turn, free until played.
             [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, attack, hit )
-                -- self.damageTaken = 0
+                
                 local randomCard = math.random(1,6)
                 local randomChance = math.random(1,2)
                 if randomChance == 1 then
@@ -3486,11 +3494,13 @@ local CONDITIONS =
                         local fighter = Fighter.CreateFromAgent( sparkMine, battle:GetScenario():GetAllyScale() )
                         self.owner:GetTeam():AddFighter( fighter )
                         self.owner:GetTeam():ActivateNewFighters()
+                        self.owner:RemoveCondition("PARASITIC_INFUSION", self.owner:GetConditionStacks("PARASITIC_INFUSION"),self)
                     elseif self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 1 or hit.damage > self.owner:GetConditionStacks("PARASITIC_INFUSION") and randomNum == 2 then
                         local groutKnuckle = Agent( "GROUT_KNUCKLE" )
                         local fighter = Fighter.CreateFromAgent( groutKnuckle, battle:GetScenario():GetAllyScale() )
                         self.owner:GetEnemyTeam():AddFighter( fighter )
                         self.owner:GetEnemyTeam():ActivateNewFighters()
+                        self.owner:RemoveCondition("PARASITIC_INFUSION", self.owner:GetConditionStacks("PARASITIC_INFUSION"),self)
                     end
                     -- elseif self.owner:GetConditionStacks("PARASITIC_INFUSION") <= 1 or hit.damage > self.owner:GetConditionStacks("PARASITIC_INFUSION") and randomNum == 3 then
                     --     local groutEye = Agent( "GROUT_EYE" )
