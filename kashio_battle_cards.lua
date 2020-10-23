@@ -153,7 +153,7 @@ local CARDS =
     {
         name = "Invincible",
         anim = "taunt",
-        desc = "An attack from an enemy on you will deal 0 damage, Gain 2 {DEFECT}.",
+        desc = "An attack from an enemy on you will deal 0 damage, Gain {DEFECT}.",
         icon = "battle/bring_it_on.tex",
 
         rarity = CARD_RARITY.UNIQUE,
@@ -164,7 +164,7 @@ local CARDS =
         OnPostResolve = function( self, battle, attack)
             self.owner:AddCondition("INVINCIBLE", 1, self)
             if self.owner:HasCondition("INVINCIBLE") then
-                self.owner:AddCondition("DEFECT", self.owner:GetConditionStacks("INVINCIBLE") + 1)
+                self.owner:AddCondition("DEFECT", 1)
             end
         end,
     },
@@ -3432,20 +3432,100 @@ local CARDS =
         icon = "battle/bog_scimitar.tex",
 
         cost = 1,
-        flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
+        flags =  CARD_FLAGS.MELEE,
         rarity = CARD_RARITY.RARE,
        
         min_damage = 5,
         max_damage = 9,
 
         OnPostResolve = function( self, battle, attack)
-            self.owner:AddCondition("INFINITY_BLADE", 1, self)
-            
             local card1 = Battle.Card( "flail_swap", self.owner )
             battle:DealCard( card1, battle:GetDeck( DECK_TYPE.IN_HAND ) )
 
             local card2 = Battle.Card( "glaive_swap", self.owner )
             battle:DealCard( card2, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+
+            if not self.owner:HasCondition("INFINITY_BLADE") then
+                self.owner:AddCondition("INFINITY_BLADE", 1, self)
+            end
+        end
+    },
+
+    extreme_focus = 
+    {
+        name = "Extreme Focus",
+        anim = "slash_up",
+        desc = "Gain {EXTREME_FOCUS}. Place both weapon cards into your hand.",
+        icon = "battle/rain_of_blades.tex",
+
+        cost = 1,
+        flags =  CARD_FLAGS.MELEE,
+        rarity = CARD_RARITY.UNCOMMON,
+       
+        min_damage = 4,
+        max_damage = 6,
+
+        OnPostResolve = function( self, battle, attack)
+            local card1 = Battle.Card( "flail_swap", self.owner )
+            battle:DealCard( card1, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+
+            local card2 = Battle.Card( "glaive_swap", self.owner )
+            battle:DealCard( card2, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+
+            if not self.owner:HasCondition("EXTREME_FOCUS") then
+                self.owner:AddCondition("EXTREME_FOCUS", 1, self)
+            end
+        end
+    },
+
+    weapon_swap_proficiency = 
+    {
+        name = "Weapon Swap Proficiency",
+        anim = "slash_up",
+        desc = "Gain 1 {EVASION}. Swapping weapons with {glaive_swap} or {flail_swap} gives you instant buffs. Shuffle 2 random weapon cards to your deck.",
+        icon = "battle/utility_belt.tex",
+
+        cost = 1,
+        flags =  CARD_FLAGS.SKILL,
+        rarity = CARD_RARITY.UNCOMMON,
+        target_type = TARGET_TYPE.SELF,
+       
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("EVASION", 1, self)
+
+            local weaponCards = {"flail_swap", "glaive_swap"}
+            local randomCard1 = math.random(1,2)
+            local randomCard2 = math.random(1,2)
+
+            local card1 = Battle.Card( weaponCards[randomCard1], self.owner )
+            battle:DealCard( card1, battle:GetDeck( DECK_TYPE.DRAW ) )
+
+            local card2 = Battle.Card( weaponCards[randomCard2], self.owner )
+            battle:DealCard( card2, battle:GetDeck( DECK_TYPE.DRAW ) )
+
+            if not self.owner:HasCondition("WEAPON_SWAP_PROFICIENCY") then
+                self.owner:AddCondition("WEAPON_SWAP_PROFICIENCY", 1, self)
+            end
+        end
+    },
+
+    prepared_circumstances = 
+    {
+        name = "Prepared Circumstances",
+        anim = "taunt",
+        desc = "Gain 7 {DEFEND}. Every turn, place {glaive_swap} and {flail_swap} to your hand.",
+        icon = "battle/battle_plan.tex",
+
+        cost = 1,
+        flags =  CARD_FLAGS.SKILL,
+        rarity = CARD_RARITY.UNCOMMON,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("DEFEND", 7 , self)
+            if not self.owner:HasCondition("PREPARED_CIRCUMSTANCES") then
+                self.owner:AddCondition("PREPARED_CIRCUMSTANCES", 1, self)
+            end
         end
     },
     --     blind_grenade = 
@@ -3619,6 +3699,116 @@ local CONDITIONS =
      
     },
 
+    WEAPON_SWAP_PROFICIENCY = 
+    {
+        name = "Weapon Swap Proficiency", 
+        desc = "Swapping weapons with {glaive_swap} or {flail_swap} gives you instant buffs.",
+        icon = "battle/conditions/steady_hands.tex",   
+        ctype = CTYPE.BUFF,
+        
+        event_handlers =
+        {
+            [ BATTLE_EVENT.CARD_MOVED ] = function( self, battle, attack, hit )
+                if self.owner:HasCondition("equip_flail") then
+                    self.flailCount = 1
+                end
+                if self.owner:HasCondition("equip_glaive") then
+                   self.glaiveCount = 1
+                end
+                if self.flailCount == 1 and self.glaiveCount == 1 then
+                    self.flailCount = 0
+                    self.glaiveCount = 0
+                    local randomCon = math.random(1,7)
+                    local positiveConditions = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "EVASION", "DEFEND", "MENDING"}
+                    self.owner:AddCondition(positiveConditions[randomCon], 2, self)
+                    if randomCon == 1 then
+                        self.owner:AddCondition("POWER_LOSS", 2, self)
+                    end
+                end
+            end,
+        }
+    },
+
+    PREPARED_CIRCUMSTANCES = 
+    {
+        name = "Prepared Circumstances", 
+        desc = "Every turn, place {glaive_swap} and {flail_swap} to your hand.",
+        icon = "battle/conditions/resonance.tex",   
+        ctype = CTYPE.BUFF,
+        
+        max_stacks = 1,
+
+        event_handlers =
+        {
+            [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, attack, hit )
+                local card1 = Battle.Card( "flail_swap", self.owner )
+                battle:DealCard( card1, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+    
+                local card2 = Battle.Card( "glaive_swap", self.owner )
+                battle:DealCard( card2, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+            end,
+        }
+    },
+
+    EXTREME_FOCUS = 
+    {
+        name = "Extreme Focus", 
+        desc = "Every time you swap weapons after an attack, gain a 0 cost attack card.",
+        icon = "battle/conditions/focus.tex",   
+
+        flailCount = 0,
+        glaiveCount = 0,
+        attackCounter = 0,
+        firstHit = false,
+        ctype = CTYPE.BUFF,
+      
+        max_stacks = 1,
+
+        OnApply = function( self, battle )
+            if self.owner:HasCondition("equip_flail") then
+                self.flailCount = 1
+            end
+            if self.owner:HasCondition("equip_glaive") then
+               self.glaiveCount = 1
+            end
+        end,
+
+        event_handlers =
+        {
+            [ BATTLE_EVENT.CARD_MOVED ] = function( self, battle, attack, hit )
+                if self.owner:HasCondition("equip_flail") then
+                    self.flailCount = 1
+                end
+                if self.owner:HasCondition("equip_glaive") then
+                   self.glaiveCount = 1
+                end
+            end,
+
+            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack, hit, fighter )
+                if self.firstHit == true and self.flailCount == 1 and self.glaiveCount == 1 then
+                    local randomCard = math.random(1,5)
+                    local cards = {"slicer", "dicer", "flurry_dagger", "red_flask", "burning_smash_upgraded"}
+                    local card = Battle.Card( cards[randomCard], self.owner )
+                    battle:DealCard( card, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+
+                    if self.owner:HasCondition("equip_glaive") then
+                        self.flailCount = 0
+                    end
+                    if self.owner:HasCondition("equip_flail") then
+                        self.glaiveCount = 0
+                    end
+                    self.firstHit = false
+                end
+            end,
+
+            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
+                if attack.attacker == self.owner then
+                    self.firstHit = true
+                end
+            end,
+        }
+    },
+
     INFINITY_BLADE = 
     {
         name = "Infinity Blade", 
@@ -3654,16 +3844,16 @@ local CONDITIONS =
 
             [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack, hit, fighter )
                 if self.firstHit == true and self.flailCount == 1 and self.glaiveCount == 1 then
+                    
                 --    self.actionCount = self.actionCount + 1
-                    self.battle:ModifyActionCount( 1 )
-                    self.owner:AddCondition("BLEED", 1, self)
-                        
+                    self.battle:ModifyActionCount( 1 )  
                     if self.owner:HasCondition("equip_glaive") then
                         self.flailCount = 0
                     end
                     if self.owner:HasCondition("equip_flail") then
                         self.glaiveCount = 0
                     end
+                    self.firstHit = false
                 end
             end,
 
