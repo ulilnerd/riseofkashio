@@ -3218,7 +3218,7 @@ local CARDS =
         name = "Nightmare Blade",
         anim = "spin_attack",
         desc = "Incept a {NIGHTMARE} into an enemy, a {NIGHTMARE} inflicted enemy will take more damage from all sources and deal less damage.  All allies gain {TARGETED}. <i>{BEE}</i>.",
-        -- icon = "RISE:textures/infestation.png",
+        icon = "RISE:textures/nightmareblade.png",
         
         cost = 1,
         flags =  CARD_FLAGS.MELEE,
@@ -3349,7 +3349,7 @@ local CARDS =
     {
         name = "Transform: The Bog One",
         anim = "taunt3",
-        desc = "Transform in into the ultimate monstrocity, all of your non unique cards are expended and replaced with the all powerful bog cards!  (All non ability bog card <i>{BEE}</i>).",
+        desc = "Transform in into the ultimate monstrocity, all of your non unique cards are expended and replaced with the all powerful bog cards! {BOG_ABILITY}.",
         icon = "negotiation/hyperactive.tex",
 
         cost = 2,
