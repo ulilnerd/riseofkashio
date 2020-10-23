@@ -965,7 +965,7 @@ local CARDS =
     devise_plus2 =
     {
         name = "Boosted Devise",
-        desc = "{IMPROVISE} a card from a pool of <#UPGRADE>upgraded</> special cards.",
+        desc = "<#UPGRADE>{IMPROVISE_PLUS}</> a card from a pool of special cards.",
         pool_size = 5,
     },
 
@@ -1129,32 +1129,9 @@ local CARDS =
     swap_weapon_plus3 = 
     {
         name = "Weapon Swap of the Gods",
-        desc = "<#UPGRADE>Swap to the next weapon, then shuffle 2 weapon cards of the same weapon you were using</>.",
-
-        PostPresAnim = function( self, anim_fighter )
-            if self.owner:HasCondition("equip_flail") then
-                anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
-            elseif self.owner:HasCondition("equip_glaive") then
-                anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_flail)
-            end
-        end,
-       
-        OnPostResolve = function( self, battle, attack )
-            if self.owner:HasCondition("equip_glaive") then
-                self.owner:AddCondition("equip_flail", 1, self)
-                for i=1,2,1 do
-                    local card = Battle.Card( "glaive_swap", self.owner )
-                    battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
-                end
-            elseif self.owner:HasCondition("equip_flail") then
-                self.owner:AddCondition("equip_glaive", 1, self)
-                for i=1,2,1 do
-                    local card = Battle.Card( "flail_swap", self.owner )
-                    battle:DealCard( card, battle:GetDeck( DECK_TYPE.DRAW ) )
-                end
-            end
-
-        end,
+        desc = "Insert {flail_swap} or {glaive_swap} into your hand.",
+        cost = 0,
+        flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.AMBUSH | CARD_FLAGS.REPLENISH,
     },
     swap_weapon_plus4 = 
     {
@@ -2487,15 +2464,17 @@ local CARDS =
         {
             [ BATTLE_EVENT.ON_HIT ] = function( self, card, hit ) 
                 local enemy_health = 0
-                if hit.target:HasCondition("BLEED") then
-                    if hit.target ~= self.owner then
-                        enemy_health = math.round((hit.target:GetMaxHealth() * 0.30) - hit.target:GetConditionStacks("BLEED"))
-                        hit.target:AddCondition("BLEEDING_EDGE", enemy_health)
-                    end
-                else
-                    if hit.target ~= self.owner then
-                        enemy_health = math.round((hit.target:GetMaxHealth() * 0.30))
-                        hit.target:AddCondition("BLEEDING_EDGE", enemy_health)
+                if card == self then
+                    if hit.target:HasCondition("BLEED") then
+                        if hit.target ~= self.owner then
+                            enemy_health = math.round((hit.target:GetMaxHealth() * 0.30) - hit.target:GetConditionStacks("BLEED"))
+                            hit.target:AddCondition("BLEEDING_EDGE", enemy_health)
+                        end
+                    else
+                        if hit.target ~= self.owner then
+                            enemy_health = math.round((hit.target:GetMaxHealth() * 0.30))
+                            hit.target:AddCondition("BLEEDING_EDGE", enemy_health)
+                        end
                     end
                 end
             end
@@ -4295,7 +4274,7 @@ local CONDITIONS =
                     for i, hit in attack:Hits() do
                         if not hit.evaded then
                             self.owner:RemoveCondition("BLADE_DANCE", hit.damage, self)
-                    end
+                        end
                     end
                     if self.owner:GetConditionStacks("BLADE_DANCE") <= 1 then
                         -- get new weapon cards
@@ -4320,7 +4299,7 @@ local CONDITIONS =
                         for i, hit in attack:Hits() do
                             if not hit.evaded then
                                 self.owner:RemoveCondition("BLADE_DANCE", hit.damage, self)
-                        end
+                            end
                         end
                     end
                 end
@@ -4336,14 +4315,16 @@ local CONDITIONS =
         
         glaive_equipped = false,
         flail_equipped = false,
+        attackCount = 0,
 
         -- 10 stacks: gain METALLIC
         -- 20 stacks: Your attacks on an enemy have a small chance of granting you a random buff
+        -- 30 stacks: random enemy gains DEFECT every turn
 
         -- not yet implemented:
-        -- 30 stacks: random enemy gains DEFECT every turn
-        -- 40 stacks: your attacks have a chance to inflict an enemy with PARASITIC_INFUSION or BLEEDING_EDGE
-        -- 50 stacks: every turn a random enemy gains all of your current debuffs
+        -- 40 stacks: every turn a random enemy gains all of your current debuffs
+        -- 50 stacks: your attacks have a chance to inflict an enemy with BLEEDING_EDGE
+        -- every 3rd attack deals double damage and heals for the same amount 
 
         OnApply = function( self )
             if self.owner:HasCondition("equip_glaive") then
@@ -4377,7 +4358,7 @@ local CONDITIONS =
                     end
                 end
 
-                -- 10 stacks: gain metallic 
+                -- 10 stacks: gain metallic and remove all bleed and wound from yourself
                 if self.owner:GetConditionStacks("KINGPIN") >= 10 then
                     if not self.owner:HasCondition("METALLIC") then
                         self.owner:AddCondition("METALLIC", 1, self)
@@ -4392,8 +4373,8 @@ local CONDITIONS =
             end,
 
             -- 20 stacks: have a chance to gain a random buff on each attack
-            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, fighter, attack, target )
-                local randomBuffs = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "EVASION", "DEFLECT", "FORCE_FIELD", "FLURRY", "BLADE_DANCE", "TAG_TEAM"}
+            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, fighter, attack, hit )
+                local randomBuffs = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "EVASION", "DEFLECTION", "FORCE_FIELD", "FLURRY", "BLADE_DANCE", "TAG_TEAM"}
                 local randomNum = math.random(1,10)
                 local randomChance = math.random(1,4)
                 if attack.attacker == self.owner then
@@ -4401,7 +4382,18 @@ local CONDITIONS =
                         self.owner:AddCondition(randomBuffs[randomNum], 1, self)
                     end
                 end
-            end
+            end,
+
+              -- 30 stacks: random enemy gains DEFECT every turn
+            [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, fighter )
+                if self.owner:GetConditionStacks("KINGPIN") >= 30 then
+                    local target_fighter = {}
+                    battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
+                    for i=1, #target_fighter do
+                        target_fighter[i]:AddCondition("DEFECT", 1)
+                    end
+                end
+            end,
         }
     },
 
@@ -4615,9 +4607,9 @@ local CONDITIONS =
                 local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
                 if randomNum == 1 then
                     if attack.attacker == self.owner and attack.card:IsAttackCard() then
-                            if not hit.evaded then 
-                                hit.target:AddCondition(posConditions[randomConNum], 1, self)
-                            end
+                        if not hit.evaded then 
+                            hit.target:AddCondition(posConditions[randomConNum], 1, self)
+                        end
                     end  
                 end      
             end,
