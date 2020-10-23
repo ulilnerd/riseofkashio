@@ -25,7 +25,7 @@ AddPlayerCharacter(
     :AddAct{
         id = "RISE_OF_KASHIO",
         
-        name = "At the brink of opportunity",
+        name = "Rise of Kashio",
         title = "The Rise of Kashio",
         desc = "A Kashio prequel story.",
         
@@ -107,11 +107,13 @@ local decks =
 {
     NegotiationDeck("negotiation_basic", "KASHIO_PLAYER", "SAL")
         :AddCards{ 
-            fast_talk = 3,
-            threaten = 2,
-            deflection = 3,
-            quick_thinking = 1,
-            sals_instincts = 1,
+            oppress = 3,
+            erupt = 1,
+            bellow = 2,
+            bluster = 1,
+            veiled_anger = 3,
+            overbear = 1,
+            sals_instincts_plus = 1,
         },
     
     BattleDeck("battle_basic", "KASHIO_PLAYER")

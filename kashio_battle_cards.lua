@@ -3355,7 +3355,7 @@ local CARDS =
 
         cost = 2,
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.BURNOUT | CARD_FLAGS.AMBUSH,
-        rarity = CARD_RARITY.UNIQUE,
+        rarity = CARD_RARITY.RARE,
         target_type = TARGET_TYPE.SELF,
 
         bogCards =  {"infest", "conceal", "lifestealer", "exhume", "reconstruction", "gather_their_souls", "nightmare_blade", "bog_regeneration", "viral_outbreak", "evolve", "relentless_predator"},
@@ -3400,6 +3400,29 @@ local CARDS =
                 end
             end
         end,
+    },
+    
+    massacre = 
+    {
+        name = "Massacre",
+        anim = "taunt3",
+        desc = "Gain {MASSACRE}. Place a weapon card of choice into your hand.",
+        icon = "battle/psionic_storm.tex",
+
+        cost = 1,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+        rarity = CARD_RARITY.RARE,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("MASSACRE", 1, self)
+           
+            local card1 = Battle.Card( "flail_swap", self.owner )
+            battle:DealCard( card1, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+
+            local card2 = Battle.Card( "glaive_swap", self.owner )
+            battle:DealCard( card2, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+        end
     },
     --     blind_grenade = 
     -- {
@@ -3570,6 +3593,70 @@ local CONDITIONS =
         name = "Art made by Bee", 
         desc = "This card art was designed and drawn by Bee. You can check Bee out at: https://twitter.com/OneTinyBeeDraws",
      
+    },
+
+    MASSACRE = 
+    {
+        name = "Massacre", 
+        desc = "Every time you swap weapons after an attack, increase your damage by 2 this turn.",
+        icon = "battle/conditions/concentration.tex",   
+
+        flailCount = 0,
+        glaiveCount = 0,
+        attackCounter = 0,
+        firstHit = false,
+        ctype = CTYPE.BUFF,
+
+        OnApply = function( self, battle )
+            if self.owner:HasCondition("equip_flail") then
+                self.flailCount = 1
+            end
+            if self.owner:HasCondition("equip_glaive") then
+               self.glaiveCount = 1
+            end
+        end,
+
+        event_handlers =
+        {
+            [ BATTLE_EVENT.CARD_MOVED ] = function( self, battle, attack, hit )
+                if self.owner:HasCondition("equip_flail") then
+                    self.flailCount = 1
+                end
+                if self.owner:HasCondition("equip_glaive") then
+                   self.glaiveCount = 1
+                end
+            end,
+
+            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack, hit )
+                if self.firstHit == true and self.flailCount == 1 and self.glaiveCount == 1 then
+                    self.attackCounter = self.attackCounter + 2
+                    if self.owner:HasCondition("equip_glaive") then
+                        self.flailCount = 0
+                    end
+                    if self.owner:HasCondition("equip_flail") then
+                        self.glaiveCount = 0
+                    end
+                end
+            end,
+
+            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
+                if attack.attacker == self.owner then
+                    self.firstHit = true
+                end
+            end,
+
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt, hit )
+                if card.owner == self.owner then
+                    if self.firstHit == true and self.flailCount == 1 and self.glaiveCount == 1 then
+                        dmgt:ModifyDamage(dmgt.min_damage + self.attackCounter, dmgt.max_damage + self.attackCounter, self)
+                    end
+                end
+            end,
+
+            [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit )
+                self.attackCounter = 0
+            end
+        }
     },
 
     RELENTLESS_PREDATOR = 

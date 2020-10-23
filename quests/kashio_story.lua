@@ -3,14 +3,16 @@ local START_DIFFICULTY =1
 local MAX_DIFFICULTY = 1
 
 local DAY_SCHEDULE = {
-    {quest = "KASHIO_STORY_DAY_1", difficulty = 1},  
+    {quest = "KASHIO_STORY_DAY_1", difficulty = 1},
+    -- {quest = "KASHIO_STORY_DAY_2", difficulty = 2},   
+    -- {quest = "KASHIO_STORY_DAY_3", difficulty = 3},  
 }
 
 
 
 local QDEF = QuestDef.Define
 {
-    title = "Scraping by",
+    title = "The Rise of Kashio",
     icon = engine.asset.Texture("icons/quests/rook_story_living_at_bar.tex"),
     qtype = QTYPE.STORY,
     
