@@ -3201,7 +3201,7 @@ local CARDS =
         name = "Gather Their Souls",
         anim = "taunt",
         desc = "Steal a buff every turn then inflict a debuff to a random enemy. <i>{BEE}</i>.",
-        icon = "RISE:textures/gathertheirsouls.png",
+        icon = "RISE:textures/gathertheirsouls1.png",
         
         cost = 1,
         flags =  CARD_FLAGS.SKILL,
@@ -3405,7 +3405,7 @@ local CARDS =
     {
         name = "Massacre",
         anim = "taunt3",
-        desc = "Gain {MASSACRE}. Place a weapon card of choice into your hand.",
+        desc = "Gain {MASSACRE}. Place both weapon cards into your hand.",
         icon = "battle/psionic_storm.tex",
 
         cost = 1,
@@ -3416,6 +3416,31 @@ local CARDS =
         OnPostResolve = function( self, battle, attack)
             self.owner:AddCondition("MASSACRE", 1, self)
            
+            local card1 = Battle.Card( "flail_swap", self.owner )
+            battle:DealCard( card1, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+
+            local card2 = Battle.Card( "glaive_swap", self.owner )
+            battle:DealCard( card2, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+        end
+    },
+
+    infinity_blade = 
+    {
+        name = "Infinity Blade",
+        anim = "spin_attack",
+        desc = "Gain {INFINITY_BLADE}. Place both weapon cards into your hand.",
+        icon = "battle/bog_scimitar.tex",
+
+        cost = 1,
+        flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
+        rarity = CARD_RARITY.RARE,
+       
+        min_damage = 5,
+        max_damage = 9,
+
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("INFINITY_BLADE", 1, self)
+            
             local card1 = Battle.Card( "flail_swap", self.owner )
             battle:DealCard( card1, battle:GetDeck( DECK_TYPE.IN_HAND ) )
 
@@ -3594,6 +3619,66 @@ local CONDITIONS =
      
     },
 
+    INFINITY_BLADE = 
+    {
+        name = "Infinity Blade", 
+        desc = "Every time you swap weapons after an attack, gain an extra action.",
+        icon = "battle/conditions/concentration.tex",   
+
+        flailCount = 0,
+        glaiveCount = 0,
+        attackCounter = 0,
+        firstHit = false,
+        ctype = CTYPE.BUFF,
+        actionCount = 0,
+
+        OnApply = function( self, battle )
+            if self.owner:HasCondition("equip_flail") then
+                self.flailCount = 1
+            end
+            if self.owner:HasCondition("equip_glaive") then
+               self.glaiveCount = 1
+            end
+        end,
+
+        event_handlers =
+        {
+            [ BATTLE_EVENT.CARD_MOVED ] = function( self, battle, attack, hit )
+                if self.owner:HasCondition("equip_flail") then
+                    self.flailCount = 1
+                end
+                if self.owner:HasCondition("equip_glaive") then
+                   self.glaiveCount = 1
+                end
+            end,
+
+            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack, hit, fighter )
+                if self.firstHit == true and self.flailCount == 1 and self.glaiveCount == 1 then
+                --    self.actionCount = self.actionCount + 1
+                    self.battle:ModifyActionCount( 1 )
+                    self.owner:AddCondition("BLEED", 1, self)
+                        
+                    if self.owner:HasCondition("equip_glaive") then
+                        self.flailCount = 0
+                    end
+                    if self.owner:HasCondition("equip_flail") then
+                        self.glaiveCount = 0
+                    end
+                end
+            end,
+
+            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
+                if attack.attacker == self.owner then
+                    self.firstHit = true
+                end
+            end,
+            [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit )
+                self.battle:ModifyActionCount( -self.actionCount )
+                self.actionCount = 0
+            end
+        }
+    },
+
     MASSACRE = 
     {
         name = "Massacre", 
@@ -3629,6 +3714,7 @@ local CONDITIONS =
             [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack, hit )
                 if self.firstHit == true and self.flailCount == 1 and self.glaiveCount == 1 then
                     self.attackCounter = self.attackCounter + 2
+                    self.firstHit = false
                     if self.owner:HasCondition("equip_glaive") then
                         self.flailCount = 0
                     end
@@ -4362,8 +4448,8 @@ local CONDITIONS =
                             self.owner:RemoveCondition("BLADE_DANCE", hit.damage, self)
                         end
                     end
-                    if self.owner:GetConditionStacks("BLADE_DANCE") <= 1 then
-                        -- get new weapon cards
+                    if self.owner:GetConditionStacks("BLADE_DANCE") <= 1 or hit.damage >= self.owner:GetConditionStacks("BLADE_DANCE") then
+                        -- get new weapon cards depending on which one is equipped
                         local weapons = {"flail_swap", "glaive_swap"}
                         if self.owner:HasCondition("equip_glaive") then
                             local card = Battle.Card( weapons[1], self.owner )
@@ -4372,7 +4458,7 @@ local CONDITIONS =
                             local card = Battle.Card( weapons[2], self.owner )
                             battle:DealCard( card, battle:GetDeck( DECK_TYPE.IN_HAND ) )
                         end
-                        -- get evasion
+                        -- get new random enemy, reapply blade dance
                         local randomEnemyHealth = 0
                         local target_fighter = {}
                         battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
@@ -4382,11 +4468,6 @@ local CONDITIONS =
                             randomEnemyHealth = math.round(randomEnemyHealth * 0.75)
                         self.owner:AddCondition("BLADE_DANCE", randomEnemyHealth, self)
                         self.owner:AddCondition("EVASION", 1, self)
-                        for i, hit in attack:Hits() do
-                            if not hit.evaded then
-                                self.owner:RemoveCondition("BLADE_DANCE", hit.damage, self)
-                            end
-                        end
                     end
                 end
             end
