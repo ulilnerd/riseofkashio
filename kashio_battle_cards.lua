@@ -1250,31 +1250,25 @@ local CARDS =
         end,
     },
 
-    kill_with_kindness = 
+    smooth_moves = 
     {
-        name = "Kill With Kindness",
+        name = "Smooth Moves",
         anim = "taunt3",
-        desc = "Deal damage to all enemies equal to half your block.",
-        icon = "battle/dugout.tex",
+        desc = "Gain 3 {RIPOSTE}, If {equip_glaive} is active gain 2 {EVASION}.",
+        icon = "battle/cyclone.tex",
 
         flags = CARD_FLAGS.SKILL,
         cost = 1,
         rarity = CARD_RARITY.COMMON,
         max_xp = 6,
-        target_mod = TARGET_MOD.TEAM,
-        min_damage = 0,
-        max_damage = 0,
+        target_type = TARGET_TYPE.SELF,
 
-        event_handlers = 
-        {
-            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
-                if card == self then
-                    if self.owner:HasCondition("DEFEND") then
-                        dmgt:AddDamage( math.round(self.owner:GetConditionStacks("DEFEND")) / 2, math.round(self.owner:GetConditionStacks("DEFEND")) / 2 , self )
-                    end
-                end
+        OnPostResolve = function( self, battle, attack )
+            self.owner:AddCondition("RIPOSTE", 3, self)
+            if self.owner:HasCondition("equip_glaive") then
+                self.owner:AddCondition("EVASION", 2, self)
             end
-        }
+        end
 
     },
 
@@ -1673,7 +1667,7 @@ local CARDS =
     {
         name = "Strength of One Thousand",
         anim = "defend",
-        desc = "Gain {scaling_defense}.",
+        desc = "Gain {scaling_defense} then place {equip_flail} and {equip_glaive} into your hand.",
         icon = "RISE:textures/strengthofonethousand.png",
 
         flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.BUFF,
@@ -1684,6 +1678,11 @@ local CARDS =
 
         OnPostResolve = function( self, battle, attack)
             self.owner:AddCondition("scaling_defense", 1)
+            local card1 = Battle.Card( "flail_swap", self.owner )
+            battle:DealCard( card1, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+
+            local card2 = Battle.Card( "glaive_swap", self.owner )
+            battle:DealCard( card2, battle:GetDeck( DECK_TYPE.IN_HAND ) )
         end
     },
 
@@ -1757,7 +1756,7 @@ local CARDS =
     {
         name = "Defensive Manuevers",
         anim = "defend",
-        desc = "Gain {1} {DEFEND}, if {equip_flail} is active gain 7 {DEFEND} instead.",
+        desc = "Gain {1} {DEFEND}, if {equip_flail} is active gain 8 {DEFEND} instead.",
         icon = "battle/scatter.tex",
 
         flags = CARD_FLAGS.SKILL,
@@ -1774,7 +1773,7 @@ local CARDS =
 
         OnPostResolve = function( self, battle, attack)
             if self.owner:HasCondition("equip_flail") then
-                self.owner:AddCondition("DEFEND", 7)
+                self.owner:AddCondition("DEFEND", 8)
             else
                 self.owner:AddCondition("DEFEND", self.defend_amount)
             end
@@ -2270,8 +2269,8 @@ local CARDS =
         rarity = CARD_RARITY.COMMON,
         max_xp = 8,
         
-        min_damage = 2,
-        max_damage = 4,
+        min_damage = 3,
+        max_damage = 5,
 
         debuff_amount = 1,
 
@@ -2552,7 +2551,7 @@ local CARDS =
         max_xp = 6,
       
         min_damage = 2,
-        max_damage = 4, 
+        max_damage = 5, 
 
         OnPostResolve = function( self, battle, attack, card )
             if self.owner:HasCondition("equip_flail") then
@@ -2681,7 +2680,7 @@ local CARDS =
         max_xp = 6,
       
         min_damage = 2,
-        max_damage = 3, 
+        max_damage = 4, 
 
         OnPostResolve = function( self, battle, attack, card ) 
             local enemyCount = 0
@@ -3411,7 +3410,7 @@ local CARDS =
 
         cost = 1,
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
-        rarity = CARD_RARITY.RARE,
+        rarity = CARD_RARITY.UNCOMMON,
         target_type = TARGET_TYPE.SELF,
 
         OnPostResolve = function( self, battle, attack)
@@ -4588,8 +4587,11 @@ local CONDITIONS =
     scaling_defense = 
     {
         name = "Strength of One Thousand",
-        desc = "Gain {ARMOURED} every turn, you will gain one more stack of {ARMOURED} than you had last turn.",
+        desc = "Gain {ARMOURED} every turn, you will gain one more stack of {ARMOURED} than you had last turn. Additionally, gain a stack of {ARMOURED} everytime you swap weapons",
         icon = "battle/conditions/rentorian_battle_armor.tex",
+
+        flailCount = 0,
+        glaiveCount = 0,
 
         OnApply = function( self )
             self.owner:AddCondition("ARMOURED", 1)
@@ -4597,10 +4599,24 @@ local CONDITIONS =
 
         event_handlers = 
         {
-            [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function (self, battle, attack)
+            [ BATTLE_EVENT.END_PLAYER_TURN ] = function (self, battle, attack)
                 self.owner:AddCondition("ARMOURED", 1)
-            end
-        }
+            end,
+
+            [ BATTLE_EVENT.CARD_MOVED ] = function( self, battle, attack, hit )
+                if self.owner:HasCondition("equip_flail") then
+                    self.flailCount = 1
+                end
+                if self.owner:HasCondition("equip_glaive") then
+                   self.glaiveCount = 1
+                end
+                if self.flailCount == 1 and self.glaiveCount == 1 then
+                    self.flailCount = 0
+                    self.glaiveCount = 0
+                    self.owner:AddCondition("ARMOURED", 1, self)
+                end
+            end,
+        },
     },
 
     equip_glaive = 
