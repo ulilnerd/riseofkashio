@@ -153,7 +153,7 @@ local CARDS =
     {
         name = "Invincible",
         anim = "taunt",
-        desc = "An attack from an enemy on you will deal 0 damage, Gain {DEFECT}.",
+        desc = "All damage is reduced by 50% this turn and gain {RIPOSTE} equal to that amount, Gain {DEFECT}.",
         icon = "battle/bring_it_on.tex",
 
         rarity = CARD_RARITY.UNIQUE,
@@ -172,7 +172,7 @@ local CARDS =
     {
         name = "Boosted Invincible",
         anim = "taunt",
-        desc = "An attack from an enemy on you will deal 0 damage.",
+        desc = "All damage is reduced by 50% this turn and gain {RIPOSTE} equal to that amount.",
         icon = "battle/bring_it_on.tex",
 
         rarity = CARD_RARITY.UNIQUE,
@@ -4061,38 +4061,35 @@ local CONDITIONS =
     INVINCIBLE = 
     {
         name = "Invincible", 
-        desc = "An attack from an enemy on you will deal 0 damage.",
+        desc = "Negate 50% of all damage this turn and gain {RIPOSTE} equal to that damage.",
         icon = "battle/conditions/shield_of_hesh.tex",  
 
         ctype = CTYPE.BUFF,
 
         event_handlers = 
         {
-            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
-                if attack.attacker ~= self.owner then
+            [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, attack, hit )
+                self.owner:AddCondition("DEFECT", self.owner:GetEnemyTeam():NumActiveFighters())
+                if self.owner:HasCondition("INVINCIBLE") then
                     self.owner:RemoveCondition("INVINCIBLE", 1, self)
                 end
             end,
 
-            [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit )
-                local target_fighter = {}
-                local isAttack = false
-                battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
-                while (isAttack == false) do 
-                    for i=1, #target_fighter do
-                    if target_fighter[i].prepared_cards then
-                        if target_fighter[i].prepared_cards[1]:IsAttackCard() then
-                            target_fighter[i].prepared_cards[1].min_damage = 0
-                            target_fighter[i].prepared_cards[1].max_damage = 0
-                            isAttack = true
-                        else
-                            battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
+            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack, hit )
+                for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                    if enemy.prepared_cards then
+                        for i, card in ipairs( enemy.prepared_cards ) do
+                            if card:IsAttackCard() then
+                                card.min_damage = math.ceil(card.min_damage / 2)
+                                card.max_damage = math.ceil(card.max_damage / 2)
+                            end
                         end
                     end
-                    end
                 end
-                if self.owner:HasCondition("INVINCIBLE") then
-                    self.owner:RemoveCondition("INVINCIBLE", 1, self)
+            end,
+            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit, target)
+                if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
+                    self.owner:AddCondition("RIPOSTE", math.ceil(hit.damage / 2))
                 end
             end
         }
