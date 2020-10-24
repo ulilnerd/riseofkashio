@@ -4079,14 +4079,16 @@ local CONDITIONS =
                 local isAttack = false
                 battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
                 while (isAttack == false) do 
-                    if target_fighter[1].prepared_cards then
-                        if target_fighter[1].prepared_cards[1]:IsAttackCard() then
-                            target_fighter[1].prepared_cards[1].min_damage = 0
-                            target_fighter[1].prepared_cards[1].max_damage = 0
+                    for i=1, #target_fighter do
+                    if target_fighter[i].prepared_cards then
+                        if target_fighter[i].prepared_cards[1]:IsAttackCard() then
+                            target_fighter[i].prepared_cards[1].min_damage = 0
+                            target_fighter[i].prepared_cards[1].max_damage = 0
                             isAttack = true
                         else
                             battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
                         end
+                    end
                     end
                 end
                 if self.owner:HasCondition("INVINCIBLE") then
