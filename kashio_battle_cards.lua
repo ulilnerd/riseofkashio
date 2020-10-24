@@ -2152,6 +2152,14 @@ local CARDS =
         min_damage = 1,
         max_damage = 6,
 
+        OnPostResolve = function( self, battle, attack, card )
+            if self.owner:HasCondition("KINGPIN") then
+                if self.owner:GetConditionStacks("KINGPIN") >= 10 then
+                    self.owner:AddCondition("DEFEND", self.max_damage, self)
+                end
+            end
+        end,
+
         event_handlers =
         {
             [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
@@ -2159,7 +2167,6 @@ local CARDS =
                     if self.owner:GetConditionStacks("KINGPIN") >= 10 then
                         if self.owner == card.owner then
                             dmgt:ModifyDamage( dmgt.max_damage, dmgt.max_damage, self )
-                            self.owner:AddCondition("DEFEND", self.max_damage, self)
                         end
                     end
                 end

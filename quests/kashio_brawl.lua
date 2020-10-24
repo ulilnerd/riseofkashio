@@ -369,7 +369,7 @@ QDEF:AddObjective{
     mark = {"bartender"},
     hide_in_overlay = true,
 }
-local randomCard = math.random(1,2)
+local randomCard = math.random(1,3)
 QDEF:AddConvo("gift_from_fssh1", "bartender")
     :ConfrontState("CONF")
         :Loc{
@@ -400,12 +400,13 @@ QDEF:AddConvo("gift_from_fssh1", "bartender")
                     :Fn(function(cxt)
                         cxt.quest:Complete("gift_from_fssh1")
                     end)
-                cxt:Opt("OPT_TAKE_CARD", "bleeding_edge")
+                cxt:Opt("OPT_TAKE_CARD", "extreme_focus")
                     :PreIcon( global_images.buycombat )
-                    :GainCards{"bleeding_edge"}
+                    :GainCards{"extreme_focus"}
                     :Fn(function(cxt)
                         cxt.quest:Complete("gift_from_fssh1")
-                end)
+                    end)
+                
             end
         
             if randomCard == 2 then
@@ -421,9 +422,31 @@ QDEF:AddConvo("gift_from_fssh1", "bartender")
                     :Fn(function(cxt)
                         cxt.quest:Complete("gift_from_fssh1")
                 end)
-                cxt:Opt("OPT_TAKE_CARD", "fake_surrender")
+                cxt:Opt("OPT_TAKE_CARD", "weapon_swap_proficiency")
                     :PreIcon( global_images.buycombat )
-                    :GainCards{"fake_surrender"}
+                    :GainCards{"weapon_swap_proficiency"}
+                    :Fn(function(cxt)
+                        cxt.quest:Complete("gift_from_fssh1")
+                end)
+                
+            end
+
+            if randomCard == 3 then
+                cxt:Opt("OPT_TAKE_CARD", "massacre")
+                    :PreIcon( global_images.buycombat )
+                    :GainCards{"massacre"}
+                    :Fn(function(cxt)
+                        cxt.quest:Complete("gift_from_fssh1")
+                end)
+                cxt:Opt("OPT_TAKE_CARD", "prepared_circumstances")
+                    :PreIcon( global_images.buycombat )
+                    :GainCards{"prepared_circumstances"}
+                    :Fn(function(cxt)
+                        cxt.quest:Complete("gift_from_fssh1")
+                end)
+                cxt:Opt("OPT_TAKE_CARD", "bleeding_edge")
+                    :PreIcon( global_images.buycombat )
+                    :GainCards{"bleeding_edge"}
                     :Fn(function(cxt)
                         cxt.quest:Complete("gift_from_fssh1")
                 end)
@@ -539,6 +562,12 @@ QDEF:AddConvo("gift_from_fssh1", "bartender")
                             :Fn(function(cxt)
                                 cxt.quest:Complete("gift_from_fssh2")
                         end)
+                        cxt:Opt("OPT_TAKE_CARD", "infinity_blade")
+                        :PreIcon( global_images.buycombat )
+                        :GainCards{"infinity_blade"}
+                        :Fn(function(cxt)
+                            cxt.quest:Complete("gift_from_fssh2")
+                    end)
                     end
                 
                     cxt:Opt("OPT_SKIP")
