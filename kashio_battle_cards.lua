@@ -1812,40 +1812,58 @@ local CARDS =
     bounce_back = 
     {
         name = "Bounce Back",
-        anim = "slam",
-        desc = "Deal damage equal to half the amount of damage the enemy team is intending to inflict to your team.",
+        anim = "crack",
+        desc = "Your next attack deals damage equal to half the amount of damage the enemy team is intending to inflict to your team.",
         icon = "battle/weakness_blind_spot.tex",
 
-        flags =  CARD_FLAGS.MELEE,
+        flags =  CARD_FLAGS.SKILL,
         cost = 1,
         rarity = CARD_RARITY.UNCOMMON,
         max_xp = 6,
 
-        min_damage = 0,
-        max_damage = 0,
+        min_damage = 3,
+        max_damage = 6,
 
-        OnPostResolve = function( self, battle, attack )
-                   
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("bounce_back", 1 , self)
         end,
 
-        event_handlers =
+        condition = 
         {
-            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
-                if card == self then
-                    local count = 0
-                    for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-                        if enemy.prepared_cards then
-                            for i, card in ipairs( enemy.prepared_cards ) do
-                                if card:IsAttackCard() then
-                                    count = count + card.max_damage
-                                end
+            hidden = true,
+            count = 0,
+
+            OnApply = function( self, battle )
+                for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                    if enemy.prepared_cards then
+                        for i, card in ipairs( enemy.prepared_cards ) do
+                            if card:IsAttackCard() then
+                                self.count = self.count + card.max_damage
                             end
                         end
-                        dmgt:ModifyDamage( math.floor(count/2), math.floor(count/2), self )
                     end
                 end
-            end
-        }
+            end,
+
+            event_handlers =
+            {
+                [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle )
+                    self.owner:RemoveCondition("bounce_back")
+                end,
+
+                [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                    if card.owner == self.owner then
+                        dmgt:ModifyDamage( math.floor(self.count/2), math.floor(self.count/2), self )
+                    end
+                end,
+
+                [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack )
+                    if attack.owner == self.owner and attack.card:IsAttackCard() then
+                        self.owner:RemoveCondition("bounce_back", 1, self)
+                    end
+                end
+            }
+        },
         
     },
 
@@ -4548,6 +4566,7 @@ local CONDITIONS =
                                 enemy:ApplyDamage( math.round(count / 4), math.round(count / 4), self )
                             end
                         end
+                    self.owner:BroadcastEvent( BATTLE_EVENT.PLAY_ANIM, "taunt3")
                     self.owner:RemoveCondition("DEFLECTION", 1)
                 end
         }
@@ -4810,7 +4829,7 @@ local CONDITIONS =
     FORCE_FIELD =
     {
         name = "Rentorian Force Field",
-        desc = "Gain a shield that will negate all damage unless the enemy that is attacking you has higher damage than the threshold, the threshold is equal to 10% of your max health plus current defend value.",
+        desc = "Gain a shield that will negate all damage from enemies that have a lower max damage than the threshold, the threshold is equal to 10% of your max health plus current defend value.",
         icon = "battle/conditions/active_shield_generator.tex",
 
 
@@ -4821,29 +4840,42 @@ local CONDITIONS =
         --     end)
         -- end
 
-
+        threshold = 0,
+        OnApply = function( self, battle )
+            self.threshold = math.round(self.owner:GetMaxHealth() * 0.10)
+        end,
+    
         event_handlers = 
         {
-            [ BATTLE_EVENT.END_PLAYER_TURN ] = function (self, battle, attack)
-                local threshold = math.round(self.owner:GetMaxHealth() * 0.10)
+            [ BATTLE_EVENT.ON_HIT ] = function (self, battle, attack, hit)
+                if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
+                    if hit.damage > self.threshold then
+                        if self.owner:HasCondition("DEFEND") then
+                            if hit.damage > self.threshold + self.owner:GetConditionStacks("DEFEND") then
+                                self.owner:RemoveCondition("FORCE_FIELD", 1, self)
+                            end
+                        else
+                            self.owner:RemoveCondition("FORCE_FIELD", 1, self)
+                        end
+                    end
+                end
+            end,
+
+            [ BATTLE_EVENT.POST_RESOLVE ] = function (self, battle, attack)
                 for i, enemy in self.owner:GetEnemyTeam():Fighters() do
                     if enemy.prepared_cards then
                         for i, card in ipairs( enemy.prepared_cards ) do
                             if card:IsAttackCard() then
-                                if card.max_damage <= threshold then
+                                if card.max_damage <= self.threshold then
                                     card.min_damage = 0
                                     card.max_damage = 0
                                 end
-                                if card.max_damage > threshold then
+                                if card.max_damage > self.threshold then
                                     if self.owner:HasCondition("DEFEND") then
-                                        if card.max_damage < threshold + self.owner:GetConditionStacks("DEFEND") then
+                                        if card.max_damage < self.threshold + self.owner:GetConditionStacks("DEFEND") then
                                             card.min_damage = 0
                                             card.max_damage = 0
-                                        else
-                                            self.owner:RemoveCondition("FORCE_FIELD", 1, self)
                                         end
-                                    else
-                                        self.owner:RemoveCondition("FORCE_FIELD", 1, self)
                                     end
                                 end
                             end

@@ -209,7 +209,6 @@ data.MakeBrawlSchedule = function(data)
         :QuestPhase("strange_request")
         :Quest(table.remove(day_1_quests))
         :Bonus(all_kashio_bonuses, 2)
-        :QuestPhase("gift_from_fssh1")
         :Night()
         :Merchants(brawl.PickMerchants(data.merchant_list,1))
         :Boss(brawl.PickBoss(data.bosses[1], used_bosses) )
@@ -336,8 +335,8 @@ QDEF:AddConvo("starting_kashio")
 					* Just another ordinary day working with the Spark Barons.
 					** Welcome to the Kashio Battle Brawl Demo.
 					** This is a highly work in progress project and nothing in the current build is final.
-                    ** So far, the mod has 80+ battle cards that are made purely from curiosity and are not tested to be balanced and the cards may or may not flow well together.  Despite the high battle card count, this mod does not contain a single custom negotiation card.
-                    ** As for as the brawl mode goes, it does have negotiation but is unnecessary to complete the brawl (ie, convince patron to help you fight a boss).  I've provided a few of Sal's basic cards to help with that.
+                    ** So far, the mod has 95+ battle cards that are made purely from curiosity and are not tested to be balanced and the cards may or may not flow well together.  Despite the high battle card count, this mod does not contain a single custom negotiation card.
+                    ** As for as the brawl mode goes, it does have negotiation but is unnecessary to complete the brawl (ie, convince patron to help you fight a boss).  I've provided a few of Sal's cards to help with that.
                 ]],
 
                 DIALOG_INTRO_2 = [[
@@ -347,7 +346,7 @@ QDEF:AddConvo("starting_kashio")
                         !right
                         !happy
 						!shrug
-						I don't know why we were ordered to setup at this bar, but it will do as our base of operations for the time being.
+						HQ ordered us to setup here to find that lost technology within the Bog.
                         !point
                         Time to go {player}, let's run it back.
                 ]],
@@ -568,10 +567,13 @@ QDEF:AddConvo("gift_from_fssh1", "bartender")
                                     Hey {player} I was doing a little snooping around the bar and this shady guy left this at one of the tables. I'm sure you'll have a use for it. 
                                 player:
                                     !left
-                                    Uh I don't do drugs...
+                                    What is it?
                                 agent:
                                     !right
-                                    Me neither.
+                                    Beats me.
+                                player:
+                                    !left
+                                    Only one way to find out.
                             ]],
                             OPT_TRANSFORM = "Obtain {1#card}",
                         
