@@ -15,6 +15,7 @@ local CARDS =
 
         min_damage =  0,
         max_damage =  1,
+        max_xp = 0,
         
         rarity = CARD_RARITY.UNIQUE,
         cost = 0,
@@ -64,6 +65,7 @@ local CARDS =
         flags = CARD_FLAGS.SKILL| CARD_FLAGS.EXPEND,
         power_amt = 2,
         wound_amt = 2,
+        max_xp = 0,
 
         desc_fn = function(self, fmt_str)
             return loc.format(fmt_str, self:CalculateDefendText( self.power_amt ))
@@ -109,6 +111,7 @@ local CARDS =
         cost = 0,
         flags = CARD_FLAGS.EXPEND | CARD_FLAGS.MELEE,
         burn_amount = 3,
+        max_xp = 0,
 
         desc_fn = function(self, fmt_str)
             return loc.format(fmt_str, self:CalculateDefendText( self.burn_amount ))
@@ -160,6 +163,7 @@ local CARDS =
         cost = 0,
         flags = CARD_FLAGS.EXPEND | CARD_FLAGS.SKILL,
         target_type = TARGET_TYPE.SELF,
+        max_xp = 0,
 
         OnPostResolve = function( self, battle, attack)
             self.owner:AddCondition("INVINCIBLE", 1, self)
@@ -196,6 +200,7 @@ local CARDS =
         cost = 0,
         rarity = CARD_RARITY.UNIQUE,
         target_type = TARGET_TYPE.SELF,
+        max_xp = 0,
 
         OnPostResolve = function( self, battle, attack)
             local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
@@ -239,6 +244,7 @@ local CARDS =
         cost = 0,
         rarity = CARD_RARITY.UNIQUE,
         target_type = TARGET_TYPE.SELF,
+        max_xp = 0,
 
         OnPostResolve = function( self, battle, attack)
             local drinkCards = {"green_flask", "red_flask", "purple_flask"}
@@ -448,6 +454,20 @@ local CARDS =
         manual_desc = true,
         OnPostResolve = function( self, battle, attack )
             self.owner:HealHealth(2, self)
+            self.owner:AddCondition("EVASION", 1, self)
+            self.owner:AddCondition("IMPAIR", self.impair_amount, self)
+        end,
+    },
+    dodge_and_compromise_plus9 = 
+    {
+        name = "Dodge and Compromise of Confidence",
+        desc = "Gain {EVASION}, {IMPAIR} and <#UPGRADE>equip {equip_glaive} </>.",
+        manual_desc = true,
+        PostPresAnim = function( self, anim_fighter )
+            anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
+        end,
+        OnPostResolve = function( self, battle, attack )
+            self.owner:AddCondition("equip_glaive", 1, self)
             self.owner:AddCondition("EVASION", 1, self)
             self.owner:AddCondition("IMPAIR", self.impair_amount, self)
         end,
@@ -1072,7 +1092,7 @@ local CARDS =
     {
         name = "Swap Weapons",
         anim = "taunt",
-        desc = "Insert {flail_swap} or {glaive_swap} into your hand.",
+        desc = "Place {flail_swap} or {glaive_swap} into your hand.",
         icon = "RISE:textures/swap_weapon.png",
 
         rarity = CARD_RARITY.BASIC,
@@ -1571,6 +1591,24 @@ local CARDS =
             end
         end
     },
+    crippling_slice_plus = 
+    {
+        name = "Boosted Crippling Slice",
+
+        desc = "Apply {1} {IMPAIR} to target enemy if you have Taste of Blood in your hand.  {KINGPIN} 5: Apply {1} {IMPAIR}.",
+        manual_desc = true,
+
+        min_damage = 5,
+        max_damage = 6,
+    },
+    crippling_slice_plus2 = 
+    {
+        name = "Crippling Slice of Masochism",
+        desc = "Apply <#UPGRADE>{1}</> {IMPAIR} to target enemy if you have Taste of Blood in your hand.  {KINGPIN} 5: Apply <#UPGRADE>{1}</> {IMPAIR}.",
+        manual_desc = true,
+
+        impair_amount = 3,
+    },
 
     feel_what_i_feel = 
     {
@@ -1606,7 +1644,7 @@ local CARDS =
         flags = CARD_FLAGS.MELEE,
         cost = 2,
         rarity = CARD_RARITY.RARE,
-        max_xp = 3,
+        max_xp = 4,
         target_mod = TARGET_MOD.TEAM,
 
         min_damage = 5,
@@ -1779,6 +1817,34 @@ local CARDS =
             end
         end
     },
+    defensive_manuevers_plus =
+    {
+        name = "Boosted Defensive Manuevers",
+        desc = "Gain <#UPGRADE>{1}</> {DEFEND}, if {equip_flail} is active gain <#UPGRADE>10</> {DEFEND} instead.",
+        manual_desc = true,
+        
+        defend_amount = 6,
+        OnPostResolve = function( self, battle, attack)
+            if self.owner:HasCondition("equip_flail") then
+                self.owner:AddCondition("DEFEND", 10)
+            else
+                self.owner:AddCondition("DEFEND", self.defend_amount)
+            end
+        end
+    },
+    defensive_manuevers_plus2 =
+    {
+        name = "Defensive Manuevers of Invincibility",
+        desc = "Gain <#UPGRADE>{1}</> {DEFEND}, if {equip_flail} is active gain <#UPGRADE>{INVINCIBLE}</> instead.",
+        manual_desc = true,
+        
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("DEFEND", self.defend_amount, self)
+            if self.owner:HasCondition("equip_flail") then
+               self.owner:AddCondition("INVINCIBLE", 1, self)
+            end
+        end
+    },
 
     bait_and_switch = 
     {
@@ -1807,6 +1873,30 @@ local CARDS =
             anim_fighter:SetAnimMapping(self.owner.agent.fight_data.anim_mapping_glaive)
         end,
         
+    },
+    bait_and_switch_plus =
+    {
+        name = "Boosted Bait and Switch",
+        -- desc = "<#UPGRADE>Attack twice</>.",
+        desc = "Deal damage then switch to {equip_glaive}. If it is already equipped, draw a card.",
+        manual_desc = true,
+        
+        min_damage = 4,
+        max_damage = 5,
+    },
+    bait_and_switch_plus2 =
+    {
+        name = "Bait and Switch of Vision",
+        -- desc = "<#UPGRADE>Attack twice</>.",
+        desc = "Deal damage then switch to {equip_glaive}. If it is already equipped, <#UPGRADE>draw 2 cards</>.",
+        manual_desc = true,
+        OnPostResolve = function( self, battle, attack)
+            if self.owner:HasCondition("equip_glaive") then
+                 battle:DrawCards(2)
+            else
+                self.owner:AddCondition("equip_glaive", 1)
+            end
+        end,
     },
 
     bounce_back = 
@@ -2070,7 +2160,6 @@ local CARDS =
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.BURNOUT,
         cost = 0,
         rarity = CARD_RARITY.UNIQUE,
-        max_xp = 6,
         target_type = TARGET_TYPE.SELF,
 
         -- PostPresAnim = function( self, anim_fighter )
@@ -2234,6 +2323,25 @@ local CARDS =
             end
         end
     },
+    control_cee_plus = 
+    {
+        name = "Boosted Control CEE",
+        defend_amount = 8,
+    },
+    control_cee_plus2 = 
+    {
+        name = "Control CEE of Wealth",
+        desc = "Gain {1} {DEFEND}, {KINGPIN} 5: Draw 2 Control VEE's into your hand.",
+        OnPostResolve = function( self, battle, attack, card )
+            self.owner:AddCondition("DEFEND", self.defend_amount, self)
+            if self.owner:GetConditionStacks("KINGPIN") >= 5 then
+                local card = Battle.Card( "control_vee", self.owner )
+                card:TransferCard( battle:GetHandDeck() )
+                local card2 = Battle.Card( "control_vee", self.owner )
+                card2:TransferCard( battle:GetHandDeck() )
+            end
+        end
+    },
 
     control_vee =
     {
@@ -2282,6 +2390,17 @@ local CARDS =
                 end
             end
         end
+    },
+    irritating_blow_plus =
+    {
+        name = "Boosted Irritating Blow",
+        min_damage = 3,
+        max_damage = 3,
+    },
+    irritating_blow_plus2 =
+    {
+        name = "Live to Irritate",
+        flags =  CARD_FLAGS.MELEE | CARD_FLAGS.AMBUSH | CARD_FLAGS.REPLENISH,
     },
 
     playing_with_fire =
@@ -2544,7 +2663,7 @@ local CARDS =
     {
         name = "Finish Them",
         anim = "slash_up",
-        desc = "If {equip_glaive} is equipped, deal bonus damage equal to how many cards were played this turn.",
+        desc = "If {equip_glaive} is equipped, deal bonus damage for each card played this turn.",
         icon = "battle/weakness_telegraphed.tex",
 
         flags =  CARD_FLAGS.MELEE,
@@ -2565,12 +2684,34 @@ local CARDS =
             end,
         },
     },
+    finish_them_plus =
+    {
+        name = "Boosted Finish Them",
+        min_damage = 5,
+        max_damage = 5,
+    },
+    finish_them_plus2 =
+    {
+        name = "Certainly Finish Them",
+        desc = "If {equip_glaive} is equipped, deal <#UPGRADE>2</> bonus damage for each card played this turn.",
+        min_damage = 1,
+        max_damage = 1,
+        event_handlers =
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                local stacks = self.engine:CountCardsPlayed()
+                if self == card and self.owner:HasCondition("equip_glaive") then
+                    dmgt:AddDamage( stacks * 2, stacks * 2, self )
+                end
+            end,
+        },
+    },
 
     exposeaid =
     {
         name = "Exposeaid",
         anim = "crack",
-        desc = "If {equip_flail} is equipped, gain {SHATTER} for one turn.",
+        desc = "If {equip_flail} is equipped, gain {SHATTER} for 1 turn.",
         icon = "RISE:textures/overdrive.png",
 
         flags =  CARD_FLAGS.MELEE,
@@ -2580,20 +2721,35 @@ local CARDS =
       
         min_damage = 2,
         max_damage = 5, 
+        
+        shatter_amount = 1,
 
         OnPostResolve = function( self, battle, attack, card )
             if self.owner:HasCondition("equip_flail") then
-                self.owner:AddCondition("SHATTER", 1, self)
-                self.owner:AddCondition("TEMP_SHATTER", 1, self)
+                self.owner:AddCondition("SHATTER", self.shatter_amount, self)
+                self.owner:AddCondition("TEMP_SHATTER", self.shatter_amount, self)
             end
         end,
+    },
+    exposeaid_plus =
+    {
+        name = "Boosted Exposeaid",
+        min_damage = 4,
+        max_damage = 6,
+    },
+    exposeaid_plus2 =
+    {
+        name = "Exposeaid of Destruction",
+        desc = "If {equip_flail} is equipped, gain {SHATTER} for <#UPGRADE>2 turns</>.",
+        manual_desc = true,
+        shatter_amount = 2,
     },
 
     nice_knowin_ya = 
     {
         name = "Nice Knowin Ya",
         anim = "spin_attack",
-        desc = "If {equip_glaive} is equipped, have a chance to deal double, triple or decreased damage.",
+        desc = "If {equip_glaive} is equipped, have a chance to deal double, triple or decreased base damage.",
         icon = "RISE:textures/gumption.png",
 
         flags =  CARD_FLAGS.MELEE,
@@ -2611,11 +2767,53 @@ local CARDS =
                 if card == self then
                     if self.owner:HasCondition("equip_glaive") then
                         if damageChance == 3 then
-                            dmgt:ModifyDamage( dmgt.min_damage * 2, dmgt.max_damage * 2, self ) -- triple damage
+                            dmgt:ModifyDamage( dmgt.min_damage + 2, dmgt.max_damage + 6, self ) -- triple damage
                         elseif damageChance == 2 then
-                            dmgt:ModifyDamage( dmgt.min_damage * 1, dmgt.max_damage * 1, self ) -- double damage
+                            dmgt:ModifyDamage( dmgt.min_damage + 1, dmgt.max_damage + 3 , self ) -- double damage
                         elseif damageChance == 1 then
-                            dmgt:ModifyDamage( dmgt.min_damage - 1, dmgt.max_damage - 1, self ) -- decreased damage
+                            dmgt:ModifyDamage( dmgt.min_damage, dmgt.max_damage - 2, self ) -- decreased damage (1 min, 1 max)
+                        end
+                    end
+                end
+            end,
+        },
+    },
+    nice_knowin_ya_plus=
+    {
+        name = "Really Nice Knowin Ya",
+        desc = "Have a chance to deal double, triple or decreased base damage.",
+        manual_desc = true,
+        event_handlers =
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                local damageChance = math.random(1,3)
+                if card == self then
+                    if damageChance == 3 then
+                        dmgt:ModifyDamage( dmgt.min_damage + 2, dmgt.max_damage + 6, self ) -- triple damage
+                    elseif damageChance == 2 then
+                        dmgt:ModifyDamage( dmgt.min_damage + 1, dmgt.max_damage + 3 , self ) -- double damage
+                    elseif damageChance == 1 then
+                        dmgt:ModifyDamage( dmgt.min_damage, dmgt.max_damage - 2, self ) -- decreased damage (1 min, 1 max)
+                    end
+                end
+            end,
+        },
+    },
+    nice_knowin_ya_plus2=
+    {
+        name = "Reliable Nice Knowin Ya",
+        desc = "If {equip_glaive} is equipped, have a chance to deal double or triple damage.",
+        manual_desc = true,
+        event_handlers =
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                local damageChance = math.random(1,3)
+                if card == self then
+                    if self.owner:HasCondition("equip_glaive") then
+                        if damageChance == 3 then
+                            dmgt:ModifyDamage( dmgt.min_damage + 2, dmgt.max_damage + 6, self ) -- triple damage
+                        elseif damageChance == 2 then
+                            dmgt:ModifyDamage( dmgt.min_damage + 1, dmgt.max_damage + 3 , self ) -- double damage
                         end
                     end
                 end
@@ -2652,6 +2850,33 @@ local CARDS =
             end
         end,
         
+    },
+    it_wasnt_me_plus =
+    {
+        name = "It Actually Wasn't Me.",
+        desc = "If {equip_glaive} is equipped, gain {1} {EVASION}.",
+        manual_desc = true,
+        OnPostResolve = function( self, battle, attack, card )
+            if self.owner:HasCondition("equip_glaive") then
+                self.owner:AddCondition("EVASION", self.evasion_amount, self)
+            end
+        end,
+    },
+    it_wasnt_me_plus2 =
+    {
+        name = "It Was You!!",
+        desc = "If {equip_glaive} is equipped, Apply 2 {WOUND} to enemy.",
+        manual_desc = true,
+        OnPostResolve = function( self, battle, attack, card )
+            if self.owner:HasCondition("equip_glaive") then
+                for i, hit in attack:Hits() do
+                    local target = hit.target
+                    if not hit.evaded then 
+                        target:AddCondition("WOUND", 2, self)
+                    end
+                end
+            end
+        end,
     },
 
     call_it_even = 
@@ -2723,14 +2948,39 @@ local CARDS =
         event_handlers = 
         {
             [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
-                local enemyCount = 0
-                for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-                    enemyCount = enemyCount + 1
+                if card == self then
+                    local enemyCount = 0
+                    for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                        enemyCount = enemyCount + 1
+                    end
+                    dmgt:AddDamage(enemyCount,enemyCount,self)
                 end
-                dmgt:AddDamage(enemyCount,enemyCount,self)
             end,
         }
         
+    },
+    under_pressure_plus =
+    {
+        name = "Boosted Excel Under Pressure",
+        min_damage = 4,
+        max_damage = 6,
+    },
+    under_pressure_plus2 =
+    {
+        name = "Excel Under Extreme Pressure",
+        desc = "Deal <#UPGRADE>2</> extra damage for each enemy in the fight.  If {equip_glaive} is active and there is more than 1 enemy, gain {INVINCIBLE}.",
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                if card == self then
+                    local enemyCount = 0
+                    for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                        enemyCount = enemyCount + 2
+                    end
+                    dmgt:AddDamage(enemyCount,enemyCount,self)
+                end
+            end,
+        }
     },
 
     -- BOG CARDS BELOW
@@ -3733,7 +3983,7 @@ local CONDITIONS =
     WEAPON_SWAP_PROFICIENCY = 
     {
         name = "Weapon Swap Proficiency", 
-        desc = "Swapping weapons with {glaive_swap} or {flail_swap} grants you buffs.",
+        desc = "Swapping weapons with Kashio's Flail or Kashio's Force Glaive grants you buffs.",
         icon = "battle/conditions/steady_hands.tex",   
         ctype = CTYPE.BUFF,
         
@@ -4117,7 +4367,7 @@ local CONDITIONS =
         event_handlers = 
         {
             [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, attack, hit )
-                self.owner:AddCondition("DEFECT", self.owner:GetEnemyTeam():NumActiveFighters())
+                -- self.owner:AddCondition("DEFECT", self.owner:GetEnemyTeam():NumActiveFighters())
                 if self.owner:HasCondition("INVINCIBLE") then
                     self.owner:RemoveCondition("INVINCIBLE", 1, self)
                 end
@@ -4412,8 +4662,8 @@ local CONDITIONS =
         event_handlers =
         {
             [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, card, target )
-                self.owner:RemoveCondition("SHATTER")
-                self.owner:RemoveCondition(self.id)
+                self.owner:RemoveCondition("SHATTER", 1, self)
+                self.owner:RemoveCondition(self.id, 1, self)
             end,
         },
     },
