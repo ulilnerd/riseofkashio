@@ -1,0 +1,77 @@
+┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+Rise of Kashio Steam Workshop (DEMO)
+┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+
+Hello!  Please note first that this is a work in progress project and nothing in the game you will see will be final.
+
+Enter the Griftlands in the eyes of Kashio!  This mod is a character mod that features a new character, Kashio with over 90+ new battle cards, new conditions, new abilities and a "Battle" brawl mode.
+
+Kashio is meant to be played as a flexible and more aggressive character.  She currently has two main passive abilities: Kashio's Flail and Kashio's Force Glaive.
+
+With these two abilities in mind, you are not binded to either of these weapons and may swap between them during a battle.  How would you swap weapons you ask?  There are a few card abilities that either swap your weapon, shuffles a card into your deck that swaps your weapon on activation or simply using the "Swap Weapon" card that allows you to place one of the weapon cards in your hand to swap weapons immediately or save it for later.
+
+As for card archetypes, there are 3 main decks that you may find in this mod but are not limited to them.  These consist of:
+
+Swap Weapons: 
+A deck that revolves around swapping your weapons depending on the situation.  A typical combo would be to swap to the glaive when enemy is not attacking, deal bonus damage due to the glaive passive, end turn, enemy attacks?  Swap to the flail to take reduced damage and gain passive defend. You will then gain an additional action the next turn while having the flail equipped.  This deck has the most flexibility in terms of, you can do whatever you want to do and if you want to do something new, just do it!
+
+Kingpin: 
+You may have noticed some cards have the "Kingpin" tag on them and will gain bonus effects depending on the number. After 6 actions of using the same weapon consecutively (Can be on different turns) a card will be placed into your hand called "The Execution", this card activates an ability called Kingpin.  While active, you gain stacks of Kingpin every time someone (Allies, enemies, you) makes an action.  Every 10 stacks of Kingpin will grant you a special effect which I will list below.  Additionally as you already know, some of the cards will gain bonus effects if you have a certain amount of Kingpin stacks. If you swap weapons while this ability is active, you will lose all your stacks of Kingpin and will have to make 6 actions using the same weapon again to gain "The Execution" card.  
+
+CURRENT KINGPIN ABILITIES: 
+-- 10 stacks: gain METALLIC and removes all bleed and wound on activation
+-- 20 stacks: Your attacks on an enemy have a small chance of granting you a random buff from a select few buffs on a list I've set.
+-- 30 stacks: A random enemy gains DEFECT every turn
+
+
+[spoiler]Bog Monstrosity: [/spoiler]
+I want to keep this one a secret and let you, the players be surprised by this deck archetype so I will warn you right now, stop reading this section of the post if you want to be surprised (then come back to it later haha).  
+
+[spoiler]First you will notice there are some out of place cards like "Parasite Infusion, Armor of Disease, Contamination, etc" in the Rare card pool that have the "Bog Ability" tag. After using a "Bog Ability" card you will notice you gain a condition called "One With The Bog", this ability has a chance to shuffle one of these Bog cards to your hand for free regardless if you picked up the card or not every turn, but that's not all.  Additionally every time you end your turn, one non bog card will be expended from both your draw pile and discard pile and be replaced with a "Bog" card.  These cards are not the same as the Bog Ability cards and can only be obtained through "One With The Bog".  Bog cards you pick up here are meant to be very powerful and make you feel like slowly but surely you are becoming a Bog Monstrosity! [/spoiler]
+
+[spoiler]How did you get the idea of the Bog Monster deck archetype?  I was participating in a Griftlands event called Bogtober which is an event to create Bog themed content.  My idea was to create a normal character with a normal set of cards that could transform into a bog monster, and I wanted to demonstrate and simulate doing that with programming.  Kashio was already an existing project of mine and I thought it would be cool to implement a more silly kind of deck archetype that could simulate this effect, but unfortunately does not fit in with the transform into a monster theme at all. [/spoiler]
+
+As for modes you can play in this mod there are 2 so far.  I have included a mostly complete Battle Brawl as a demo to try out all of the new cards with some events that will allow you to draft some of the more powerful cards.  The story "Rise of Kashio" in it's current state is an incomplete and experimental project I was working on to get a grasp on how story quests are built and nothing in this short story campaign will be included in the final build in the future.  For a limited time there is an event after the first quest in the Battle Brawl that will allow you to experience the  [spoiler]"Bog Monstrocity" [/spoiler] deck archetype without diving super deep into the mod.  
+
+Lastly I want to thank our friendly Griftlands community member Bee for creating all of the non bog ability card arts for the cards!  You can check out Bee at this Twitter link: https://twitter.com/OneTinyBeeDraws
+
+SUMMARY OF CURRENT FEATURES:
+- 95+ brand new and unique battle cards!
+- New playable character, Kashio
+- New conditions and abilities
+- Switching weapons mechanic/gimmick
+- "Battle" Brawl mode with a few custom events
+- Custom Card art made by Bee!
+- 3 new deck archetypes with unique playstyles
+
+PLANNED IMPLEMENTED FEATURES:
+- More card upgrades
+- Rework on some dull cards
+- Bug fixes (Yep you guessed it, it crashes A LOT)
+- More cards
+- Additional Kingpin stack abilities
+- Card and ability balancing?
+- Random events in the battle brawl
+- Story Campaign
+- Grafts
+- Possibly Negotiation
+
+HISTORY OF THE MOD
+
+I bought this game in July when Griftlands was released on Steam, also being a fan of Klei's other games such as Oxygen Not Included and Don't starve.  The first playthroughs felt very intriguing to me and I immediately binged hours upon hours playing the game as I was an avid Slay the Spire fan as well.  The first time fighting Kashio got me MIND BLOWN.  The animations and how she fights you are brilliant, while switching to that force glaive is just soooo soooo smooth. 
+
+Fast forward to September, Steam Workshop mods release for the game and I start up my mini project and I knew exactly what kind of mod I wanted to make.  I start with what I think would be fun to do or fun to play when I finish the mod, only to realize that this was going to take quite some time to do.  My goal was to create a whole new playable deck with a unique fighting style, with around 80 cards, which I have achieved through hours and hours of programming.
+
+Today I have over 200 hours of modding mostly how cards work with new mechanics and abilities/conditions.
+
+This is the first personal project I've worked on and I'm proud to create something for a game that I really enjoy playing.  I'm planning to keep pushing out content for my mod and in the future enjoy many hours of my own creation, or even come out with a great return value after I have completed this project (And I can only hope that others will enjoy hours and hours of my mod as well!).
+
+If you have any questions or want to report a bug, feel free to comment on this mod post or personal message me on any of the platforms below! Thank you so much for reading and I hope you all have a great day :D
+
+
+┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+
+DISCORD: u lil nerd#4551
+GITHUB: https://github.com/ulilnerd
+
+┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄

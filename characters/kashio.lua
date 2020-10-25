@@ -9,6 +9,8 @@ local def = CharacterDef("KASHIO_PLAYER",
 
     anims = {"anim/weapon_flail_kashio.zip" },
     combat_anims = { "anim/med_combat_flail_kashio.zip" },
+
+    voice_actor = "kashio",
     
     max_grafts = {
         [GRAFT_TYPE.COMBAT] = 6,

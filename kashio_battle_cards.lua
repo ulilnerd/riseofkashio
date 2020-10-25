@@ -153,7 +153,7 @@ local CARDS =
     {
         name = "Invincible",
         anim = "taunt",
-        desc = "All damage is reduced by 50% this turn and gain {RIPOSTE} equal to that amount, Gain {DEFECT}.",
+        desc = "Gain {INVINCIBLE} and {DEFECT}.",
         icon = "battle/bring_it_on.tex",
 
         rarity = CARD_RARITY.UNIQUE,
@@ -172,7 +172,7 @@ local CARDS =
     {
         name = "Boosted Invincible",
         anim = "taunt",
-        desc = "All damage is reduced by 50% this turn and gain {RIPOSTE} equal to that amount.",
+        desc = "Gain {INVINCIBLE}.",
         icon = "battle/bring_it_on.tex",
 
         rarity = CARD_RARITY.UNIQUE,
@@ -1148,7 +1148,7 @@ local CARDS =
     flail_swap =
     {
         name = "Kashio's Flail",
-        desc = "Equip {equip_flail} and gain {DEFEND} equal to 5% of your maximum health and current defend then {HEAL} self for 10% of your missing health every turn. Also have a 25% chance to apply a random debuff to an enemy on hit.",
+        desc = "Equip {equip_flail}.",
         icon = "battle/overloaded_spark_hammer.tex",
         anim = "taunt",
 
@@ -1172,7 +1172,7 @@ local CARDS =
     glaive_swap = 
     {
         name = "Kashio's Force Glaive",
-        desc = "Equip the Rentorian Force Glaive gaining extra damage with your attacks and an extra action per turn at the cost of taking more damage and halving {DEFEND}.",
+        desc = "Equip {equip_glaive}.",
         icon = "battle/rentorian_force_glaive.tex",
         anim = "transition1",
 
@@ -1276,7 +1276,7 @@ local CARDS =
     {
         name = "Deflect",
         anim = "taunt3",
-        desc = "Gain {1} {DEFLECTION}, {KINGPIN} 15: Deal half the damage enemies will deal to you instead and defend for the same amount.",
+        desc = "Gain {1} {DEFLECTION}.",
         icon = "battle/hammer_swing.tex",
 
         flags = CARD_FLAGS.SKILL,
@@ -1632,7 +1632,7 @@ local CARDS =
     {
         name = "Raging Slam",
         anim = "slam",
-        desc = "Damage a random enemy and gain {EXPOSED}. If {equip_flail} is active, the enemy hit gains {IMPAIR}.",
+        desc = "Damage a random enemy and gain {EXPOSED}. If {equip_flail} is active, apply {IMPAIR}.",
         icon = "RISE:textures/ragingslam.png",
 
         flags = CARD_FLAGS.MELEE,
@@ -1667,7 +1667,7 @@ local CARDS =
     {
         name = "Strength of One Thousand",
         anim = "defend",
-        desc = "Gain {scaling_defense} then place {equip_flail} and {equip_glaive} into your hand.",
+        desc = "Gain {scaling_defense} then place both weapon cards into your hand.",
         icon = "RISE:textures/strengthofonethousand.png",
 
         flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.BUFF,
@@ -1958,7 +1958,7 @@ local CARDS =
     {
         name = "Plead for Life",
         anim = "surrender",
-        desc = "Have a small chance of gaining {PLEAD_FOR_LIFE} for 1 turn depending on your missing health.",
+        desc = "Have a small chance to gain {PLEAD_FOR_LIFE} depending on your missing health.",
         icon = "battle/doomed.tex",
 
         flags =  CARD_FLAGS.SKILL,
@@ -1992,7 +1992,7 @@ local CARDS =
     {
         name = "Blade Dance",
         anim = "transition1",
-        desc = "Gain stacks of {BLADE_DANCE} depending on a random enemy's current health, place {flail_swap} or {glaive_swap} into your hand depending on what weapon is currently equipped.",
+        desc = "Gain {BLADE_DANCE}. Place a weapon card into your hand depending on what weapon is currently equipped.",
         icon = "battle/blade_fury.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -2066,7 +2066,7 @@ local CARDS =
         anim = "transition1",
         icon = "RISE:textures/tempt.png",
 
-        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.REPLENISH,
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.BURNOUT,
         cost = 0,
         rarity = CARD_RARITY.UNIQUE,
         max_xp = 6,
@@ -2178,7 +2178,7 @@ local CARDS =
     {
         name = "Ultimate Hunter",
         anim = "taunt",
-        desc = "Gain {ULTIMATE_HUNTER} then place {flail_swap} or {glaive_swap} in your hand depending on which weapon you currently have equipped.",
+        desc = "Gain {ULTIMATE_HUNTER} then place 1 weapon card to your hand depending on which weapon you currently have equipped.",
         icon = "battle/butcher_of_the_bog.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -2286,7 +2286,7 @@ local CARDS =
     {
         name = "Playing With Fire",
         anim = "slam",
-        desc = "Apply a random negative condition to either you or the enemy {KINGPIN} 10: Always apply a random debuff to an enemy.",
+        desc = "Apply a random negative condition to yourself or the enemy {KINGPIN} 10: Always apply a random debuff to an enemy.",
         icon = "battle/weakness_inflammable.tex",
 
         flags =  CARD_FLAGS.MELEE,
@@ -2359,7 +2359,7 @@ local CARDS =
     {
         name = "Battle Cry: Rejuvenate",
         anim = "taunt4",
-        desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {MENDING} evenly amongst your team depending on how many {TAG_TEAM} stacks were consumed.",
+        desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {MENDING} evenly amongst your team.",
         icon = "battle/healing_vapors.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -2388,7 +2388,7 @@ local CARDS =
     {
         name = "Battle Cry: Inspire",
         anim = "taunt4",
-        desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {POWER_LOSS} evenly amongst your team depending on how many {TAG_TEAM} stacks were consumed.",
+        desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {POWER_LOSS} evenly amongst your team.",
         icon = "battle/adrenaline_shot.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -2418,7 +2418,7 @@ local CARDS =
     {
         name = "Battle Cry: Hold The Line",
         anim = "taunt4",
-        desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {ARMOURED} evenly amongst your team depending on how many {TAG_TEAM} stacks were consumed.",
+        desc = "Consume all of your {TAG_TEAM} stacks to apply stacks of {ARMOURED} evenly amongst your team.",
         icon = "battle/get_down.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -2447,7 +2447,7 @@ local CARDS =
     {
         name = "Tag Team",
         anim = "transition1",
-        desc = "Gain {TAG_TEAM} and place {flail_swap} or {glaive_swap} into your hand depending on the current weapon equipped.",
+        desc = "Gain {TAG_TEAM} and place a weapon card into your hand depending on the current weapon equipped.",
         icon = "battle/baron_expedition.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -2541,7 +2541,7 @@ local CARDS =
     {
         name = "Finish Them",
         anim = "slash_up",
-        desc = "Deal bonus damage equal to how many cards were played this turn if you have {equip_glaive}.",
+        desc = "If you have {equip_glaive}, deal bonus damage equal to how many cards were played this turn.",
         icon = "battle/weakness_telegraphed.tex",
 
         flags =  CARD_FLAGS.MELEE,
@@ -2590,7 +2590,7 @@ local CARDS =
     {
         name = "Nice Knowin Ya",
         anim = "spin_attack",
-        desc = "If you have {equip_glaive}, have a chance to deal double or triple damage or decreased damage.",
+        desc = "If you have {equip_glaive}, have a chance to deal double, triple or decreased damage.",
         icon = "RISE:textures/gumption.png",
 
         flags =  CARD_FLAGS.MELEE,
@@ -2624,7 +2624,7 @@ local CARDS =
     {
         name = "It Wasn't Me!!",
         anim = "slash_up",
-        desc = "If you have {equip_glaive}, gain {1} {EVASION} and  {2} {WOUND}.",
+        desc = "If you have {equip_glaive}, gain {1} {EVASION} and {2} {WOUND}.",
         icon = "RISE:textures/save_face.png",
 
         flags =  CARD_FLAGS.MELEE,
@@ -2735,7 +2735,7 @@ local CARDS =
     {
         name = "Parasite Infusion", -- bugged when you have more than one copy in your hand: enemies gain more stacks than intended and gain even more stacks while attacking not with this card
         anim = "throw1",
-        desc = "Infuses an enemy with {PARASITIC_INFUSION}, gaining stacks depending on the target enemy's max health. {BOG_ABILITY}.",
+        desc = "Infuse an enemy with {PARASITIC_INFUSION}. {BOG_ABILITY}.",
         icon = "battle/branch.tex",
 
         flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
@@ -2768,8 +2768,9 @@ local CARDS =
     {
         name = "Contaminate",
         anim = "slash_up",
-        desc = "Contaminates an enemy, which grants them stacks of {CONTAMINATION} based on their current health. {BOG_ABILITY}.",
+        desc = "Inflict an enemy with {CONTAMINATION}. {BOG_ABILITY}.",
         icon = "battle/giant_stinger.tex",
+        -- desc = "Contaminates an enemy, which grants them stacks of {CONTAMINATION} based on their current health. {BOG_ABILITY}.",
 
         flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
         cost = 2,
@@ -2793,7 +2794,7 @@ local CARDS =
     {
         name = "Remote Plague",
         anim = "throw2",
-        desc = "Contaminates an enemy, which grants them random stacks of {REMOTE_PLAGUE}. {BOG_ABILITY}.",
+        desc = "Contaminate an enemy with {REMOTE_PLAGUE}. {BOG_ABILITY}.",
         icon = "battle/funky_fungi.tex",
 
         flags =  CARD_FLAGS.RANGED,
@@ -2854,7 +2855,7 @@ local CARDS =
     {
         name = "Remote: Contaminate",
         anim = "taunt",
-        desc = "Enemies with {REMOTE_PLAGUE} spread a {CONTAMINATION} virus to all of their allies without {REMOTE_PLAGUE}.",
+        desc = "Enemies with {REMOTE_PLAGUE} spread {CONTAMINATION} to all of their allies without {REMOTE_PLAGUE}.",
         icon = "battle/automech_access_code.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -2910,7 +2911,7 @@ local CARDS =
     {
         name = "Epidemic",
         anim = "throw1",
-        desc = "Deal damage to all enemies and have a chance to inflict enemies with a virus called {EPIDEMIC} for 3 turns. Minimum 1 enemy will be inflicted. {BOG_ABILITY}.",
+        desc = "Have a chance to inflict enemies with {EPIDEMIC}. Minimum 1 enemy will be inflicted. {BOG_ABILITY}.",
         icon = "battle/tendrils.tex",
 
         flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
@@ -2989,7 +2990,7 @@ local CARDS =
     {
         name = "Infestation",
         anim = "taunt",
-        desc = "Shuffle 2 Bog Cards to your hand and expend a non unique card from your draw and discard pile each.  If any enemies have a Bog Condition, raise a bog creature to your side or the enemy's side. {BOG_ABILITY}.",
+        desc = "Place 2 Bog Cards to your hand, expend 2 non unique cards.  If any enemies have a Bog Condition, raise a bog creature. {BOG_ABILITY}.",
         icon = "negotiation/voices.tex",
         
         cost = 2,
@@ -3058,7 +3059,7 @@ local CARDS =
     {
         name = "Infest",
         anim = "crack",
-        desc = "Deal damage and have a chance to inflict an enemy with a bog condition. <i>{BEE}</i>.",
+        desc = "Have a chance to inflict an enemy with a bog condition. <i>{BEE}</i>.",
         icon = "RISE:textures/infest.png",
         
         cost = 1,
@@ -3242,7 +3243,7 @@ local CARDS =
     {
         name = "Nightmare Blade",
         anim = "spin_attack",
-        desc = "Incept a {NIGHTMARE} into an enemy, a {NIGHTMARE} inflicted enemy will take more damage from all sources and deal less damage.  All allies gain {TARGETED}. <i>{BEE}</i>.",
+        desc = "Incept a {NIGHTMARE} into an enemy. All allies gain {TARGETED}. <i>{BEE}</i>.",
         icon = "RISE:textures/nightmareblade.png",
         
         cost = 1,
@@ -3290,7 +3291,8 @@ local CARDS =
     {
         name = "Viral Outbreak",
         anim = "slash_up",
-        desc = "Deal bonus damage equal to 10% of the total damage you took then apply {PARASITIC_INFUSION} to an enemy, the stacks gained are equal to half the total damage you took. <i>{BEE}</i>.",
+        desc = "Deal bonus damage equal to 10% of the total damage taken. Apply {PARASITIC_INFUSION} to an enemy. <i>{BEE}</i>.",
+            -- the stacks gained are equal to half the total damage you took
         icon = "RISE:textures/viraloutbreak.png",
         
         cost = 1,
@@ -3332,7 +3334,7 @@ local CARDS =
     {
         name = "Evolve",
         anim = "taunt",
-        desc = "Evolve, gaining Regeneration and {DEFEND} per turn equal to 10% total damage dealt this fight. Add 10 to your damage dealt counter if you already have {EVOLUTION}. <i>{BEE}</i>.",
+        desc = "Gain {EVOLUTION}. <i>{BEE}</i>.",
         icon = "RISE:textures/evolve.png",
         
         cost = 1,
@@ -3507,7 +3509,7 @@ local CARDS =
     {
         name = "Weapon Swap Proficiency",
         anim = "slash_up",
-        desc = "Gain 1 {EVASION}. Swapping weapons with {glaive_swap} or {flail_swap} gives you instant buffs. Shuffle 2 random weapon cards to your deck.",
+        desc = "Gain 1 {EVASION} and {WEAPON_SWAP_PROFICIENCY}. Shuffle 2 random weapon cards to your deck.",
         icon = "battle/utility_belt.tex",
 
         cost = 1,
@@ -3538,7 +3540,7 @@ local CARDS =
     {
         name = "Prepared Circumstances",
         anim = "taunt",
-        desc = "Gain 7 {DEFEND}. Every turn, place {glaive_swap} and {flail_swap} to your hand.",
+        desc = "Gain 7 {DEFEND} and {PREPARED_CIRCUMSTANCES}.",
         icon = "battle/battle_plan.tex",
 
         cost = 1,
@@ -3991,19 +3993,38 @@ local CONDITIONS =
     EVOLUTION = 
     {
         name = "Evolution", 
-        desc = "Gain Regeneration and {DEFEND} per turn equal to 10% total damage dealt this fight. At 100 damage, gain an extra action per turn.",
+        desc = "Gain Regeneration and {DEFEND} per turn equal to 10% total damage dealt this fight. At 100 damage, gain an extra action per turn. The stacks of this ability is equal to total damage dealt.",
         icon = "battle/conditions/blood_bind.tex",   
 
         ctype = CTYPE.BUFF,
-        max_stacks = 1,
+        max_stacks = 100,
+        atMax = false,
+
+        OnApply = function( self, battle )
+            self.owner:AddCondition("EVOLUTION", self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt, self )
+        end,
 
         event_handlers = 
         {
+            [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, card, target, dmgt, hit )
+                if self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt >= 100 then
+                    self.owner:AddCondition("NEXT_TURN_ACTION", 1 , self)
+                end
+            end,
             [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, card, target, dmgt, hit )
                 self.owner:AddCondition("DEFEND", math.round(self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt / 10), self)
                 self.owner:HealHealth(math.round(self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt / 10), self)
-                if self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt >= 100 then
-                    self.owner:AddCondition("NEXT_TURN_ACTION", 1 , self)
+            end,
+            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit, target )
+                if attack.attacker == self.owner and attack.card:IsAttackCard() and not hit.evaded then
+                    if self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt > 100 and self.atMax == false then
+                        self.owner:RemoveCondition("EVOLUTION", self.owner:GetConditionStacks("EVOLUTION") - 1)
+                        self.owner:AddCondition("EVOLUTION", 100, self )
+                        self.atMax = true
+                    else
+                        self.owner:RemoveCondition("EVOLUTION", self.owner:GetConditionStacks("EVOLUTION") - 1)
+                        self.owner:AddCondition("EVOLUTION", self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt, self )
+                    end
                 end
             end
         }  
@@ -4123,7 +4144,7 @@ local CONDITIONS =
     ONE_WITH_THE_BOG = 
     {
         name = "One With The Bog", 
-        desc = "You gain this condition after using a Kashio Bog Ability.  You cannot gain KINGPIN stacks while this is active and cannot equip any weapons. Removes {KINGPIN}, {equip_flail} and {equip_glaive} on activation. Every turn, have a chance to shuffle a Bog ability card into your hand (regardless if you picked up the card) then shuffle a Bog card into your draw/discard pile while expending a non Item/Bog card in your draw/dicard pile.",
+        desc = "You gain this condition after using a Kashio Bog Ability.  You cannot gain KINGPIN stacks while this is active and cannot equip any weapons. Removes Kingpin, Kashio's Flail and Kashio's Force Glaive on activation. Every turn, have a chance to shuffle a Bog ability card into your hand (regardless if you picked up the card) then shuffle a Bog card into your draw/discard pile while expending a non Item/Bog card in your draw/dicard pile.",
         icon = "battle/conditions/heart_of_the_bog.tex",  
         
         max_stacks = 1,
@@ -4220,7 +4241,7 @@ local CONDITIONS =
     ARMOR_OF_DISEASE = 
     {
         name = "Armor Of Disease", 
-        desc = "The next enemy that attacks you, will gain {EPIDEMIC}, {REMOTE_PLAGUE}, {PARASITIC_INFUSION} or {CONTAMINATION}.",
+        desc = "The next enemy that attacks you, will gain Epidemic, Remote Plague, Parasitic Infusion or Contamination.",
         icon = "battle/conditions/armored_pet.tex",  
 
         ctype = CTYPE.BUFF,
@@ -4258,7 +4279,7 @@ local CONDITIONS =
     EPIDEMIC = 
     {
         name = "The Epidemic", 
-        desc = "Every turn, shuffle a Viral Sadism card into your discard pile for every enemy with this condition then have a chance to spread the virus to an ally.",
+        desc = "Every turn, shuffle {viral_sadism} into your discard pile for every enemy with this condition then have a chance to spread the virus to an ally.",
         icon = "battle/conditions/burr_eye_stalk_vision.tex",  
 
         ctype = CTYPE.DEBUFF,
@@ -4582,7 +4603,7 @@ local CONDITIONS =
     ULTIMATE_HUNTER = 
     {
         name = "Ultimate Hunter",
-        desc = "Gain {DEFEND} whenever you swap weapons. Shuffle {equip_flail} or {equip_glaive} into your draw pile after every turn end depending on which weapon you have equipped.",
+        desc = "Gain {DEFEND} whenever you swap weapons. Shuffle a weapon card into your draw pile after every turn end depending on which weapon you have equipped.",
         icon = "battle/conditions/vroc_howl.tex",
 
         flailCount = 0,
@@ -4958,10 +4979,10 @@ local CONDITIONS =
             -- take roughly 30% more damage and deal 30% more damage
             [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
                 if card.owner == self.owner and card:IsAttackCard() then
-                    dmgt:ModifyDamage( math.round(dmgt.min_damage + dmgt.min_damage * 0.3), math.round(dmgt.max_damage + dmgt.max_damage * 0.3), self )
+                    dmgt:ModifyDamage( math.round(dmgt.min_damage + dmgt.min_damage * 0.33), math.round(dmgt.max_damage + dmgt.max_damage * 0.3), self )
                 end
                 if target == self.owner then
-                    dmgt:ModifyDamage( math.round(dmgt.min_damage + dmgt.min_damage * 0.3), math.round(dmgt.max_damage + dmgt.max_damage * 0.3), self )
+                    dmgt:ModifyDamage( math.round(dmgt.min_damage + dmgt.min_damage * 0.33), math.round(dmgt.max_damage + dmgt.max_damage * 0.3), self )
                 end
             end,
 
