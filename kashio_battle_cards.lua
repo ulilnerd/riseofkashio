@@ -1992,7 +1992,8 @@ local CARDS =
     {
         name = "Blade Dance",
         anim = "transition1",
-        desc = "Gain {BLADE_DANCE}. Place a weapon card into your hand depending on what weapon is currently equipped.",
+        desc = "Gain {BLADE_DANCE}. Place a weapon card into your hand.",
+        -- depending on what weapon is currently equipped
         icon = "battle/blade_fury.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -2178,7 +2179,8 @@ local CARDS =
     {
         name = "Ultimate Hunter",
         anim = "taunt",
-        desc = "Gain {ULTIMATE_HUNTER} then place 1 weapon card to your hand depending on which weapon you currently have equipped.",
+        desc = "Gain {ULTIMATE_HUNTER}. Place a weapon card to your hand.",
+            -- depending on which weapon you currently have equipped
         icon = "battle/butcher_of_the_bog.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -2447,7 +2449,8 @@ local CARDS =
     {
         name = "Tag Team",
         anim = "transition1",
-        desc = "Gain {TAG_TEAM} and place a weapon card into your hand depending on the current weapon equipped.",
+        desc = "Gain {TAG_TEAM}. Place a weapon card into your hand.",
+        -- depending on the current weapon equipped
         icon = "battle/baron_expedition.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -2541,7 +2544,7 @@ local CARDS =
     {
         name = "Finish Them",
         anim = "slash_up",
-        desc = "If you have {equip_glaive}, deal bonus damage equal to how many cards were played this turn.",
+        desc = "If {equip_glaive} is equipped, deal bonus damage equal to how many cards were played this turn.",
         icon = "battle/weakness_telegraphed.tex",
 
         flags =  CARD_FLAGS.MELEE,
@@ -2567,7 +2570,7 @@ local CARDS =
     {
         name = "Exposeaid",
         anim = "crack",
-        desc = "If you have {equip_flail} gain {SHATTER} for one turn.",
+        desc = "If {equip_flail} is equipped, gain {SHATTER} for one turn.",
         icon = "RISE:textures/overdrive.png",
 
         flags =  CARD_FLAGS.MELEE,
@@ -2590,7 +2593,7 @@ local CARDS =
     {
         name = "Nice Knowin Ya",
         anim = "spin_attack",
-        desc = "If you have {equip_glaive}, have a chance to deal double, triple or decreased damage.",
+        desc = "If {equip_glaive} is equipped, have a chance to deal double, triple or decreased damage.",
         icon = "RISE:textures/gumption.png",
 
         flags =  CARD_FLAGS.MELEE,
@@ -2624,7 +2627,7 @@ local CARDS =
     {
         name = "It Wasn't Me!!",
         anim = "slash_up",
-        desc = "If you have {equip_glaive}, gain {1} {EVASION} and {2} {WOUND}.",
+        desc = "If {equip_glaive} is equipped, gain {1} {EVASION} and {2} {WOUND}.",
         icon = "RISE:textures/save_face.png",
 
         flags =  CARD_FLAGS.MELEE,
@@ -2911,7 +2914,7 @@ local CARDS =
     {
         name = "Epidemic",
         anim = "throw1",
-        desc = "Have a chance to inflict enemies with {EPIDEMIC}. Minimum 1 enemy will be inflicted. {BOG_ABILITY}.",
+        desc = "Have a chance to inflict enemies with {EPIDEMIC}. {BOG_ABILITY}.",
         icon = "battle/tendrils.tex",
 
         flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
@@ -3214,6 +3217,7 @@ local CARDS =
         rarity = CARD_RARITY.UNIQUE,
         target_type = TARGET_TYPE.SELF,
 
+        -- could create this as an invisible condition, that way, can add bleed, wound, etc.  ie. apply 1 bleed for 99 turns.
         OnPostResolve = function( self, battle, attack)
             local debuffs = {"IMPAIR", "STAGGER", "DEFECT", "EXPOSED", "TARGETED", "RICOCHET", "TRAUMA"}
             local randomDebuff = math.random(1,7)
@@ -3376,7 +3380,7 @@ local CARDS =
     {
         name = "Transform: The Bog One",
         anim = "taunt3",
-        desc = "Transform in into the ultimate monstrocity, all of your non unique cards are expended and replaced with the all powerful bog cards! {BOG_ABILITY}.",
+        desc = "Transform into the ultimate monstrocity, all of your non unique cards are expended and replaced with the all powerful bog cards! {BOG_ABILITY}.",
         icon = "negotiation/hyperactive.tex",
 
         cost = 2,
@@ -3729,7 +3733,7 @@ local CONDITIONS =
     WEAPON_SWAP_PROFICIENCY = 
     {
         name = "Weapon Swap Proficiency", 
-        desc = "Swapping weapons with {glaive_swap} or {flail_swap} gives you instant buffs.",
+        desc = "Swapping weapons with {glaive_swap} or {flail_swap} grants you buffs.",
         icon = "battle/conditions/steady_hands.tex",   
         ctype = CTYPE.BUFF,
         
@@ -3993,7 +3997,7 @@ local CONDITIONS =
     EVOLUTION = 
     {
         name = "Evolution", 
-        desc = "Gain Regeneration and {DEFEND} per turn equal to 10% total damage dealt this fight. At 100 damage, gain an extra action per turn. The stacks of this ability is equal to total damage dealt.",
+        desc = "Gain Regeneration and {DEFEND} per turn equal to 10% total damage dealt this fight. At 100 damage, gain an extra action per turn. The stacks of this ability is equal to total damage dealt while One With The Bog was active.",
         icon = "battle/conditions/blood_bind.tex",   
 
         ctype = CTYPE.BUFF,
@@ -4006,14 +4010,12 @@ local CONDITIONS =
 
         event_handlers = 
         {
-            [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, card, target, dmgt, hit )
-                if self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt >= 100 then
-                    self.owner:AddCondition("NEXT_TURN_ACTION", 1 , self)
-                end
-            end,
             [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, card, target, dmgt, hit )
                 self.owner:AddCondition("DEFEND", math.round(self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt / 10), self)
                 self.owner:HealHealth(math.round(self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt / 10), self)
+                if self.owner:GetCondition("ONE_WITH_THE_BOG").damageDealt >= 100 then
+                    self.owner:AddCondition("NEXT_TURN_ACTION", 1 , self)
+                end
             end,
             [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit, target )
                 if attack.attacker == self.owner and attack.card:IsAttackCard() and not hit.evaded then
@@ -4144,7 +4146,7 @@ local CONDITIONS =
     ONE_WITH_THE_BOG = 
     {
         name = "One With The Bog", 
-        desc = "You gain this condition after using a Kashio Bog Ability.  You cannot gain KINGPIN stacks while this is active and cannot equip any weapons. Removes Kingpin, Kashio's Flail and Kashio's Force Glaive on activation. Every turn, have a chance to shuffle a Bog ability card into your hand (regardless if you picked up the card) then shuffle a Bog card into your draw/discard pile while expending a non Item/Bog card in your draw/dicard pile.",
+        desc = "Every turn, have a chance to shuffle a Bog ability card into your hand then shuffle a Bog card into your draw/discard pile while expending a non unique card in your draw/dicard pile. You cannot gain KINGPIN stacks while this is active and cannot equip any weapons. Removes Kingpin, Kashio's Flail and Kashio's Force Glaive on activation.",
         icon = "battle/conditions/heart_of_the_bog.tex",  
         
         max_stacks = 1,
@@ -4952,7 +4954,7 @@ local CONDITIONS =
     equip_glaive = 
     {
         name = "Kashio's Force Glaive",
-        desc = "Deal extra damage with your attacks and gain an extra action per turn at the cost of taking more damage and halving {DEFEND}.",
+        desc = "Deal extra damage with your attacks and an extra action per turn at the cost of taking more damage and halving {DEFEND}.",
         -- desc = "Deal extra damage on your first attack and gain an extra action per turn at the cost of taking more damage and halving {DEFEND}.",
         icon = "battle/conditions/kashio_glaive.tex",
 
@@ -5016,7 +5018,7 @@ local CONDITIONS =
     equip_flail = 
     {
         name = "Kashio's Flail",
-        desc = "Gain {DEFEND} equal to 5% of your current health and {DEFEND} then {HEAL} self for 10% of your missing health every turn. Also have a chance 25% chance to apply a random debuff to an enemy on hit.",
+        desc = "Gain {DEFEND} equal to 5% of your current health and {DEFEND} then {HEAL} self for 10% of your missing health every turn. Also have a 25% chance to apply a random debuff to an enemy on hit.",
         -- desc = "Gain {DEFEND} for every 10 current health then {HEAL} self for 10% of your missing health every turn.", -- new description
         icon = "battle/conditions/spree_rage.tex",
 
