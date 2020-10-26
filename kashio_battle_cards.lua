@@ -1711,7 +1711,7 @@ local CARDS =
         flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.BUFF,
         cost = 1,
         rarity = CARD_RARITY.RARE,
-        max_xp = 6,
+        max_xp = 4,
         target_type = TARGET_TYPE.SELF,
 
         OnPostResolve = function( self, battle, attack)
@@ -2118,7 +2118,7 @@ local CARDS =
     {
         name = "Flurry",
         anim = "taunt4",
-        desc = "Gain {FLURRY} and gain 5 flurry daggers.",
+        desc = "Gain {FLURRY} and place 5 flurry daggers to your hand.",
         icon = "battle/daggerstorm.tex",
 
         flags =  CARD_FLAGS.SKILL,
@@ -2994,7 +2994,6 @@ local CARDS =
         flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
         cost = 1,
         rarity = CARD_RARITY.RARE,
-        max_xp = 4,
 
         min_damage = 4,
         max_damage = 7,
@@ -3028,7 +3027,6 @@ local CARDS =
         flags =  CARD_FLAGS.MELEE | CARD_FLAGS.EXPEND,
         cost = 2,
         rarity = CARD_RARITY.RARE,
-        max_xp = 4,
 
         min_damage = 4,
         max_damage = 7,
@@ -3170,7 +3168,6 @@ local CARDS =
         flags =  CARD_FLAGS.RANGED | CARD_FLAGS.EXPEND,
         cost = 2,
         rarity = CARD_RARITY.RARE,
-        max_xp = 4,
         target_mod = TARGET_MOD.TEAM,
 
         min_damage = 3,
@@ -3742,6 +3739,7 @@ local CARDS =
         cost = 1,
         flags =  CARD_FLAGS.MELEE,
         rarity = CARD_RARITY.UNCOMMON,
+        max_xp = 6,
        
         min_damage = 4,
         max_damage = 6,
@@ -3801,6 +3799,7 @@ local CARDS =
         flags =  CARD_FLAGS.SKILL,
         rarity = CARD_RARITY.UNCOMMON,
         target_type = TARGET_TYPE.SELF,
+        max_xp = 6,
 
         OnPostResolve = function( self, battle, attack)
             self.owner:AddCondition("DEFEND", 7 , self)
@@ -4873,7 +4872,7 @@ local CONDITIONS =
                 if self.flailCount == 1 and self.glaiveCount == 1 then
                     self.flailCount = 0
                     self.glaiveCount = 0
-                    self.owner:AddCondition("DEFEND", 5, self)
+                    self.owner:AddCondition("DEFEND", 3, self)
                 end
             end,
 
@@ -4922,7 +4921,7 @@ local CONDITIONS =
     BLADE_DANCE = 
     {
         name = "Blade Dance",
-        desc = "Gain stacks of {BLADE_DANCE} depending on a random enemy's health which will decrease the stacks for every point of damage you deal, when the stacks reach 0, gain evade and place {glaive_swap} or {flail_swap} into your hand.",
+        desc = "Gain stacks of {BLADE_DANCE} depending on a random enemy's health which will decrease the stacks for every point of damage you deal, when the stacks reach 0, gain evade and place Kashio's Flail or Kashio's Force Glaive into your hand.",
         icon = "battle/conditions/sharpened_blades.tex",
 
         min_stacks = 1,
@@ -4975,12 +4974,11 @@ local CONDITIONS =
         -- 10 stacks: gain METALLIC
         -- 20 stacks: Your attacks on an enemy have a small chance of granting you a random buff
         -- 30 stacks: random enemy gains DEFECT every turn
+        -- 40 stacks: every 3rd attack deals double damage and heals for half the amount
 
         -- not yet implemented:
-        -- 40 stacks: every turn a random enemy gains all of your current debuffs
-        -- 50 stacks: your attacks have a chance to inflict an enemy with BLEEDING_EDGE
-        -- every 3rd attack deals double damage and heals for half the amount
-
+        -- 50 stacks: your attacks have a chance to give one of your debuffs to the enemy and remove that debuff
+       
         OnApply = function( self )
             if self.owner:HasCondition("equip_glaive") then
                 self.glaive_equipped = true
@@ -5029,7 +5027,7 @@ local CONDITIONS =
 
             -- 20 stacks: have a chance to gain a random buff on each attack
             [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
-                local randomBuffs = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "EVASION", "DEFLECTION", "FORCE_FIELD", "FLURRY", "BLADE_DANCE", "TAG_TEAM"}
+                local randomBuffs = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "EVASION", "DEFLECTION", "FORCE_FIELD", "FLURRY", "BLADE_DANCE", "TAG_TEAM", "INVINCIBLE"}
                 local randomNum = math.random(1,10)
                 local randomChance = math.random(1,4)
                 if attack.attacker == self.owner and attack.card:IsAttackCard() then
@@ -5037,10 +5035,12 @@ local CONDITIONS =
                     if self.owner:GetConditionStacks("KINGPIN") >= 20 and randomChance == 1 then
                         self.owner:AddCondition(randomBuffs[randomNum], 1, self)
                     end
-                    if self.attackCount == 3 then
-                        self.attackCount = 0
-                    elseif self.attackCount == 2 then
-                        self.owner:HealHealth(hit.damage, self)
+                    if self.owner:GetConditionStacks("KINGPIN") >= 40 then
+                        if self.attackCount == 3 then
+                            self.attackCount = 0
+                        elseif self.attackCount == 2 then
+                            self.owner:HealHealth(hit.damage, self)
+                        end
                     end
                 end
             end,
