@@ -1710,7 +1710,7 @@ local CARDS =
 
         flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND | CARD_FLAGS.BUFF,
         cost = 1,
-        rarity = CARD_RARITY.UNCOMMON,
+        rarity = CARD_RARITY.RARE,
         max_xp = 6,
         target_type = TARGET_TYPE.SELF,
 
@@ -4979,7 +4979,7 @@ local CONDITIONS =
         -- not yet implemented:
         -- 40 stacks: every turn a random enemy gains all of your current debuffs
         -- 50 stacks: your attacks have a chance to inflict an enemy with BLEEDING_EDGE
-        -- every 3rd attack deals double damage and heals for the same amount 
+        -- every 3rd attack deals double damage and heals for half the amount
 
         OnApply = function( self )
             if self.owner:HasCondition("equip_glaive") then
@@ -5028,14 +5028,27 @@ local CONDITIONS =
             end,
 
             -- 20 stacks: have a chance to gain a random buff on each attack
-            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, fighter, attack, hit )
+            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
                 local randomBuffs = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "EVASION", "DEFLECTION", "FORCE_FIELD", "FLURRY", "BLADE_DANCE", "TAG_TEAM"}
                 local randomNum = math.random(1,10)
                 local randomChance = math.random(1,4)
-                if attack.attacker == self.owner then
+                if attack.attacker == self.owner and attack.card:IsAttackCard() then
+                    self.attackCount = self.attackCount + 1
                     if self.owner:GetConditionStacks("KINGPIN") >= 20 and randomChance == 1 then
                         self.owner:AddCondition(randomBuffs[randomNum], 1, self)
                     end
+                    if self.attackCount == 3 then
+                        self.attackCount = 0
+                    elseif self.attackCount == 2 then
+                        self.owner:HealHealth(hit.damage, self)
+                    end
+                end
+            end,
+            
+            -- 40 stacks: every 3 attacks deal double damage, damage counter carries on to next turn as well
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                if card.owner == self.owner and card:IsAttackCard() and self.attackCount >= 2 then
+                    dmgt:ModifyDamage( dmgt.min_damage + dmgt.min_damage , dmgt.max_damage + dmgt.max_damage, self )
                 end
             end,
 
