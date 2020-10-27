@@ -1488,26 +1488,26 @@ local CARDS =
         }
     },
 
-    summon_auto_mech =
-    {
-        name = "Summon Sparkbaron Automech",
-        anim = "taunt",
-        desc = "Summon a Sparkbaron Automech to fight for you.",
-        icon = "battle/screamer.tex",
+    -- summon_auto_mech =
+    -- {
+    --     name = "Summon Sparkbaron Automech",
+    --     anim = "taunt",
+    --     desc = "Summon a Sparkbaron Automech to fight for you.",
+    --     icon = "battle/screamer.tex",
 
-        target_type = TARGET_TYPE.SELF,
-        flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
-        cost = 2,
-        rarity = CARD_RARITY.RARE,
-        max_xp = 4,
+    --     target_type = TARGET_TYPE.SELF,
+    --     flags = CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+    --     cost = 2,
+    --     rarity = CARD_RARITY.RARE,
+    --     max_xp = 4,
 
-        OnPostResolve = function( self, battle, attack )
-            local agent = Agent("SPARK_BARON_AUTOMECH")
-            local fighter = Fighter.CreateFromAgent( agent, 1 )
-            self.owner:GetTeam():AddFighter( fighter )
-            self.owner:GetTeam():ActivateNewFighters()
-        end
-    },
+    --     OnPostResolve = function( self, battle, attack )
+    --         local agent = Agent("SPARK_BARON_AUTOMECH")
+    --         local fighter = Fighter.CreateFromAgent( agent, 1 )
+    --         self.owner:GetTeam():AddFighter( fighter )
+    --         self.owner:GetTeam():ActivateNewFighters()
+    --     end
+    -- },
 
     sonic_pistol = 
     {
@@ -3880,6 +3880,64 @@ local CARDS =
             end
         end
     },
+
+    confusion = 
+    {
+        name = "Confusion",
+        anim = "throw2",
+        desc = "Inflict all enemies with {CONFUSION}.",
+        icon = "battle/long_night.tex",
+
+        flags =  CARD_FLAGS.RANGED,
+        cost = 3,
+        rarity = CARD_RARITY.RARE,
+        max_xp = 4,
+        target_mod = TARGET_MOD.TEAM,
+    
+        min_damage = 1,
+        max_damage = 2,
+
+        OnPostResolve = function( self, battle, attack)
+            for i, hit in attack:Hits() do
+                local target = hit.target
+                if not hit.evaded then 
+                    target:AddCondition("DECEIVED", 1, self)
+                end
+            end
+        end
+
+    },
+
+    killing_spree = 
+    {
+        name = "Killing Spree",
+        anim = "spin_attack",
+        desc = "{KINGPIN} 30: Instantly kill an enemy if they are under 25% health.",
+        icon = "battle/long_night.tex",
+
+        flags =  CARD_FLAGS.MELEE,
+        cost = 2,
+        rarity = CARD_RARITY.RARE,
+        max_xp = 6,
+    
+        min_damage = 5,
+        max_damage = 7,
+
+        OnPostResolve = function( self, battle, attack)
+            for i, hit in attack:Hits() do
+                local target = hit.target
+                if not hit.evaded then 
+                    if self.owner:HasCondition("KINGPIN") then
+                        if self.owner:GetConditionStacks("KINGPIN") >= 30 then
+                            if target:GetHealthPercent() <= 25 then
+                                target:Kill()
+                            end
+                        end
+                    end
+                end
+            end
+        end, 
+    },
     --     blind_grenade = 
     -- {
     --     name = "Blinding Grenade",
@@ -3916,19 +3974,7 @@ local CARDS =
     --     target_type = TARGET_TYPE.SELF,
     -- },
 
-    -- deceived = 
-    -- {
-    --     name = "Deceive",
-    --     anim = "taunt",
-    --     desc = "have a chance to inflict all enemies with deceive, this will cause their next attack to miss and you will counter their missed attack.",
-    --     icon = "battle/improvise_chug.tex",
 
-    --     flags =  CARD_FLAGS.SKILL,
-    --     cost = 2,
-    --     rarity = CARD_RARITY.UNCOMMON,
-    --     max_xp = 4,
-    --     target_type = TARGET_TYPE.SELF,
-    -- },
 
      -- devious_taunt = 
     -- {
@@ -4049,6 +4095,50 @@ local CONDITIONS =
         name = "Art made by Bee", 
         desc = "This card art was designed and drawn by Bee. You can check Bee out at: https://twitter.com/OneTinyBeeDraws",
      
+    },
+
+    CONFUSION = -- a very entertaining ability
+    {
+        name = "Deceived", 
+        desc = "Enemies with this condition will attack themselves or their allies.",
+        icon = "battle/conditions/steady_hands.tex",   
+        hud_fx = {"stunned"},
+        ctype = CTYPE.DEBUFF,
+        
+        event_handlers =
+        {
+            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack, hit )
+                if self.owner.prepared_cards then
+                    for i, card in ipairs(self.owner.prepared_cards) do
+                        card.target_type = TARGET_TYPE.FRIENDLY_OR_SELF
+                    end
+                end
+            end,
+            [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, attack, hit )
+                self.owner:RemoveCondition("DECEIVED", 1, self)
+            end
+        }
+    },
+
+    PREPARED_CIRCUMSTANCES = 
+    {
+        name = "Prepared Circumstances", 
+        desc = "Every turn, place {glaive_swap} and {flail_swap} to your hand.",
+        icon = "battle/conditions/resonance.tex",   
+        ctype = CTYPE.BUFF,
+        
+        max_stacks = 1,
+
+        event_handlers =
+        {
+            [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, attack, hit )
+                local card1 = Battle.Card( "flail_swap", self.owner )
+                battle:DealCard( card1, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+    
+                local card2 = Battle.Card( "glaive_swap", self.owner )
+                battle:DealCard( card2, battle:GetDeck( DECK_TYPE.IN_HAND ) )
+            end,
+        }
     },
 
     WEAPON_SWAP_PROFICIENCY = 
@@ -4389,35 +4479,48 @@ local CONDITIONS =
         ctype = CTYPE.BUFF,
 
         OnApply = function( self, battle )
-            local target_fighter = {}
             local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
             local randomCon = math.random(1,6)
-            battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
-            for i=1, #target_fighter do
-                for i, condition in pairs(target_fighter[1]:GetConditions()) do
+            local randomEnemy = self.owner:GetEnemyTeam():GetRandomTeammate()
+
+            if randomEnemy:IsActive() then
+                for i, condition in pairs(randomEnemy:GetConditions()) do
                     if condition.ctype == CTYPE.BUFF then
                         self.owner:AddCondition(condition.id, 1, self)
-                        target_fighter[1]:RemoveCondition(condition.id, 1)
-                        target_fighter[1]:AddCondition(posConditions[randomCon], 1)
+                        randomEnemy:RemoveCondition(condition.id, 1)
+                        randomEnemy:AddCondition(posConditions[randomCon], 1)
                         break
                     end
                 end
             end
+            -- OLD CODE:
+            -- local target_fighter = {}
+            -- battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
+            -- for i=1, #target_fighter do
+            --     for i, condition in pairs(target_fighter[1]:GetConditions()) do
+            --         if condition.ctype == CTYPE.BUFF then
+            --             self.owner:AddCondition(condition.id, 1, self)
+            --             target_fighter[1]:RemoveCondition(condition.id, 1)
+            --             target_fighter[1]:AddCondition(posConditions[randomCon], 1)
+            --             break
+            --         end
+            --     end
+            -- end
         end,
 
         event_handlers = 
         {
             [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit )
-                local target_fighter = {}
                 local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
                 local randomCon = math.random(1,6)
-                battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
-                for i=1, #target_fighter do
-                    for i, condition in pairs(target_fighter[1]:GetConditions()) do
+                local randomEnemy = self.owner:GetEnemyTeam():GetRandomTeammate()
+                
+                if randomEnemy:IsActive() then
+                    for i, condition in pairs(randomEnemy:GetConditions()) do
                         if condition.ctype == CTYPE.BUFF then
                             self.owner:AddCondition(condition.id, 1, self)
-                            target_fighter[1]:RemoveCondition(condition.id, 1)
-                            target_fighter[1]:AddCondition(posConditions[randomCon], 1)
+                            randomEnemy:RemoveCondition(condition.id, 1)
+                            randomEnemy:AddCondition(posConditions[randomCon], 1)
                             break
                         end
                     end
