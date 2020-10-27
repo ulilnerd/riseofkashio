@@ -1772,6 +1772,28 @@ local CARDS =
         end
 
     },
+    raging_slam_plus =
+    {
+        name = "Boosted Raging Slam",
+        min_damage = 8,
+        max_damage = 9,
+    },
+    raging_slam_plus2 =
+    {
+        name = "Raging Slam of Purpose",
+        desc = "Damage a random enemy. If {equip_flail} is active, apply {IMPAIR}.",
+        manual_desc = true,
+        OnPostResolve = function( self, battle, attack)
+            if self.owner:HasCondition("equip_flail") then
+                for i, hit in attack:Hits() do
+                    local target = hit.target
+                    if not hit.evaded then 
+                        target:AddCondition("IMPAIR", self.exposed_amount, self)
+                    end
+                end
+            end
+        end
+    },
 
     strength_of_one_thousand = 
     {
@@ -2270,6 +2292,24 @@ local CARDS =
             end
         end
     },
+    slice_and_dice_plus =
+    {
+        name = "Boosted Slice and Dice",
+        min_damage = 4,
+        max_damage = 6,
+    },
+    slice_and_dice_plus2 =
+    {
+        name = "Slicing and Dicing",
+        desc = "Draw Slicer and Dicer into your hand.",
+        manual_desc = true,
+        OnPostResolve = function( self, battle, attack, card )
+            local card1 = Battle.Card( "slicer", self.owner )
+            local card2 = Battle.Card( "dicer", self.owner )
+            card1:TransferCard( battle:GetHandDeck() )
+            card2:TransferCard( battle:GetHandDeck() )
+        end
+    },
     
     slicer = 
     {
@@ -2334,6 +2374,44 @@ local CARDS =
                 end
             end,
         }
+    },
+    readied_assault_plus =
+    {
+        name = "Very Readied Assault",
+        min_damage = 4,
+        max_damage = 6,
+    },
+    readied_assault_plus2 =
+    {
+        name = "Unreliable Readied Assault",
+        min_damage = 1,
+        max_damage = 10,
+    },
+    readied_assault_plus3 =
+    {
+        name = "Swift Readied Assault",
+        desc = "{KINGPIN} 10: Deal max damage and gain {EVASION}.",
+        manual_desc = true,
+        OnPostResolve = function( self, battle, attack, card )
+            if self.owner:HasCondition("KINGPIN") then
+                if self.owner:GetConditionStacks("KINGPIN") >= 10 then
+                    self.owner:AddCondition("EVASION", 1, self)
+                end
+            end
+        end,
+    },
+    readied_assault_plus4 =
+    {
+        name = "Readied Assault of Invincibility",
+        desc = "{KINGPIN} 10: Deal max damage and gain {INVINCIBLE}.",
+        manual_desc = true,
+        OnPostResolve = function( self, battle, attack, card )
+            if self.owner:HasCondition("KINGPIN") then
+                if self.owner:GetConditionStacks("KINGPIN") >= 10 then
+                    self.owner:AddCondition("INVINCIBLE", 1, self)
+                end
+            end
+        end,
     },
 
     ultimate_hunter = 
@@ -2485,7 +2563,7 @@ local CARDS =
         flags =  CARD_FLAGS.MELEE,
         cost = 1,
         rarity = CARD_RARITY.COMMON,
-        max_xp = 8,
+        max_xp = 6,
         
         min_damage = 3,
         max_damage = 5,
@@ -2513,6 +2591,19 @@ local CARDS =
                 self.owner:AddCondition(randomDebuffList[randomDebuff], self.debuff_amount, self)
             end
         end
+    },
+    playing_with_fire_plus =
+    {
+        name = "Boosted Playing With Fire",
+        min_damage = 4,
+        max_damage = 6,
+    },
+    playing_with_fire_plus2 =
+    {
+        name = "Playing With Big Fires",
+        desc = "Apply 3 stacks of a random negative condition to yourself or the enemy {KINGPIN} 10: Always apply a random debuff to an enemy.",
+        manual_desc = true,
+        debuff_amount = 3,
     },
 
     great_escape =
@@ -2701,7 +2792,7 @@ local CARDS =
 
     run_it_back = 
     {
-        name = "Run it Back", -- won't hit twice
+        name = "Run it Back",
         anim = "slam",
         desc = "If {equip_flail} is active, have a chance to stun the target and draw a card.",
         icon = "battle/the_sledge.tex",
@@ -2727,8 +2818,29 @@ local CARDS =
                 end
             end
         end,
-
-        
+    },
+    run_it_back_plus =
+    {
+        name = "Boosted Run it Back",
+        min_damage = 4,
+        max_damage = 7,
+    },
+    run_it_back_plus2 =
+    {
+        name = "Run It All The Way Back",
+        desc = "Stun the target enemy. If {equip_flail} is active, draw a card.",
+        min_damage = 0,
+        max_damage = 0,
+        OnPostResolve = function( self, battle, attack, card )
+            for i, hit in attack:Hits() do
+                if not attack:CheckHitResult( hit.target, "evaded" ) then
+                    hit.target:AddCondition("STUN", 1, self)
+                end
+            end
+            if self.owner:HasCondition("equip_flail") then
+                battle:DrawCards(1)
+            end
+        end,
     },
 
     finish_them =
@@ -3909,6 +4021,7 @@ local CARDS =
 
         condition = 
         {
+            desc = "Enemies with this condition will attack themselves or their allies.",
             hidden = true,
             event_handlers = 
             {
@@ -3960,7 +4073,7 @@ local CARDS =
     {
         name = "Even the Odds",
         anim = "taunt",
-        desc = "Singles out a random enemy, while this effect is active, you and the random enemy are the only fighters that can attack and can only attack eachother.",
+        desc = "You and a random enemy gain {EVEN_ODDS}.",
         icon = "battle/single_out.tex",
 
         flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
@@ -4071,7 +4184,7 @@ local CONDITIONS =
     EVEN_ODDS = 
     {
         name = "Even The Odds",
-        desc = "All fighters in the battle are unable to attack except the two fighters with this condition, they may only attack eachother. Additionally, both fighters will deal double damage.",
+        desc = "Singles out an enemy (You and the random target), all fighters in the battle are unable to attack except the two fighters with this condition, they may only attack eachother. Additionally, both fighters will deal double damage as long as one of the fighters still stand.",
         icon = "battle/conditions/vendetta.tex",
         apply_sound = "event:/sfx/battle/status/system/Status_Buff_Attack",
         max_stacks = 1,
