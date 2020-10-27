@@ -3901,7 +3901,7 @@ local CARDS =
             for i, hit in attack:Hits() do
                 local target = hit.target
                 if not hit.evaded then 
-                    target:AddCondition("DECEIVED", 1, self)
+                    target:AddCondition("CONFUSION", 1, self)
                 end
             end
         end
@@ -3913,7 +3913,7 @@ local CARDS =
         name = "Killing Spree",
         anim = "spin_attack",
         desc = "{KINGPIN} 30: Instantly kill an enemy if they are under 25% health.",
-        icon = "battle/long_night.tex",
+        icon = "battle/terrorize.tex",
 
         flags =  CARD_FLAGS.MELEE,
         cost = 2,
@@ -3938,6 +3938,43 @@ local CARDS =
             end
         end, 
     },
+
+    even_the_odds = 
+    {
+        name = "Even the Odds",
+        anim = "taunt",
+        desc = "Singles out a random enemy, while this effect is active, you and the random enemy are the only fighters that can attack and can only attack eachother.",
+        icon = "battle/single_out.tex",
+
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+        cost = 2,
+        rarity = CARD_RARITY.RARE,
+        max_xp = 4,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPreResolve = function( self, battle, attack, card, fighter )
+            self.owner:AddCondition("EVEN_ODDS", 1 , self)
+            local target_fighter = {}
+            battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
+            for i=1, #target_fighter do
+                target_fighter[i]:AddCondition("EVEN_ODDS", 1, self)
+            end
+        end,
+
+        OnPostResolve = function( self, battle, attack, card, fighter )
+            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                if not enemy:HasCondition("EVEN_ODDS") then
+                    enemy:AddCondition("OUT_OF_WAY")
+                end
+            end
+            for i, ally in self.owner:GetEnemyTeam():Fighters() do
+                if not ally:HasCondition("EVEN_ODDS") then
+                    ally:AddCondition("OUT_OF_WAY")
+                end
+            end
+        end,
+    },
+
     --     blind_grenade = 
     -- {
     --     name = "Blinding Grenade",
@@ -3990,41 +4027,6 @@ local CARDS =
     --     target_type = TARGET_TYPE.SELF,
     -- },
 
-    -- even_the_odds = 
-    -- {
-    --     name = "Even the Odds",
-    --     anim = "taunt",
-    --     desc = "Singles out a random enemy, while this effect is active, you and the random enemy are the only fighters that can attack and can only attack eachother.",
-    --     icon = "battle/single_out.tex",
-
-    --     flags =  CARD_FLAGS.SKILL,
-    --     cost = 2,
-    --     rarity = CARD_RARITY.UNCOMMON,
-    --     max_xp = 4,
-    --     target_type = TARGET_TYPE.SELF,
-
-    --     OnPreResolve = function( self, battle, attack, card, fighter )
-    --         self.owner:AddCondition("EVEN_ODDS", 1 , self)
-    --         local target_fighter = {}
-    --         battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
-    --         for i=1, #target_fighter do
-    --             target_fighter[i]:AddCondition("EVEN_ODDS", 1, self)
-    --         end
-    --     end,
-
-    --     OnPostResolve = function( self, battle, attack, card, fighter )
-    --         for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-    --             if not enemy:HasCondition("EVEN_ODDS") then
-    --                 enemy:AddCondition("OUT_OF_WAY")
-    --             end
-    --         end
-    --         for i, ally in self.owner:GetEnemyTeam():Fighters() do
-    --             if not ally:HasCondition("EVEN_ODDS") then
-    --                 ally:AddCondition("OUT_OF_WAY")
-    --             end
-    --         end
-    --     end,
-    -- },
 
  -- hypnotize = 
     -- {
@@ -4049,41 +4051,104 @@ end
 
 local CONDITIONS = 
 {
-        -- EVEN_ODDS = 
-    -- {
-    --     name = "Even The Odds",
-    --     desc = "All fighters in the battle are unable to attack except the two fighters with this condition, they may only attack eachother.",
-    --     icon = "battle/conditions/vendetta.tex",
-    --     apply_sound = "event:/sfx/battle/status/system/Status_Buff_Attack",
-    --     max_stacks = 1,
+    EVEN_ODDS = 
+    {
+        name = "Even The Odds",
+        desc = "All fighters in the battle are unable to attack except the two fighters with this condition, they may only attack eachother. Additionally, both fighters will deal double damage.",
+        icon = "battle/conditions/vendetta.tex",
+        apply_sound = "event:/sfx/battle/status/system/Status_Buff_Attack",
+        max_stacks = 1,
+        
+        evenOddsCount = 0,
 
-    --     CanBeTargetted = function( self, card, fighter)
-    --         if fighter:GetTeam() ~= card:GetOwner():GetTeam() and fighter:GetTeam() == self.owner:GetTeam() then
-    --             if fighter:HasCondition("OUT_OF_WAY") then
-    --                 if fighter ~= self.owner and self.owner:IsAlive() then
-    --                     return false
-    --                 end
-    --             end
-    --         end
-    --         return true
-    --     end
-    -- },
+        CanBeTargetted = function( self, card, fighter )
+            if card:IsAttackCard() and card.owner == self.owner and not fighter:HasCondition("EVEN_ODDS") and not card:IsFlagged( CARD_FLAGS.SPECIAL ) then
+                return false, "Can only attack enemies with Even The Odds"
+            end
+            return true
+        end,
 
-    -- OUT_OF_WAY =
-    -- {
-    --     name = "Out of the way",
-    --     desc = "Fighters waiting for the brawl to come to a closure.",
-    --     icon = "battle/conditions/favorite_of_hesh.tex",
-    --     -- apply_sound = "event:/sfx/battle/status/system/Status_Buff_Attack",
-    --     max_stacks = 1,
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                if card.owner == self.owner and card:IsAttackCard() then
+                    dmgt:ModifyDamage( dmgt.min_damage * 2, dmgt.max_damage * 2, self )
+                end
+            end,
+            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, card, target )
+                local updateEnemy = 0
+                for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                    if enemy:HasCondition("EVEN_ODDS") then
+                        updateEnemy = updateEnemy + 1
+                    end
+                end
+                if updateEnemy < 1 then
+                    self.owner:RemoveCondition("EVEN_ODDS", 1, self)
+                end
+            end
+        }
+    },
 
-    --     -- CanBeTargetted = function( self, card, fighter )
-    --     --     if fighter:HasCondition("OUT_OF_WAY") then
-    --     --         return false
-    --     --     end
-            
-    --     -- end
-    -- },
+    OUT_OF_WAY =
+    {
+        name = "Out of the way",
+        desc = "Fighters waiting for the brawl to come to a closure. Fighters with this condition may buff their allies or themselves, but cannot attack. Some fighters may get impatient and attack their own allies...",
+        icon = "battle/conditions/favorite_of_hesh.tex",
+        -- apply_sound = "event:/sfx/battle/status/system/Status_Buff_Attack",
+        max_stacks = 1,
+        stillFighting = 1,
+
+        -- OnApply = function( self, battle )
+        --     if self.owner:HasCondition("OUT_OF_WAY") then
+        --         if self.owner.prepared_cards then
+        --             for i, card in ipairs(self.owner.prepared_cards) do
+        --                 card.target_type = TARGET_TYPE.FRIENDLY_OR_SELF
+        --             end
+        --         end
+        --     end
+        -- end,
+
+        CanBeTargetted = function( self, card, fighter )
+            if card:IsAttackCard() and card.owner == self.owner and fighter:HasCondition("EVEN_ODDS") and not card:IsFlagged( CARD_FLAGS.SPECIAL ) then
+                return false, "Can only attack enemies without Even The Odds"
+            end
+            return true
+        end,
+
+        event_handlers =
+        {
+            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack, hit )
+                local updateFight = 0
+                for i, ally in self.owner:GetTeam():Fighters() do
+                    if ally:HasCondition("EVEN_ODDS") then
+                        updateFight = updateFight + 1
+                    end
+                end
+                for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                    if enemy:HasCondition("EVEN_ODDS") then
+                        updateFight = updateFight + 1
+                    end
+                end
+                if updateFight <= 1 then
+                    self.stillFighting = false
+                end
+                -- if self.owner:HasCondition("OUT_OF_WAY") then
+                --     if self.owner.prepared_cards then
+                --         for i, card in ipairs(self.owner.prepared_cards) do
+                --             card.target_type = TARGET_TYPE.SELF
+                --         end
+                --     end
+                -- end
+            end,
+            [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit )
+                if self.stillFighting == false then
+                    self.owner:RemoveCondition("OUT_OF_WAY", 1, self)
+                end
+            end
+        }
+        
+    },
+
     BOG_ABILITY = 
     {
         name = "Bog Ability", 
@@ -4099,23 +4164,39 @@ local CONDITIONS =
 
     CONFUSION = -- a very entertaining ability
     {
-        name = "Deceived", 
+        name = "Confusion", 
         desc = "Enemies with this condition will attack themselves or their allies.",
         icon = "battle/conditions/steady_hands.tex",   
         hud_fx = {"stunned"},
         ctype = CTYPE.DEBUFF,
+
+        savedCard = "",
+        savedTargetType = "",
         
         event_handlers =
         {
             [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack, hit )
                 if self.owner.prepared_cards then
                     for i, card in ipairs(self.owner.prepared_cards) do
-                        card.target_type = TARGET_TYPE.FRIENDLY_OR_SELF
+                        if card:IsAttackCard() then
+                            -- self.savedCard = card
+                            -- self.savedTargetType = card.target_type
+                            card.target_type = TARGET_TYPE.FRIENDLY_OR_SELF
+                        end
                     end
                 end
             end,
             [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, attack, hit )
-                self.owner:RemoveCondition("DECEIVED", 1, self)
+                if self.owner.prepared_cards then
+                    for i, card in ipairs(self.owner.prepared_cards) do
+                        if card:IsAttackCard() then
+                            -- self.savedCard = card
+                            -- self.savedTargetType = card.target_type
+                            card.target_type = TARGET_TYPE.ENEMY
+                        end
+                    end
+                end
+                self.owner:RemoveCondition("CONFUSION", 1, self)
             end
         }
     },
