@@ -3902,10 +3902,27 @@ local CARDS =
                 local target = hit.target
                 if not hit.evaded then 
                     target:AddCondition("CONFUSION", 1, self)
+                    target:AddCondition(self.id)
                 end
             end
-        end
+        end,
 
+        condition = 
+        {
+            hidden = true,
+            event_handlers = 
+            {
+                [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit )
+                    if self.owner.prepared_cards then
+                        for i, card in ipairs(self.owner.prepared_cards) do
+                            if card:IsAttackCard() then
+                                card.target_type = TARGET_TYPE.ENEMY
+                            end
+                        end
+                    end
+                end
+            }
+        }
     },
 
     killing_spree = 
@@ -3967,7 +3984,7 @@ local CARDS =
                     enemy:AddCondition("OUT_OF_WAY")
                 end
             end
-            for i, ally in self.owner:GetEnemyTeam():Fighters() do
+            for i, ally in self.owner:GetTeam():Fighters() do
                 if not ally:HasCondition("EVEN_ODDS") then
                     ally:AddCondition("OUT_OF_WAY")
                 end
@@ -4075,7 +4092,7 @@ local CONDITIONS =
                     dmgt:ModifyDamage( dmgt.min_damage * 2, dmgt.max_damage * 2, self )
                 end
             end,
-            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, card, target )
+            [ BATTLE_EVENT.FIGHTER_KILLED ] = function( self, fighter )
                 local updateEnemy = 0
                 for i, enemy in self.owner:GetEnemyTeam():Fighters() do
                     if enemy:HasCondition("EVEN_ODDS") then
@@ -4093,31 +4110,21 @@ local CONDITIONS =
     {
         name = "Out of the way",
         desc = "Fighters waiting for the brawl to come to a closure. Fighters with this condition may buff their allies or themselves, but cannot attack. Some fighters may get impatient and attack their own allies...",
-        icon = "battle/conditions/favorite_of_hesh.tex",
+        icon = "battle/conditions/cautious.tex",
         -- apply_sound = "event:/sfx/battle/status/system/Status_Buff_Attack",
         max_stacks = 1,
         stillFighting = 1,
 
-        -- OnApply = function( self, battle )
-        --     if self.owner:HasCondition("OUT_OF_WAY") then
-        --         if self.owner.prepared_cards then
-        --             for i, card in ipairs(self.owner.prepared_cards) do
-        --                 card.target_type = TARGET_TYPE.FRIENDLY_OR_SELF
-        --             end
-        --         end
-        --     end
-        -- end,
-
         CanBeTargetted = function( self, card, fighter )
-            if card:IsAttackCard() and card.owner == self.owner and fighter:HasCondition("EVEN_ODDS") and not card:IsFlagged( CARD_FLAGS.SPECIAL ) then
-                return false, "Can only attack enemies without Even The Odds"
+            if card:IsAttackCard() and card.owner == self.owner and not card:IsFlagged( CARD_FLAGS.SPECIAL ) then
+                return false, "Cannot attack with Out of The Way"
             end
             return true
         end,
 
         event_handlers =
         {
-            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack, hit )
+            [ BATTLE_EVENT.FIGHTER_KILLED ] = function( self, fighter )
                 local updateFight = 0
                 for i, ally in self.owner:GetTeam():Fighters() do
                     if ally:HasCondition("EVEN_ODDS") then
@@ -4132,15 +4139,6 @@ local CONDITIONS =
                 if updateFight <= 1 then
                     self.stillFighting = false
                 end
-                -- if self.owner:HasCondition("OUT_OF_WAY") then
-                --     if self.owner.prepared_cards then
-                --         for i, card in ipairs(self.owner.prepared_cards) do
-                --             card.target_type = TARGET_TYPE.SELF
-                --         end
-                --     end
-                -- end
-            end,
-            [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit )
                 if self.stillFighting == false then
                     self.owner:RemoveCondition("OUT_OF_WAY", 1, self)
                 end
