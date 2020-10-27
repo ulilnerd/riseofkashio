@@ -1390,7 +1390,7 @@ local CARDS =
     {
         name = "Kashio's Hologram Belt",
         anim = "taunt4",
-        desc = "Summon two copies of Kashio to fight for you.",
+        desc = "Summon a hologram every time you swap weapons after an attack. Max 2 holograms.",
         icon = "battle/hologram_projection_belt.tex",
 
         flags = CARD_FLAGS.SKILL | CARD_FLAGS.REPLENISH | CARD_FLAGS.EXPEND,
@@ -1404,16 +1404,88 @@ local CARDS =
         end,
 
         OnPostResolve = function( self, battle, attack )
-            local summon = Agent( "KASHIO_HOLO_PLAYER" )
-            local summon2 = Agent( "KASHIO_HOLO_PLAYER" )
+            self.owner:AddCondition(self.id)
+            -- local summon = Agent( "KASHIO_HOLO_PLAYER" )
+            -- local summon2 = Agent( "KASHIO_HOLO_PLAYER" )
 
-            local fighter = Fighter.CreateFromAgent( summon, battle:GetScenario():GetAllyScale() )
-            local fighter2 = Fighter.CreateFromAgent( summon2, battle:GetScenario():GetAllyScale() )
+            -- local fighter = Fighter.CreateFromAgent( summon, battle:GetScenario():GetAllyScale() )
+            -- local fighter2 = Fighter.CreateFromAgent( summon2, battle:GetScenario():GetAllyScale() )
 
-            self.owner:GetTeam():AddFighter( fighter )
-            self.owner:GetTeam():AddFighter( fighter2 )
-            self.owner:GetTeam():ActivateNewFighters()
+            -- self.owner:GetTeam():AddFighter( fighter )
+            -- self.owner:GetTeam():AddFighter( fighter2 )
+            -- self.owner:GetTeam():ActivateNewFighters()
         end,
+
+        condition = 
+        {
+            hidden = true,
+            firstHit = false,
+
+            flailCount = 0,
+            glaiveCount = 0,
+            attackCounter = 0,
+            firstHit = false,
+            ctype = CTYPE.BUFF,
+            hologramCount = 0,
+            holoRecount = 0,
+          
+            max_stacks = 1,
+    
+            OnApply = function( self, battle )
+                if self.owner:HasCondition("equip_flail") then
+                    self.flailCount = 1
+                end
+                if self.owner:HasCondition("equip_glaive") then
+                   self.glaiveCount = 1
+                end
+            end,
+    
+            event_handlers =
+            {
+                [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, fighter )
+                    self.holoRecount = 0
+                    for i, hologram in self.owner:GetTeam():Fighters() do
+                        if hologram:GetAgent():GetAlias() == "KASHIO_HOLOGRAM" then
+                            self.holoRecount = self.holoRecount + 1
+                        end
+                    end
+                    self.hologramCount = self.holoRecount
+                end,
+
+                [ BATTLE_EVENT.CARD_MOVED ] = function( self, battle, attack, hit, fighter )
+                    if self.owner:HasCondition("equip_flail") then
+                        self.flailCount = 1
+                    end
+                    if self.owner:HasCondition("equip_glaive") then
+                       self.glaiveCount = 1
+                    end
+                end,
+    
+                [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack, hit, fighter )
+                    if self.firstHit == true and self.flailCount == 1 and self.glaiveCount == 1 and self.hologramCount < 2 then
+                        local summon = Agent( "KASHIO_HOLO_PLAYER" )
+                        local fighter = Fighter.CreateFromAgent( summon, battle:GetScenario():GetAllyScale() )
+                        self.owner:GetTeam():AddFighter( fighter )
+                        self.owner:GetTeam():ActivateNewFighters()
+                        self.hologramCount = self.hologramCount + 1
+
+                        if self.owner:HasCondition("equip_glaive") then
+                            self.flailCount = 0
+                        end
+                        if self.owner:HasCondition("equip_flail") then
+                            self.glaiveCount = 0
+                        end
+                        self.firstHit = false
+                    end
+                end,
+    
+                [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
+                    if attack.attacker == self.owner then
+                        self.firstHit = true
+                    end
+                end,
+            }
+        }
     },
 
     summon_auto_mech =
@@ -1902,7 +1974,7 @@ local CARDS =
     bounce_back = 
     {
         name = "Bounce Back",
-        anim = "crack",
+        anim = "throw1",
         desc = "Your next attack deals damage equal to half the amount of damage the enemy team is intending to inflict to your team.",
         icon = "battle/weakness_blind_spot.tex",
 
@@ -1927,7 +1999,7 @@ local CARDS =
                 for i, enemy in self.owner:GetEnemyTeam():Fighters() do
                     if enemy.prepared_cards then
                         for i, card in ipairs( enemy.prepared_cards ) do
-                            if card:IsAttackCard() then
+                            if card:IsAttackCard() and card.max_damage > 0 then
                                 self.count = self.count + card.max_damage
                             end
                         end
@@ -4067,7 +4139,7 @@ local CONDITIONS =
             [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack, hit, fighter )
                 if self.firstHit == true and self.flailCount == 1 and self.glaiveCount == 1 then
                     local randomCard = math.random(1,5)
-                    local cards = {"slicer", "dicer", "flurry_dagger", "red_flask", "burning_smash_upgraded"}
+                    local cards = {"slicer", "dicer", "flurry_dagger", "red_flask", "improvise_burningsmash_upgraded"}
                     local card = Battle.Card( cards[randomCard], self.owner )
                     battle:DealCard( card, battle:GetDeck( DECK_TYPE.IN_HAND ) )
 
@@ -4376,7 +4448,7 @@ local CONDITIONS =
                 for i, enemy in self.owner:GetEnemyTeam():Fighters() do
                     if enemy.prepared_cards then
                         for i, card in ipairs( enemy.prepared_cards ) do
-                            if card:IsAttackCard() then
+                            if card:IsAttackCard() and attack:IsTarget( self.owner ) and card.min_damage > 0 then
                                 card.min_damage = math.ceil(card.min_damage / 2)
                                 card.max_damage = math.ceil(card.max_damage / 2)
                             end
@@ -4970,14 +5042,16 @@ local CONDITIONS =
         glaive_equipped = false,
         flail_equipped = false,
         attackCount = 0,
+        robotSummon = false,
 
         -- 10 stacks: gain METALLIC
         -- 20 stacks: Your attacks on an enemy have a small chance of granting you a random buff
         -- 30 stacks: random enemy gains DEFECT every turn
         -- 40 stacks: every 3rd attack deals double damage and heals for half the amount
+        -- 50 stacks: Summon a Spark Baron automech to fight for you (max 1 automech)
 
         -- not yet implemented:
-        -- 50 stacks: your attacks have a chance to give one of your debuffs to the enemy and remove that debuff
+        -- 60 stacks: your attacks have a chance to give one of your debuffs to the enemy and remove that debuff
        
         OnApply = function( self )
             if self.owner:HasCondition("equip_glaive") then
@@ -5022,6 +5096,15 @@ local CONDITIONS =
                             self.owner:RemoveCondition("WOUND", self.owner:GetConditionStacks("WOUND"))
                         end
                     end
+                end
+
+                -- 50 stacks: Summon a Spark Baron automech to fight for you (max 1 automech)
+                if self.owner:GetConditionStacks("KINGPIN") >= 50 and self.robotSummon == false then
+                    local agent = Agent("SPARK_BARON_AUTOMECH")
+                    local fighter = Fighter.CreateFromAgent( agent, 1 )
+                    self.owner:GetTeam():AddFighter( fighter )
+                    self.owner:GetTeam():ActivateNewFighters()
+                    self.robotSummon = true
                 end
             end,
 

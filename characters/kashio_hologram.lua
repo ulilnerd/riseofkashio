@@ -43,6 +43,7 @@ local def = CharacterDef("KASHIO_HOLO_PLAYER",
     {
         title = "Kashio Hologram",
         base_def = "NPC_BASE",
+        alias = "KASHIO_HOLOGRAM",
 
         anims = {"anim/weapon_flail_kashio.zip" },
         combat_anims = { "anim/med_combat_flail_kashio.zip" },
