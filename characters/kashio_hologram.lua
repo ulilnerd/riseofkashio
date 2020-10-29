@@ -77,7 +77,7 @@ local def = CharacterDef("KASHIO_HOLO_PLAYER",
         
                     features =
                     {
-                        WOUND = 2,
+                        WOUND = 1,
                     },
                 },
 

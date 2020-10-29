@@ -1,4 +1,3 @@
-
 local def = CharacterDef("KASHIO_PLAYER",
 {
     base_def = "PLAYER_BASE",
