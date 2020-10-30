@@ -174,7 +174,7 @@ local data = table.extend(brawl.base_data)
     },
 
     bosses = {
-        {"SPARK_BARON_BOSS", "DRONE_GOON", "HESH_BOSS", "RENTORIAN_BOSS"},
+        {"SPARK_BARON_BOSS", "DRONE_GOON", "HESH_BOSS", "RENTORIAN_BOSS", "FSSH_PAST"},
         {"JAKES_ASSASSIN", "JAKES_ASSASSIN2", "FLEAD_QUEEN", "AUTOMECH_BOSS"},
         {"SPARK_SECOND", "RISE_SECOND", "SHROOG", "DRUSK_1"},
         {"MURDER_BAY_BANDIT_CONTACT", "MURDER_BAY_ADMIRALTY_CONTACT"},

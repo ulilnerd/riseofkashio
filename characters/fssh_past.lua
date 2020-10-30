@@ -5,7 +5,6 @@ local CARD_FLAGS = battle_defs.CARD_FLAGS
 local def = CharacterDef("FSSH_PAST",
     {
         name = "Fssh Menewene",
-        -- title = "Dag n'Gurr",
         base_def = "NPC_BASE",
         alias = "FSSH_PAST",
         id = "FSSH_PAST",
@@ -19,6 +18,7 @@ local def = CharacterDef("FSSH_PAST",
         hair_colour = 2775271167,
         species = "HUMAN",
         unique = true,
+        boss = true,
     
 
         fight_data = 
@@ -36,8 +36,10 @@ local def = CharacterDef("FSSH_PAST",
                     icon = "battle/conditions/burr_boss_enrage.tex",
                     ctype = CTYPE.DEBUFF,
 
+                    max_stacks = 50,
+
                     slicerDicerUsed = false,
-                    petCalled = false,
+                    -- petCalled = false,
                     powerGained = false,
 
                     -- OnApply = function( self, battle )
@@ -47,6 +49,8 @@ local def = CharacterDef("FSSH_PAST",
                     -- 10 stacks: all basic attacks gain various debuffs
                     -- 20 stacks: have a chance to spawn an upgraded crayote
                     -- 30 stacks: gain 2 defend per hit from you
+                    -- 40 stacks: gains an extra attack from a pool of advanced cards
+                    -- 50 stacks: gains an extra attack from the basic card pool
 
                     event_handlers =
                     {
@@ -56,7 +60,7 @@ local def = CharacterDef("FSSH_PAST",
                             if self.owner:GetConditionStacks("FINAL_EFFORT") >= 10 then
                                 self.owner:AddCondition("FSSH_BETRAYED", 1, self)
                             end
-                            -- 20 stacks: gain 2 defend per hit from you
+                            -- 30 stacks: gain 2 defend per hit from you
                             if self.owner:GetConditionStacks("FINAL_EFFORT") >= 30 then
                                 self.owner:AddCondition("FSSH_UNBREAKABLE", 1, self)
                             end
@@ -333,21 +337,20 @@ local def = CharacterDef("FSSH_PAST",
                     pre_anim = "taunt2",
                     anim = "double_stab",
 
-                    base_damage = 2,
-                    OnPostResolve = function( self, battle, attack)
-                        local randomDebuffList = {"SHATTER", "EXPOSED", "TARGETED", "WOUND", "DEFECT", "IMPAIR", "BLEED"}
-                        local amountOfDebuffs = math.random(1,3)
-                        for i, hit in attack:Hits() do
-                            local target = hit.target
-                            if not hit.evaded then 
-                                for i=1, amountOfDebuffs, 1 do
-                                    local randomDebuff = math.random(1,7)
-                                    local randomStacks = math.random(1,3)
-                                    target:AddCondition(randomDebuffList[randomDebuff], randomStacks, self)
+                    base_damage = 4,
+                    
+                    event_handlers = 
+                    {
+                        [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                            if card == self then
+                                if self.owner:HasCondition("FINAL_EFFORT") then
+                                    if self.owner:GetConditionStacks("FINAL_EFFORT") >= 40 then
+                                        dmgt:AddDamage(math.floor(self.owner:GetConditionStacks("FINAL_EFFORT") / 10), math.floor(self.owner:GetConditionStacks("FINAL_EFFORT") / 10), self)
+                                    end
                                 end
                             end
                         end
-                    end
+                    }
                 },
             },
 
@@ -396,6 +399,10 @@ local def = CharacterDef("FSSH_PAST",
                     -- 40 stacks: gains an extra attack from a pool of advanced cards
                     if self.fighter:GetConditionStacks("FINAL_EFFORT") >= 40 then
                         self.advancedCards:ChooseCards(1)
+                    end
+                    -- 50 stacks: gains an extra attack from the basic card pool
+                    if self.fighter:GetConditionStacks("FINAL_EFFORT") >= 50 then
+                        self.basicCards:ChooseCards(1)
                     end
                 end,
             }

@@ -5546,7 +5546,7 @@ local CONDITIONS =
         name = "Rentorian Force Field",
         desc = "Gain a shield that will negate all damage from enemies that have a lower max damage than the threshold, the threshold is equal to 10% of your max health plus current defend value.",
         icon = "battle/conditions/active_shield_generator.tex",
-        hud_fx = {"stunned"},
+        
         threshold = 0,
         OnApply = function( self, battle, anim_fighter )
             self.threshold = math.round(self.owner:GetMaxHealth() * 0.10)
