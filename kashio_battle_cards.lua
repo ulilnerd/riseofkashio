@@ -4105,6 +4105,24 @@ local CARDS =
         end,
     },
 
+    unbreakable = 
+    {
+        name = "Unbreakable",
+        anim = "taunt",
+        desc = "Gain {UNBREAKABLE}.",
+        icon = "battle/tough_and_angry.tex",
+
+        flags =  CARD_FLAGS.SKILL,
+        cost = 2,
+        rarity = CARD_RARITY.UNCOMMON,
+        max_xp = 4,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPostResolve = function( self, battle, attack, card, fighter )
+            self.owner:AddCondition("UNBREAKABLE", 1, self)
+        end
+    },
+
     --     blind_grenade = 
     -- {
     --     name = "Blinding Grenade",
@@ -4181,6 +4199,31 @@ end
 
 local CONDITIONS = 
 {
+
+    UNBREAKABLE = 
+    {
+        name = "Unbreakable",
+        desc = "Gain 2 defend. Every time you get hit, gain 2 more defend than you had last time you got hit.",
+        icon = "battle/conditions/barbed_defense.tex",
+
+        defend_amount = 2,
+        
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
+                if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
+                    self.owner:AddCondition("DEFEND", self.defend_amount, self)
+                    self.defend_amount = self.defend_amount + 2
+                end
+            end,
+            [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, attack, hit )
+                self.defend_amount = 2
+                self.owner:RemoveCondition("UNBREAKABLE", 1, self)
+            end,
+        }
+        
+    },
+
     EVEN_ODDS = 
     {
         name = "Even The Odds",
