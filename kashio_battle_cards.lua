@@ -5093,6 +5093,7 @@ local CONDITIONS =
                     if self.owner:GetConditionStacks("BLEEDING_EDGE") <= 1 or hit.damage >= self.owner:GetConditionStacks("BLEEDING_EDGE") then
                         self.owner:ApplyDamage( math.round(self.owner:GetMaxHealth() * 0.25), 10, self )
                         attack.attacker:HealHealth(math.round(self.owner:GetMaxHealth() * 0.25), self)
+                        self.owner:RemoveCondition("BLEEDING_EDGE", self.owner:GetConditionStacks("BLEEDING_EDGE"))
                     end
                 end
             end
@@ -5452,11 +5453,11 @@ local CONDITIONS =
                 local randomNum = math.random(1,10)
                 local randomChance = math.random(1,4)
                 if attack.attacker == self.owner and attack.card:IsAttackCard() then
-                    self.attackCount = self.attackCount + 1
                     if self.owner:GetConditionStacks("KINGPIN") >= 20 and randomChance == 1 then
                         self.owner:AddCondition(randomBuffs[randomNum], 1, self)
                     end
                     if self.owner:GetConditionStacks("KINGPIN") >= 40 then
+                        self.attackCount = self.attackCount + 1
                         if self.attackCount == 3 then
                             self.attackCount = 0
                         elseif self.attackCount == 2 then
@@ -5657,10 +5658,10 @@ local CONDITIONS =
             -- take roughly 30% more damage and deal 30% more damage
             [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
                 if card.owner == self.owner and card:IsAttackCard() then
-                    dmgt:ModifyDamage( math.round(dmgt.min_damage + dmgt.min_damage * 0.33), math.round(dmgt.max_damage + dmgt.max_damage * 0.3), self )
+                    dmgt:ModifyDamage( math.round(dmgt.min_damage + (dmgt.min_damage * 0.30)), math.round(dmgt.max_damage + (dmgt.max_damage * 0.30)), self )
                 end
                 if target == self.owner then
-                    dmgt:ModifyDamage( math.round(dmgt.min_damage + dmgt.min_damage * 0.33), math.round(dmgt.max_damage + dmgt.max_damage * 0.3), self )
+                    dmgt:ModifyDamage( math.round(dmgt.min_damage + (dmgt.min_damage * 0.30)), math.round(dmgt.max_damage + (dmgt.max_damage * 0.30)), self )
                 end
             end,
 
