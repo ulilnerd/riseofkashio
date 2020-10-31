@@ -3610,7 +3610,7 @@ local CARDS =
     {
         name = "Exhume",
         anim = "taunt",
-        desc = "Deal damage to all enemies and steal one of their buffs. <i>{BEE}</i>.",
+        desc = "Deal damage to all enemies and inflict a random debuff. <i>{BEE}</i>.",
         icon = "RISE:textures/exhume.png",
         
         cost = 1,
@@ -3622,17 +3622,22 @@ local CARDS =
         max_damage = 6,
 
         OnPostResolve = function( self, battle, attack)
-            local target_fighter = {}
-            battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
-            for i=1, #target_fighter do
-                for i,condition in pairs(target_fighter[i]:GetConditions()) do
-                    if condition.ctype == CTYPE.BUFF then
-                        self.owner:AddCondition(condition.id, condition.stacks, self)
-                        target_fighter[1]:RemoveCondition(condition.id, condition.stacks)
-                        break
-                    end
-                end
+            local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
+            local randomCon = math.random(1,6)
+            for i, enemy in self.owner:GetEnemyTeam():Fighters() do 
+                enemy:AddCondition(posConditions[randomCon])
             end
+            -- local target_fighter = {}
+            -- battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
+            -- for i=1, #target_fighter do
+            --     for i,condition in pairs(target_fighter[i]:GetConditions()) do
+            --         if condition.ctype == CTYPE.BUFF then
+            --             self.owner:AddCondition(condition.id, condition.stacks, self)
+            --             target_fighter[1]:RemoveCondition(condition.id, condition.stacks)
+            --             break
+            --         end
+            --     end
+            -- end
         end
     },
 
@@ -3661,7 +3666,7 @@ local CARDS =
     {
         name = "Gather Their Souls",
         anim = "taunt",
-        desc = "Steal a buff every turn then inflict a debuff to a random enemy. <i>{BEE}</i>.",
+        desc = "Steal health from all enemies then have a chance to gain a random buff. <i>{BEE}</i>.",
         icon = "RISE:textures/gathertheirsouls1.png",
         
         cost = 1,
@@ -3670,7 +3675,7 @@ local CARDS =
         target_type = TARGET_TYPE.SELF,
 
         OnPostResolve = function( self, battle, attack)
-            self.owner:AddCondition("GATHER_THEIR_SOULS", 3, self)
+            self.owner:AddCondition("GATHER_THEIR_SOULS", 2, self)
         end
     },
 
@@ -4708,57 +4713,51 @@ local CONDITIONS =
     GATHER_THEIR_SOULS = 
     {
         name = "Gather Their Souls", 
-        desc = "Steal a buff from a random enemy and inflict them with a random debuff.",
+        desc = "Steals health from all enemies based on their current health and has a chance for you to gain a random buff.",
         icon = "battle/conditions/favorite_of_hesh.tex",  
 
         ctype = CTYPE.BUFF,
 
         OnApply = function( self, battle )
-            local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
+            -- local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
             local randomCon = math.random(1,6)
-            local randomEnemy = self.owner:GetEnemyTeam():GetRandomTeammate()
-
-            if randomEnemy:IsActive() then
-                for i, condition in pairs(randomEnemy:GetConditions()) do
-                    if condition.ctype == CTYPE.BUFF then
-                        self.owner:AddCondition(condition.id, 1, self)
-                        randomEnemy:RemoveCondition(condition.id, 1)
-                        randomEnemy:AddCondition(posConditions[randomCon], 1)
-                        break
-                    end
-                end
+            local posPosConditions = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "METALLIC", "EVASION"}
+            local randomChance = math.random(1,4)
+            for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                local enemyHealth = math.floor(enemy:GetHealth() * 0.05)
+                enemy:ApplyDamage( enemyHealth, enemyHealth, self )
+                self.owner:HealHealth(enemyHealth, self)
             end
-            -- OLD CODE:
-            -- local target_fighter = {}
-            -- battle:CollectRandomTargets( target_fighter, self.owner:GetEnemyTeam().fighters, 1 )
-            -- for i=1, #target_fighter do
-            --     for i, condition in pairs(target_fighter[1]:GetConditions()) do
+            if randomChance == 2 then
+                self.owner:AddCondition(posPosConditions[randomCon], 1, self)
+            end
+            -- OLD CODE
+            -- local randomEnemy = self.owner:GetEnemyTeam():GetRandomTeammate()
+            -- if randomEnemy:IsActive() then
+            --     for i, condition in pairs(randomEnemy:GetConditions()) do
             --         if condition.ctype == CTYPE.BUFF then
             --             self.owner:AddCondition(condition.id, 1, self)
-            --             target_fighter[1]:RemoveCondition(condition.id, 1)
-            --             target_fighter[1]:AddCondition(posConditions[randomCon], 1)
+            --             randomEnemy:RemoveCondition(condition.id, 1)
+            --             randomEnemy:AddCondition(posConditions[randomCon], 1)
             --             break
             --         end
             --     end
             -- end
+           
         end,
 
         event_handlers = 
         {
             [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit )
-                local posConditions = {"BLEED", "IMPAIR", "BURN", "STUN", "WOUND", "EXPOSED"}
                 local randomCon = math.random(1,6)
-                local randomEnemy = self.owner:GetEnemyTeam():GetRandomTeammate()
-                
-                if randomEnemy:IsActive() then
-                    for i, condition in pairs(randomEnemy:GetConditions()) do
-                        if condition.ctype == CTYPE.BUFF then
-                            self.owner:AddCondition(condition.id, 1, self)
-                            randomEnemy:RemoveCondition(condition.id, 1)
-                            randomEnemy:AddCondition(posConditions[randomCon], 1)
-                            break
-                        end
-                    end
+                local posPosConditions = {"POWER", "ARMOURED", "NEXT_TURN_DRAW", "RIPOSTE", "METALLIC", "EVASION"}
+                local randomChance = math.random(1,4)
+                for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+                    enemy:ApplyDamage( 2, 2, self )
+                    self.owner:HealHealth(2, self)
+                end
+                if randomChance == 2 then
+                    self.owner:AddCondition(posPosConditions[randomCon], 1, self)
                 end
                 self.owner:RemoveCondition("GATHER_THEIR_SOULS", 1, self)
             end
@@ -4920,7 +4919,7 @@ local CONDITIONS =
                 elseif randomDebuff == 2 then
                     debuffStacks = math.random(3,10)
                     local randomNum = math.random(1,3)
-                    local remoteCards = {"remote_expunge", "remote_blind", "remote_virus"}
+                    local remoteCards = {"remote_expunge", "remote_contaminate", "remote_virus"}
                     local card = Battle.Card( remoteCards[randomNum], battle:GetPlayerFighter()  )
                     card:TransferCard(battle:GetDrawDeck())
                 elseif randomDebuff == 3 then
@@ -5546,7 +5545,7 @@ local CONDITIONS =
         name = "Rentorian Force Field",
         desc = "Gain a shield that will negate all damage from enemies that have a lower max damage than the threshold, the threshold is equal to 10% of your max health plus current defend value.",
         icon = "battle/conditions/active_shield_generator.tex",
-        
+
         threshold = 0,
         OnApply = function( self, battle, anim_fighter )
             self.threshold = math.round(self.owner:GetMaxHealth() * 0.10)

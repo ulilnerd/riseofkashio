@@ -45,6 +45,26 @@ AddPlayerCharacter(
             agent:DeltaMoney( 50 )
         end,
     }
+    
+    :AddAct{
+        id = "KASHIO_ESCAPE_THE_BOG",
+        
+        name = "Escape the Bog",
+        title = "Escape the Bog",
+        desc = "The Great Escape.",
+        
+        act_image = engine.asset.Texture("UI/char_1_campaign.tex"),
+        colour_frame = "0xFFDE5Aff",
+        colour_text = "0xFFFF94ff",
+        colour_background = "0xFFA32Aff",
+
+        world_region = "grout_bog",
+
+        max_resolve = 35,
+
+        main_quest = "KASHIO_ESCAPE_BOG",
+        game_type = GAME_TYPE.CAMPAIGN,
+    }
 
     -- :AddAct{
     --     id = "ROOK_BRAWL",
