@@ -175,9 +175,9 @@ local data = table.extend(brawl.base_data)
 
     bosses = {
         {"SPARK_BARON_BOSS", "DRONE_GOON", "HESH_BOSS", "RENTORIAN_BOSS", "FSSH_PAST"},
-        {"JAKES_ASSASSIN", "JAKES_ASSASSIN2", "FLEAD_QUEEN", "AUTOMECH_BOSS"},
-        {"SPARK_SECOND", "RISE_SECOND", "SHROOG", "DRUSK_1"},
-        {"MURDER_BAY_BANDIT_CONTACT", "MURDER_BAY_ADMIRALTY_CONTACT"},
+        {"JAKES_ASSASSIN", "JAKES_ASSASSIN2", "FLEAD_QUEEN", "AUTOMECH_BOSS", "FSSH_PAST"},
+        {"SPARK_SECOND", "RISE_SECOND", "SHROOG", "DRUSK_1", "FSSH_PAST"},
+        {"MURDER_BAY_BANDIT_CONTACT", "MURDER_BAY_ADMIRALTY_CONTACT", "FSSH_PAST"},
         {"BOGGER_BOSS"},
     }
 }
@@ -334,9 +334,9 @@ QDEF:AddConvo("starting_kashio")
 						!palm
 					* Just another ordinary day working with the Spark Barons.
 					** Welcome to the Kashio Battle Brawl Demo.
-					** This is a highly work in progress project and nothing in the current build is final.
-                    ** So far, the mod has 95+ battle cards that are made purely from curiosity and are not tested to be balanced and the cards may or may not flow well together.  Despite the high battle card count, this mod does not contain a single custom negotiation card.
-                    ** As for as the brawl mode goes, it does have negotiation but is unnecessary to complete the brawl (ie, convince patron to help you fight a boss).  I've provided a few of Sal's cards to help with that.
+					** This is a work in progress project and nothing in the current build is final.
+                    ** So far, the mod has 100+ battle cards.  Despite the high battle card count, this mod does not contain a single custom negotiation card.
+                    ** As for as the brawl mode, it does have negotiation but is unnecessary to complete the brawl (ie, convince patron to help you fight a boss).  I've provided a few of Sal's cards to help with that.
                 ]],
 
                 DIALOG_INTRO_2 = [[

@@ -51,12 +51,12 @@ AddPlayerCharacter(
         
         name = "Escape the Bog",
         title = "Escape the Bog",
-        desc = "The Great Escape.",
+        desc = "Return Vagarant Tech to the Spark Barons and eliminate anyone who gets in your way.",
         
-        act_image = engine.asset.Texture("UI/char_1_campaign.tex"),
-        colour_frame = "0xFFDE5Aff",
-        colour_text = "0xFFFF94ff",
-        colour_background = "0xFFA32Aff",
+		act_image = engine.asset.Texture("UI/char_2_brawl.tex"),
+		colour_frame = "0x0CD864ff",
+        colour_text = "0x9BEFD8ff",
+        colour_background = "0xFFDE5Aff",
 
         world_region = "grout_bog",
 
@@ -106,7 +106,7 @@ AddPlayerCharacter(
 		id = "KASHIO_BATTLE_BRAWL",
 		name = "Kashio's Battle Brawl",
 		title = "Kashio Battle-Brawl",
-		desc = "Survive endless fighting through the eyes of Kashio.",
+		desc = "Survive waves of fighting through the eyes of Kashio.",
 
 		game_type = GAME_TYPE.BRAWL,
 		

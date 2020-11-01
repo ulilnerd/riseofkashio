@@ -1,570 +1,601 @@
-local fun = require "util/fun"
-local daily = require "daily_util"
+local brawl = require "content/quests/brawl/brawl_util"
 
-local ally_options = 
-{
-    "WANDERING_CHEF", "BRAVE_MERCHANT"
+local patron_weights = {
+    ADMIRALTY_PATROL_LEADER = 1,
+    WEALTHY_MERCHANT = 1,
+    FOREMAN = 1,
+
+    SPARK_BARON_GOON = 1,
+    SPARK_BARON_TASKMASTER = 1,
+    SPARK_BARON_PROFESSIONAL = 1,
+
+    JAKES_RUNNER = 1,
+    JAKES_SMUGGLER = 1,
+    JAKES_LIFTER = 1,
+
+    BOGGER_CLOBBER = .5,
+    BOGGER_CULTIVATOR = .5,
 }
 
-local boss_options =
-{
-    {"SPARK_BARON_BOSS", "DRONE_GOON", "HESH_BOSS", "RENTORIAN_BOSS"},
-    {"JAKES_ASSASSIN", "JAKES_ASSASSIN2"},
-    {"SPARK_SECOND", "RISE_SECOND", "SHROOG", "DRUSK_1"},
-    {"MURDER_BAY_BANDIT_CONTACT", "MURDER_BAY_ADMIRALTY_CONTACT"},
-    {"BOGGER_BOSS", "KASHIO"},
+local bonus_loc = {
+    OPT_BONUS_MONEY = "Take money",
+    DIALOG_BONUS_MONEY = [[
+        * You get {1#money}.
+    ]],
+    DIAL_REMOVE_CARD = [[
+        agent:
+            Feels lighter, doesn't it?
+    ]],
+    REQ_AT_FULL_HEALTH = "At full health",
+    REQ_AT_FULL_RESOLVE = "At full resolve",
+    OPT_HEAL_HEALTH = "Restore <#HEALTH>{1} Health</>",
+    OPT_HEAL_RESOLVE = "Restore <#TITLE>{1} Resolve</>",
+
+    OPT_GAIN_MAX_HEALTH = "Increase max health by {1}",
+    OPT_GAIN_MAX_RESOLVE = "Increase max resolve by {1}",
+    OPT_GAIN_ITEMS = "Get {1#card_list}",
 }
-
-local boss_backup =
+local kashio_bonuses = 
 {
-    KASHIO = {"ADMIRALTY_GOON"},
-    BOGGER_BOSS = {"SPARK_BARON_GOON"},
-    MURDER_BAY_BANDIT_CONTACT = {"ADMIRALTY_GOON", "ADMIRALTY_CLERK"},
-    MURDER_BAY_ADMIRALTY_CONTACT = {"BANDIT_GOON", "BANDIT_GOON"},
-    SHROOG = {"JAKES_SMUGGLER"},
-    DRUSK_1 = {"JAKES_SMUGGLER"},
-}
-
-
-local function DoCardDraft(cxt, difficulty, subtitle_text)
-    local function OnDone()
-        cxt.encounter:ResumeEncounter()
-    end
-    local draft_popup = Screen.DraftPackPopup()
-    draft_popup:DraftPacks( cxt.player, Battle.Card, difficulty, OnDone, subtitle_text, cxt:GetRNG( "CARDS" ))
-    TheGame:FE():InsertScreen( draft_popup )
-    cxt.enc:YieldEncounter()
-end
-
-local function DoGraftDraft( cxt, difficulty )
-
-    local rng = cxt:GetRNG( "GRAFTS" )
-    if rng then
-        push_random( function( n, m )
-            return rng:Random( n, m )
-        end )
-    end
-
-    local grafts = RewardUtil.GetPooledGrafts( difficulty, 3, cxt.quest.param.graft_pool )
-
-    if rng then
-        pop_random()
-    end
-
-    local popup = Screen.PickGraftScreen(grafts, false, function(...) cxt.enc:ResumeEncounter(...) end)
-    popup:SetMusicEvent( TheGame:LookupPlayerMusic( "deck_music" ))
-    TheGame:FE():InsertScreen( popup )
-
-    local chosen_graft = cxt.enc:YieldEncounter()
-end
-
-local boon_options = 
-{
-    remove_card = function(cxt)
-            cxt:Opt( "OPT_REMOVE_BATTLE_CARD" )
-                :PreIcon( global_images.removecombat )
-                :Fn( function( cxt )
-                        cxt:Wait()
-                        AgentUtil.RemoveBattleCard( cxt.player, function( card_id )
-                            cxt.enc:ResumeEncounter()
+    money = 
+    {
+        convo = function(cxt) 
+            local diff = TheGame:GetGameState():GetCurrentBaseDifficulty() 
+            local amt = diff*50
+            cxt:Opt("OPT_BONUS_MONEY")
+                :ReceiveMoney(amt, {no_scale = true})
+                :Dialog("DIALOG_BONUS_MONEY", amt)
+                :DoneConvo()
+        end,
+    },
+    
+    
+    battle_removal = 
+    {
+        convo = function(cxt) 
+                cxt:Opt("OPT_REMOVE_BATTLE_CARD")
+                    :Fn(function() 
+                            AgentUtil.RemoveBattleCard( cxt.player, function( card )
+                                cxt.enc:ResumeEncounter( card )
+                            end)
+                            
+                            local card = cxt.enc:YieldEncounter()
+                            if card then
+                                cxt:Dialog("DIAL_REMOVE_CARD")
+                                StateGraphUtil.AddEndOption(cxt)
+                            end
                         end)
-                    cxt.enc:YieldEncounter()
-                    cxt:GoTo("STATE_ENCOUNTER")
-                end)
-    end,
-    draft_card = function(cxt)
-            cxt:Opt( "OPT_BATTLE_DRAFT" )
-                :PreIcon( global_images.buycombat )
-                :Fn( function( cxt )
-                    cxt:Wait()
+            end,
+    },
 
-                    DoCardDraft(cxt, 3)
-                    cxt:GoTo("STATE_ENCOUNTER")
-                end )
-    end,
-    triage = function( cxt )
-        cxt:Opt( "OFFER_TRIAGE_KIT", "healing_vapors" )
-            :PreIcon( global_images.giving )
-            :Quip( cxt:GetAgent(), "chum_bonus", "triage_kit" )
-            :GainCards{"healing_vapors", "healing_vapors"}
-            :GoTo("STATE_ENCOUNTER")
-    end,
-    boombox = function( cxt )
-        local function IsGrenade( def )
-            return CheckBits(def.item_tags or 0, ITEM_TAGS.GRENADE)
-        end
+    battle_draft = 
+    {
+        convo = function(cxt) 
+                cxt:Opt("OPT_DRAFT_BATTLE_CARD")
+                    :Fn(function(cxt) 
+                        local function OnDone()
+                            cxt.encounter:ResumeEncounter()
+                        end
 
-        local cards = {}
-        for i = 1, 2 do
-            local def = BattleCardCollection.AllLocalItems( IsGrenade ):Pick(1)[1]
-            if def then
-                table.insert( cards, def.id )
-            end
-        end
+                        for i = 1, 2 do
+                            local draft_popup = Screen.DraftChoicePopup()
+                            local cards = RewardUtil.GetBattleCards( TheGame:GetGameState():GetCurrentBaseDifficulty(), 3, cxt.player )
+                            draft_popup:DraftCards( cxt.player, Battle.Card, cards, OnDone )
+                            TheGame:FE():InsertScreen( draft_popup )
+                            cxt.enc:YieldEncounter()
+                        end            
+                                StateGraphUtil.AddEndOption(cxt)
+                        end)
+            end,
+    },
+    
+    heal_health = 
+    {
+        condition = function(quest) 
+            local current_health, max_health = TheGame:GetGameState():GetPlayerAgent():GetHealth()
+            return current_health < max_health
+        end,
+        convo = function(cxt) 
+                    local current_health, max_health = TheGame:GetGameState():GetPlayerAgent():GetHealth()
+                    local restore_amt = 30
+                    cxt:Opt("OPT_HEAL_HEALTH", restore_amt)
+                        :ReqCondition(current_health < max_health, "REQ_AT_FULL_HEALTH")
+                        :DeltaHealth( restore_amt )
+                        :DoneConvo()
+            end,
 
-        cxt:Opt( "OFFER_BOOM_BOX", cards )
-            :PreIcon( global_images.giving )
-            :Quip( cxt:GetAgent(), "chum_bonus", "boom_box" )
-            :GainCards(cards)
-            :GoTo("STATE_ENCOUNTER")
-    end,
-    graft_slot = function( cxt )
-        local txt = "OFFER_BATTLE_SLOT"
-        cxt:Opt( txt )
-            :PreIcon( global_images.graft )
-            :Quip( cxt:GetAgent(), "chum_bonus", "graft" )
-            :Fn( function( cxt )
-                cxt.player.graft_owner:IncreaseMaxGrafts( GRAFT_TYPE.COMBAT, 1 )
-                cxt:GoTo("STATE_ENCOUNTER")
-            end )
-    end,
-    score_cards = StateGraphUtil.OfferScoreCards("STATE_ENCOUNTER"),
+    },
+    
+    heal_resolve = 
+    {
+        condition = function(quest) 
+            local resolve, resolve_max = TheGame:GetGameState():GetCaravan():GetResolve()
+            return resolve < resolve_max
+        end,
+
+        convo = function(cxt) 
+                    local resolve, resolve_max = TheGame:GetGameState():GetCaravan():GetResolve()
+                    local restore_amt = 30
+                    cxt:Opt("OPT_HEAL_RESOLVE", restore_amt)
+                        :ReqCondition(resolve < resolve_max, "REQ_AT_FULL_RESOLVE" )
+                        :DeltaResolve( restore_amt )
+                        :DoneConvo()
+                end,
+    },
+
+    gain_max_health = 
+    {
+        condition = function(quest) 
+            local current_health, max_health = TheGame:GetGameState():GetPlayerAgent():GetHealth()
+            return max_health < 80
+        end,
+        convo = function(cxt)
+                    local gain_amount = 5
+                    cxt:Opt("OPT_GAIN_MAX_HEALTH", gain_amount)
+                        :Fn(function() 
+                            cxt.caravan:UpgradeHealth( gain_amount )
+                            StateGraphUtil.AddEndOption(cxt) 
+                        end)
+                end,
+    },
+    
+    items = {
+        init = function(cxt)
+                    cxt.enc.scratch.bonus_items = {}
+                    for i, card in ipairs(BattleCardCollection.AllItems():Pick(2)) do
+                        table.insert(cxt.enc.scratch.bonus_items, card.id)
+                    end
+                end,
+        
+        convo = function(cxt) 
+                cxt:Opt("OPT_GAIN_ITEMS", cxt.enc.scratch.bonus_items)
+                    :GainCards(cxt.enc.scratch.bonus_items)
+                    :DoneConvo()
+        end,
+    }
+
 }
 
-local QDEF = QuestDef.Define
+local all_kashio_bonuses = {}
+for k,v in pairs(kashio_bonuses) do
+    table.insert(all_kashio_bonuses, k)
+end
+
+
+local data = table.extend(brawl.base_data)
 {
-    title = "Boss Rush",
-    icon = engine.asset.Texture("icons/quests/daily_escape_cave.tex"),
-    desc = [[Defeat a series of bosses in quick succession.]],
-    qtype = QTYPE.DAILY,
-    on_complete = function( quest )
-        TheGame:Win()
-    end,
-    
-    ChooseCharacter = function( self, rng )
-        return character_options[rng:Random(#character_options)]
-    end,
-    
-    GenerateMutatorsAndFeats = function(self, rng, character_id)
-        
-        local arg = {
-            battle_draft = {
-                "havarian_mulligan_battle",
-                "battle_bundle",
-                "picky_draft_battle",
-                "veteran",
-            },
-            always_take = {
-                "brilliance",
-                "pet_owner",
-                "daily_boss_health",
-            },
-            mutators = {
-                "parasitology",
-                "roll_with_it",
-                "mental_overload",
-                "contaminated_equipment",
-                "score_card_mutator",
-                "keepsake_mutator",
-                "mutator",
-            },
-            feats = {
-                {"vicious_feat", "no_sweat", "not_a_scratch"},
-                {"smashing", "play_dead", "take_your_shot"},
-                {"smashing", "no_sweat", "take_your_shot"},
-                {"cheapskate", "thorough_search", "clean_fight"},
-                {"vicious_feat", "play_dead", "quick_work"},
-                {"smashing", "tank_up", "take_your_shot"},
+    home_loc_name = "Grout Bog",
+    home_loc_desc = "Grout Bog Forest",
+    home_loc_plax = "EXT_Bog_Forest_01",
+    bartender_alias = "FSSH",
 
-            },
-            min_mutators = 2,
-            max_mutators = 3,
-        }
-
-        return daily.GenerateMutatorsAndFeats(rng, character_id, arg)
-    end,
-
-
-    plax = "EXT_Bog_Forest_01",
-
-
-    on_init = function(quest)
-        TheGame:GetGameState():SetDifficulty( 2 ) -- For better initial draft.
-        TheGame:GetGameState():GetCaravan():MoveToLocation(quest:GetCastMember("the_forest"))
-    end,
-
-    GenerateParams = function( self, rng )
-        local param = {}
-        
-        param.available_encounters = {}
-        for i,options in ipairs(boss_options) do
-            table.insert(param.available_encounters, options[rng:Random(#options)])
-        end
-
-        param.available_bonuses = {}
-        for i=1, (#param.available_encounters - 1) do
-            local temp_options = {}
-            for k,v in pairs(boon_options) do
-                table.insert(temp_options, k)
-            end
-            table.seeded_shuffle(temp_options, rng)
-            for i=1,2 do
-                table.insert(param.available_bonuses, table.remove(temp_options, 1))
-            end
-        end
-
-        param.kashio_conditions = {}
-        local AUCTION_DATA = require "content/grafts/kashio_boss_fight_defs"
-        local candidates = {}
-        for k,v in pairs(AUCTION_DATA.CONDITION_LOOKUPS) do
-            table.insert(candidates, v)
-        end
-        table.seeded_shuffle(candidates, rng)
-        
-        local NUM_PICKS = 3
-        
-        for k = 1, math.min(NUM_PICKS, #candidates) do
-            table.insert(param.kashio_conditions, candidates[k])
-        end
-        param.all_encounters = shallowcopy(param.available_encounters)
-        param.step = 0
-        return param
-    end,
-
-
-    GenerateProgressionData = function(qdef, param)
-        local current_day = {}
-        local next_step = param.step
-        
-        if param.all_encounters then
-            for step,def in ipairs(param.all_encounters) do
-                table.insert(current_day, {id="BOSS", boss = def})
-                if next_step == step then
-                    current_day[#current_day].right_now = true
-                elseif next_step > step then
-                    current_day[#current_day].success = true
-                end
-            end
-        end
-        return {current_day}
-    end,
-
-
-    get_progression = function(quest)
-        return quest:GetQuestDef().GenerateProgressionData(quest:GetQuestDef(), quest.param)
-    end,
-
-
-
-}
-
-:AddScoreDefs{
-    
-    SKIPPED_BONUS = 
-    {
-        name = "Skipped Bonus",
-        value = 30,
-    },
-    
-    SKIPPED_HEALING = 
-    {
-        name = "Skipped Healing",
-        value = 40,
+    merchant_list = {
+        "grafts", "pets", "battle"
     },
 
-    PET_SURVIVED = {
-        name = "Pet Survived",
-        value = 150,
-    },
-    WON_DAILY = {
-        name = "Defeated All Bosses",
-        value = 500,
-    },
-    
-    LEFT_SURVIVOR = {
-        name = "Let Companion Go",
-        value = 100,
+    bosses = {
+        {"FSSH_PAST"},
+        {"FSSH_PAST"},
+        {"FSSH_PAST"},
+        {"FSSH_PAST"},
+        {"BOGGER_BOSS"},
     }
 }
 
-:AddObjective{
-    id = "start",
-    title = "Defeat the Bosses",
-    on_activate = function( quest)
-        quest.param.location = quest:SpawnTempLocation("GROUT_BOG_FOREST", "the_forest" )
-    end,
-    state = QSTATUS.ACTIVE,
-}
+data.MakeBrawlSchedule = function(data)
 
-:AddCast{
-    cast_id = "the_forest",
-    when = QWHEN.MANUAL,
-}
-
-:AddCast{
-    cast_id = "pet",
-    when = QWHEN.MANUAL,
-}
-
-local function FindNewOptions(cxt)
-        if #cxt.quest.param.available_encounters > 0 then
-            cxt.quest.param.step = cxt.quest.param.step + 1
-            cxt.quest.param.next_boss = table.remove(cxt.quest.param.available_encounters, 1)
-            cxt.quest:NotifyChanged()
-            return true
-        else
-            return false
+    local all_valid_quests = {}
+    for id, def in pairs( Content.GetAllQuests() ) do
+        if def.qtype == QTYPE.SIDE and not def:HasTag("manual_spawn") and def:FilterForAct( "SAL_BRAWL" ) and (def.character_specific == nil or table.contains(def.character_specific, "KASHIO_PLAYER")) then
+            table.insert(all_valid_quests, def)
         end
+    end
+    local used_bosses = {}
+    local selected_quests = {}
+
+    local day_1_quests = brawl.PickQuests(all_valid_quests, selected_quests, 1, 4, 0, 4)
+    local day_2_quests = brawl.PickQuests(all_valid_quests, selected_quests, 2, 4, 0, 4)
+    local day_3_quests = brawl.PickQuests(all_valid_quests, selected_quests, 3, 4, 0, 4)
+    local day_4_quests = brawl.PickQuests(all_valid_quests, selected_quests, 4, 4, 0, 4)
+    local day_5_quests = brawl.PickQuests(all_valid_quests, selected_quests, 5, 4, 0, 4)
+
+    local bs = BrawlSchedule()
+    bs:SetCurrentHome("home_hq")
+    bs:SetDifficulty(1)
+        :QuestPhase("starting_kashio")
+        :Boss(brawl.PickBoss(data.bosses[1], used_bosses) )
+        :QuestPhase("strange_request")
+        :Boss(brawl.PickBoss(data.bosses[1], used_bosses), true)
+        :QuestPhase("gift_from_fssh1")
+        :Bonus(all_kashio_bonuses, 2)
+        :Night()
+        :Bonus(all_kashio_bonuses, 2)
+        :QuestPhase("gift_from_fssh1")
+        :Sleep()
+    bs:SetDifficulty(2)
+        
+        :Quest(table.remove(day_2_quests))
+        :Bonus(all_kashio_bonuses, 2)
+        :Quest(table.remove(day_2_quests))
+        :Night()
+        :Merchants(brawl.PickMerchants(data.merchant_list,1))
+        :Boss(brawl.PickBoss(data.bosses[2], used_bosses))
+        :QuestPhase("gift_from_fssh1")
+        :Quest(table.remove(day_2_quests))
+        :Bonus(all_kashio_bonuses, 2)
+        :Quest(table.remove(day_2_quests))
+        :Boss(brawl.PickBoss(data.bosses[4], used_bosses))
+        :QuestPhase("gift_from_fssh1")
+        :Sleep()
+        
+    bs:SetDifficulty(3)
+    :Quest(table.remove(day_3_quests))
+    :Bonus(all_kashio_bonuses, 2)
+    :Quest(table.remove(day_3_quests))
+    :Bonus(all_kashio_bonuses, 2)
+    :Quest(table.remove(day_3_quests))
+    :Merchants(brawl.PickMerchants(data.merchant_list,2))
+    :Boss(brawl.PickBoss(data.bosses[1], used_bosses) )
+    :QuestPhase("gift_from_fssh2")
+    
+    :Night()
+    :Quest(table.remove(day_3_quests))
+    :Merchants({"coins"})
+    :Boss(brawl.PickBoss(data.bosses[3], used_bosses), true)
+    :QuestPhase("gift_from_fssh2")
+    :Merchants(brawl.PickMerchants(data.merchant_list,2))
+    :Sleep()
+
+bs:SetDifficulty(4)
+    :Quest(table.remove(day_4_quests))
+    :Bonus(all_kashio_bonuses, 2)
+    :Quest(table.remove(day_4_quests))
+    :Quest(table.remove(day_4_quests))
+    :Merchants(brawl.PickMerchants(data.merchant_list,2))
+    :Bonus(all_kashio_bonuses, 2)
+    :Boss(brawl.PickBoss(data.bosses[2], used_bosses))
+    :QuestPhase("gift_from_fssh2")
+     
+    :Night()
+    :Quest(table.remove(day_4_quests))
+    :Merchants({"coins"})        
+    :Boss(brawl.PickBoss(data.bosses[4], used_bosses), true)
+    :QuestPhase("gift_from_fssh2")
+    :Merchants(brawl.PickMerchants(data.merchant_list,2))
+    :Sleep()
+
+bs:SetDifficulty(5)
+    :Quest(table.remove(day_5_quests))
+    :Bonus(all_kashio_bonuses, 2)
+    :Quest(table.remove(day_5_quests))
+    :Merchants(brawl.PickMerchants(data.merchant_list,2))
+    :Quest(table.remove(day_5_quests))
+    :QuestPhase("gift_from_fssh2")
+    
+    :Night(3)
+    :Quest(table.remove(day_5_quests))
+    :Merchants(brawl.PickMerchants(data.merchant_list,2))
+    :Boss(brawl.PickBoss( data.bosses[5], used_bosses))
+    :Win()
+
+    
+    return bs.events
 end
 
-local function InitializeRun( cxt )
-    local function Filter( graft_def )
-        return graft_def.type == GRAFT_TYPE.COMBAT
-    end
-    cxt.quest.param.graft_pool = GraftCollection.GraftPool( cxt.player, Filter, cxt:GetRNG( "GRAFTS" ) )
+local QDEF = brawl.CreateBrawlQuest("KASHIO_ESCAPE_BOG", data)
 
-    cxt.encounter:DoLocationTransition( cxt.quest.param.location )
-    cxt.quest:SetRank(2)
-    cxt.quest:NotifyChanged()
-end
+QDEF:AddQuestLocation{
+    cast_id = "home_hq",
+    name = "Grout Bog",
+    desc = "Escape Grout Bog",
+    plax = "EXT_BOG_DEEPBOG",
+    show_agents = true,
+    tags = {"tavern"},
+    indoors = true,
+    work = 
+    {
+        bartender = CreateClosedJob( PHASE_MASK_ALL, "Bartender", CHARACTER_ROLES.PROPRIETOR, "GROG_N_DOG_ITEMS"),
+    },
+    -- patron_data = {
+    --     num_patrons = 4,
+    --     patron_generator = function(location)
+    --         local def = weightedpick(patron_weights)
+    --         TheGame:GetGameState():AddSkinnedAgent(def):GetBrain():SendToPatronize(location)
+    --     end
+    -- },
+    on_assign = function(quest, location)
+        AgentUtil.TakeJob(quest:GetCastMember("bartender"), location, "bartender")
+    end,
 
-local function OfferBonuses(cxt)
-    local bonuses = {}
-    for i=1, 2 do
-        table.insert( bonuses, table.remove(cxt.quest.param.available_bonuses))
-    end
+}
 
-    for i, id in ipairs( bonuses ) do
-        boon_options[id](cxt)
-    end
-    cxt:Opt("OPT_SKIP")
-        :AddScore("SKIPPED_BONUS")
-        :GoTo("STATE_ENCOUNTER")
-end
+:AddObjective{
+    id = "starting_kashio",
+    title = "Starting out",
+    desc = "",
+    hide_in_overlay = true,
+}
+
+QDEF:AddConvo("starting_kashio")
+        :ConfrontState("CONF")
+            :Loc{
+                DIALOG_INTRO = [[
+                    ** Deep Grout Bog
+                    * Kashio finds some Vagarant Tech
+                    player:
+                        !left
+                        Excellent, this will do for the Spark Barons.
+                        Time to pay off my debt.
+                ]],
+            }
+:Fn(function(cxt) 
+    cxt.quest:Complete("starting_kashio")
+    TheGame:GetGameState():SetActProgress(cxt.quest.param.day)
+    cxt:TalkTo("bartender")
+    cxt:Dialog("DIALOG_INTRO")
+    cxt:RunLoop(function( ... )
+            StateGraphUtil.AddEndOption(cxt)
+    end)
+end)
 
 
-QDEF:AddConvo("start")
+
+QDEF:AddObjective{
+    id = "gift_from_fssh1",
+    desc = "",
+    mark = {"bartender"},
+    hide_in_overlay = true,
+}
+local randomCard = math.random(1,3)
+QDEF:AddConvo("gift_from_fssh1", "bartender")
     :ConfrontState("CONF")
         :Loc{
             DIALOG_INTRO = [[
+                agent:
+                    !right 
+                    Hello {player}, I've brought you a gift.
                 player:
                     !left
+                    Thanks Fssh.
             ]],
-            OPT_GET_GRAFT = "Choose a graft",
-            OPT_DO_DRAFT = "Draft some cards",
+            OPT_TAKE_CARD = "Obtain {1#card}",
+            OPT_SKIP = "Skip Card"
         }
-        :Fn(function(cxt) 
-
-            if StateGraphUtil.RestoreDaily( cxt ) then
-                return
-            end
-
-            InitializeRun(cxt)
-
-            local pet = TheGame:GetGameState():GetCaravan():GetPet()
-            if pet then
-                cxt.quest:AssignCastMember("pet", pet)
-            end
-
+        :Fn(function(cxt)
             cxt:Dialog("DIALOG_INTRO")
 
-            DoGraftDraft(cxt, 2)
-
-            cxt:GoTo("STATE_ENCOUNTER") 
-        end)
-
-    :State("STATE_ENCOUNTER")
-        :Loc{
-            DIALOG_INTRO = [[
-                agent:
-                    !right
-                    !angryHostile
-                    !fight
-                player:
-                    !left
-                    !fight
-                {first_time?
-                    * A challenger arrives!
-                }
-                {not first_time?
-                    * The next challenger arrives!
-                }
-                
-            ]],
-            DIALOG_BACKUP = [[
-                * You spot {1} ready to fight {agent} by your side.
-            ]],
-            OPT_FIGHT = "Defend yourself",
-            OPT_CONTINUE = "Continue",
-            DIALOG_CLEAR = [[
-                player:
-                    !exit
-                agent:
-                    !exit
-            ]],
-
-            DIALOG_SURVIVOR = [[
-                agent:
-                    !right
-                    I owe you one. Do you need my help?
-            ]],
-            OPT_TAKE_SURVIVOR = "Take {agent} with you",
-            DIALOG_TAKE_SURVIVOR = [[
-                agent:
-                    !exit
-                * {agent} joins you.
-            ]],
-            OPT_LEAVE_SURVIVOR = "Let {agent} go",
-            DIALOG_LEAVE_SURVIVOR = [[
-                agent:
-                    !happy
-                    Thanks for helping me!
-                    !exit
-                * You lost a companion, but gained a friend.
-            ]],
-
-        }
-        :Fn(function(cxt) 
-                FindNewOptions(cxt)
-                local boss = cxt.quest:CreateSkinnedAgent( cxt.quest.param.next_boss )
-                cxt.enc:SetPrimaryCast(boss)
-                cxt:Dialog("DIALOG_INTRO")
-                local back_up = {}
-                if boss_backup[cxt.quest.param.next_boss] then
-                    for i,id in ipairs(boss_backup[cxt.quest.param.next_boss]) do
-                        local agent = TheGame:GetGameState():AddAgent(Agent( id ))
-                        table.insert(back_up, agent)
-                    end
-                    cxt:Dialog("DIALOG_BACKUP", back_up[1])
-                end
-                local add_conditions = {}
-                local flags
-                if cxt.quest.param.next_boss == "KASHIO" then
-                    add_conditions = cxt.quest.param.kashio_conditions
-                end
-                if #cxt.quest.param.available_encounters == 0 then
-                    flags = BATTLE_FLAGS.ISOLATED | BATTLE_FLAGS.NO_FLEE | BATTLE_FLAGS.BOSS_FIGHT | BATTLE_FLAGS.NO_REWARDS
-                else
-                    flags = BATTLE_FLAGS.ISOLATED | BATTLE_FLAGS.NO_FLEE | BATTLE_FLAGS.BOSS_FIGHT
-                end
-
-                cxt:Opt("OPT_FIGHT")
-                    :Battle{
-                        flags = flags,
-                        allies = back_up,
-                        on_start_battle = function(battle) 
-                            local fighter = battle:GetFighterForAgent(cxt:GetAgent())
-                            if fighter then
-                                for k,v in ipairs(add_conditions) do
-                                    fighter:AddCondition(v)
-                                end
-                                fighter:ClearPreparedCards()
-                                fighter:PrepareTurn()
-                            end
-                            if on_start_boss[cxt:GetAgent():GetContentID()] then
-                                on_start_boss[cxt:GetAgent():GetContentID()](battle)
-                            end
-                        end,
-                        on_win = function(cxt) 
-                            cxt:Opt("OPT_CONTINUE")
-                                :Fn(function(cxt)
-                                    cxt:Dialog("DIALOG_CLEAR")
-                                    if #cxt.quest.param.available_encounters == 0 then
-                                        local pet = cxt.enc:GetCastAgent("pet")
-                                        if pet and not pet:IsDead() and pet:IsInPlayerParty() then
-                                            cxt.quest:AddScore("PET_SURVIVED")
-                                        end
-                                        cxt.quest:Complete()
-                                    else
-                                        local diff_table = {3, 4, 4, 5}
-                                        local diff = diff_table[math.min(cxt.quest.param.step, #diff_table)]
-                                        DoGraftDraft(cxt, diff)
-                                        DoCardDraft(cxt, diff)
-
-                                        local survivors = {}
-                                        for k,v in ipairs(back_up) do
-                                            if not v:IsDead() then
-                                                table.insert(survivors, v)
-                                            end
-                                        end
-                                        
-                                        if #survivors == 0 then
-                                            cxt:GoTo("STATE_HEALING")
-                                        else
-                                            cxt:RunLoop(function() 
-                                                if #survivors == 0 then
-                                                    cxt:GoTo("STATE_HEALING")
-                                                end
-
-                                                local survivor = table.remove(survivors)
-                                                cxt:TalkTo(survivor)
-                                                cxt:Dialog("DIALOG_SURVIVOR")
-
-                                                cxt:Opt("OPT_TAKE_SURVIVOR")
-                                                    :Dialog("DIALOG_TAKE_SURVIVOR")
-                                                    :Fn(function() 
-                                                        survivor:Recruit(PARTY_MEMBER_TYPE.CREW)
-                                                    end)
-                                                
-                                                cxt:Opt("OPT_LEAVE_SURVIVOR")
-                                                    :Dialog("DIALOG_LEAVE_SURVIVOR")
-                                                    :AddScore("LEFT_SURVIVOR")
-                                                    :ReceiveOpinion(OPINION.SAVED_LIFE)
-                                                    :Fn(function() 
-                                                        cxt:GetAgent():MoveToLimbo()
-                                                    end)
-                                            end)
-                                        end
-                                        
-                                    end
-                                end)
-                        end,
-                    }
-            end)
-
-    :State("STATE_HEALING")
-        :Loc{
-            DIALOG_INTRO = [[
-                * You have some time to tend to your wounds.
-            ]],
-            OPT_SKIP = "Skip",
-            OPT_HEAL = "Tend to your injuries",
-            OPT_HEAL_PET = "Heal your pet",
-            TT_HEAL = "This also heals your pet",
-        }
-        :Fn(function(cxt) 
-            cxt:Dialog("DIALOG_INTRO")
-            cxt.enc:SetPrimaryCast(nil)
-
-            local pet = cxt.enc:GetCastAgent("pet")
-
-            cxt:Opt("OPT_HEAL")
-                :PreIcon(global_images.heal)
-                :PostText("TT_HEAL")
-                :DeltaHealth(20)
-                :Fn(function()
-                    if pet and not pet:IsRetired() then
-                        pet:GetAspect("health"):Delta(20)
-                    end
-                    cxt:GoTo("STATE_BONUS")
-                end)
-
-            if cxt.player:GetAspect("health"):GetPercent() == 1 and pet and not pet:IsRetired() then
-                cxt:Opt("OPT_HEAL_PET")
-                    :PreIcon(global_images.heal)
-                    :Fn(function()
-                        pet:GetAspect("health"):Delta(20)
-                        cxt:GoTo("STATE_BONUS")
+            if randomCard == 1 then
+                cxt:Opt("OPT_TAKE_CARD", "deflect")
+                    :PreIcon( global_images.buycombat )
+                    :GainCards{"deflect"}
+                    :Fn(function(cxt)
+                        cxt.quest:Complete("gift_from_fssh1")
                     end)
+                cxt:Opt("OPT_TAKE_CARD", "force_field")
+                    :PreIcon( global_images.buycombat )
+                    :GainCards{"force_field"}
+                    :Fn(function(cxt)
+                        cxt.quest:Complete("gift_from_fssh1")
+                    end)
+                cxt:Opt("OPT_TAKE_CARD", "extreme_focus")
+                    :PreIcon( global_images.buycombat )
+                    :GainCards{"extreme_focus"}
+                    :Fn(function(cxt)
+                        cxt.quest:Complete("gift_from_fssh1")
+                    end)
+                
+            end
+        
+            if randomCard == 2 then
+                cxt:Opt("OPT_TAKE_CARD", "ultimate_hunter")
+                    :PreIcon( global_images.buycombat )
+                    :GainCards{"ultimate_hunter"}
+                    :Fn(function(cxt)
+                        cxt.quest:Complete("gift_from_fssh1")
+                end)
+                cxt:Opt("OPT_TAKE_CARD", "tag_team")
+                    :PreIcon( global_images.buycombat )
+                    :GainCards{"tag_team"}
+                    :Fn(function(cxt)
+                        cxt.quest:Complete("gift_from_fssh1")
+                end)
+                cxt:Opt("OPT_TAKE_CARD", "weapon_swap_proficiency")
+                    :PreIcon( global_images.buycombat )
+                    :GainCards{"weapon_swap_proficiency"}
+                    :Fn(function(cxt)
+                        cxt.quest:Complete("gift_from_fssh1")
+                end)
+                
+            end
+
+            if randomCard == 3 then
+                cxt:Opt("OPT_TAKE_CARD", "massacre")
+                    :PreIcon( global_images.buycombat )
+                    :GainCards{"massacre"}
+                    :Fn(function(cxt)
+                        cxt.quest:Complete("gift_from_fssh1")
+                end)
+                cxt:Opt("OPT_TAKE_CARD", "prepared_circumstances")
+                    :PreIcon( global_images.buycombat )
+                    :GainCards{"prepared_circumstances"}
+                    :Fn(function(cxt)
+                        cxt.quest:Complete("gift_from_fssh1")
+                end)
+                cxt:Opt("OPT_TAKE_CARD", "bleeding_edge")
+                    :PreIcon( global_images.buycombat )
+                    :GainCards{"bleeding_edge"}
+                    :Fn(function(cxt)
+                        cxt.quest:Complete("gift_from_fssh1")
+                end)
             end
 
             cxt:Opt("OPT_SKIP")
-                :AddScore("SKIPPED_HEALING")
-                :GoTo("STATE_BONUS")
+                :Fn(function(cxt)
+                    cxt.quest:Complete("gift_from_fssh1")
+                    StateGraphUtil.AddEndOption(cxt)
+                end)
+
+            StateGraphUtil.AddEndOption(cxt):Fn( function( cxt ) cxt.quest:Complete("gift_from_fssh1" ) end )
         end)
 
-    :State("STATE_BONUS")
-        :Loc{
-            DIALOG_INTRO = [[
-                * Choose a bonus reward before starting the next fight.
-            ]],
-            OPT_SKIP = "Skip",
-            OPT_CONTINUE_TO_FIGHT = "Continue to the next fight",
-            OPT_REMOVE_BATTLE_CARD = "Remove a battle card",
-            OPT_BATTLE_DRAFT = "Draft a pack of battle cards",
+        QDEF:AddObjective{
+            id = "gift_from_fssh2",
+            desc = "",
+            mark = {"bartender"},
+            hide_in_overlay = true,
         }
-        :Fn(function(cxt) 
-            cxt:Dialog("DIALOG_INTRO")
-            cxt.enc:SetPrimaryCast(nil)
-            cxt:RunFn(OfferBonuses)
-        end)
+        local randomCard2 = math.random(1,4)
+        QDEF:AddConvo("gift_from_fssh2", "bartender")
+            :ConfrontState("CONF")
+                :Loc{
+                    DIALOG_INTRO = [[
+                        agent:
+                            !right 
+                            Hello {player}, I've brought you a gift.
+                        player:
+                            !left
+                            Thanks Fssh.
+                    ]],
+                    OPT_TAKE_CARD = "Obtain {1#card}",
+                    OPT_SKIP = "Skip Card"
+                }
+                :Fn(function(cxt)
+                    cxt:Dialog("DIALOG_INTRO")
+        
+                    if randomCard2 == 1 then
+                    cxt:Opt("OPT_TAKE_CARD", "blade_dance")
+                        :PreIcon( global_images.buycombat )
+                        :GainCards{"blade_dance"}
+                        :Fn(function(cxt)
+                            cxt.quest:Complete("gift_from_fssh2")
+                        end)
+                    cxt:Opt("OPT_TAKE_CARD", "flurry")
+                        :PreIcon( global_images.buycombat )
+                        :GainCards{"flurry"}
+                        :Fn(function(cxt)
+                            cxt.quest:Complete("gift_from_fssh2")
+                        end)
+                    cxt:Opt("OPT_TAKE_CARD", "hologram_belt")
+                        :PreIcon( global_images.buycombat )
+                        :GainCards{"hologram_belt"}
+                        :Fn(function(cxt)
+                            cxt.quest:Complete("gift_from_fssh2")
+                        end)
+                    end
+                    
+                   
+                    if randomCard2 == 2 then
+                        cxt:Opt("OPT_TAKE_CARD", "the_culling")
+                            :PreIcon( global_images.buycombat )
+                            :GainCards{"the_culling"}
+                            :Fn(function(cxt)
+                                cxt.quest:Complete("gift_from_fssh2")
+                        end)
+                        cxt:Opt("OPT_TAKE_CARD", "call_lumicyte")
+                            :PreIcon( global_images.buycombat )
+                            :GainCards{"call_lumicyte"}
+                            :Fn(function(cxt)
+                                cxt.quest:Complete("gift_from_fssh2")
+                        end)
+                        cxt:Opt("OPT_TAKE_CARD", "armor_of_disease")
+                            :PreIcon( global_images.buycombat )
+                            :GainCards{"armor_of_disease"}
+                            :Fn(function(cxt)
+                                cxt.quest:Complete("gift_from_fssh2")
+                        end)
+                    end
+    
+                    if randomCard2 == 3 then
+                        cxt:Opt("OPT_TAKE_CARD", "contaminate")
+                            :PreIcon( global_images.buycombat )
+                            :GainCards{"contaminate"}
+                            :Fn(function(cxt)
+                                cxt.quest:Complete("gift_from_fssh2")
+                        end)
+                        cxt:Opt("OPT_TAKE_CARD", "epidemic")
+                            :PreIcon( global_images.buycombat )
+                            :GainCards{"epidemic"}
+                            :Fn(function(cxt)
+                                cxt.quest:Complete("gift_from_fssh2")
+                        end)
+                        cxt:Opt("OPT_TAKE_CARD", "infestation")
+                            :PreIcon( global_images.buycombat )
+                            :GainCards{"infestation"}
+                            :Fn(function(cxt)
+                                cxt.quest:Complete("gift_from_fssh2")
+                        end)
+                    end
+                    
+                    if randomCard2 == 4 then
+                        cxt:Opt("OPT_TAKE_CARD", "parasite_infusion")
+                            :PreIcon( global_images.buycombat )
+                            :GainCards{"parasite_infusion"}
+                            :Fn(function(cxt)
+                                cxt.quest:Complete("gift_from_fssh2")
+                        end)
+                        cxt:Opt("OPT_TAKE_CARD", "remote_plague")
+                            :PreIcon( global_images.buycombat )
+                            :GainCards{"remote_plague"}
+                            :Fn(function(cxt)
+                                cxt.quest:Complete("gift_from_fssh2")
+                        end)
+                        cxt:Opt("OPT_TAKE_CARD", "infinity_blade")
+                        :PreIcon( global_images.buycombat )
+                        :GainCards{"infinity_blade"}
+                        :Fn(function(cxt)
+                            cxt.quest:Complete("gift_from_fssh2")
+                    end)
+                    end
+                
+                    cxt:Opt("OPT_SKIP")
+                        :Fn(function(cxt)
+                            cxt.quest:Complete("gift_from_fssh2")
+                            StateGraphUtil.AddEndOption(cxt)
+                        end)
+        
+                    StateGraphUtil.AddEndOption(cxt):Fn( function( cxt ) cxt.quest:Complete("gift_from_fssh2" ) end )
+                end)
+
+                
+                QDEF:AddObjective{
+                    id = "strange_request",
+                    desc = "",
+                    mark = {"bartender"},
+                    hide_in_overlay = true,
+                }
+                local randomCard2 = math.random(1,11)
+                QDEF:AddConvo("strange_request", "bartender")
+                    :ConfrontState("CONF")
+                        :Loc{
+                            DIALOG_INTRO = [[
+                                agent:
+                                    !right 
+                                    Hey {player} I was doing a little snooping around the bar and this shady guy left this at one of the tables. I'm sure you'll have a use for it. 
+                                player:
+                                    !left
+                                    What is it?
+                                agent:
+                                    !right
+                                    Beats me.
+                                player:
+                                    !left
+                                    Only one way to find out.
+                            ]],
+                            OPT_TRANSFORM = "Obtain {1#card}",
+                        
+                            OPT_SKIP = "Skip Card"
+                        }
+                        :Fn(function(cxt)
+                            cxt:Dialog("DIALOG_INTRO")
+                            cxt:Opt("OPT_TRANSFORM", "transform_bog_one")
+                            :PreIcon( global_images.buycombat )
+                            :GainCards{"transform_bog_one"}
+                            :Fn(function(cxt)
+                                cxt.quest:Complete("strange_request")
+                            end)
+                            cxt:Opt("OPT_SKIP")
+                            :Fn(function(cxt)
+                                cxt.quest:Complete("strange_request")
+                                StateGraphUtil.AddEndOption(cxt)
+                            end)
+                        end)
