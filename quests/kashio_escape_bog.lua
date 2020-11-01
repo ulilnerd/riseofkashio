@@ -1,21 +1,5 @@
-local brawl = require "content/quests/brawl/brawl_util"
-
-local patron_weights = {
-    ADMIRALTY_PATROL_LEADER = 1,
-    WEALTHY_MERCHANT = 1,
-    FOREMAN = 1,
-
-    SPARK_BARON_GOON = 1,
-    SPARK_BARON_TASKMASTER = 1,
-    SPARK_BARON_PROFESSIONAL = 1,
-
-    JAKES_RUNNER = 1,
-    JAKES_SMUGGLER = 1,
-    JAKES_LIFTER = 1,
-
-    BOGGER_CLOBBER = .5,
-    BOGGER_CULTIVATOR = .5,
-}
+-- local brawl = require "content/quests/brawl/brawl_util"
+local brawl = require "RISE:quests/kashio_brawl_util"
 
 local bonus_loc = {
     OPT_BONUS_MONEY = "Take money",
@@ -167,7 +151,7 @@ local data = table.extend(brawl.base_data)
     home_loc_name = "Grout Bog",
     home_loc_desc = "Grout Bog Forest",
     home_loc_plax = "EXT_Bog_Forest_01",
-    bartender_alias = "FSSH",
+    bartender_alias = "SMITH",
 
     merchant_list = {
         "grafts", "pets", "battle"
@@ -194,91 +178,23 @@ data.MakeBrawlSchedule = function(data)
     local selected_quests = {}
 
     local day_1_quests = brawl.PickQuests(all_valid_quests, selected_quests, 1, 4, 0, 4)
-    local day_2_quests = brawl.PickQuests(all_valid_quests, selected_quests, 2, 4, 0, 4)
-    local day_3_quests = brawl.PickQuests(all_valid_quests, selected_quests, 3, 4, 0, 4)
-    local day_4_quests = brawl.PickQuests(all_valid_quests, selected_quests, 4, 4, 0, 4)
-    local day_5_quests = brawl.PickQuests(all_valid_quests, selected_quests, 5, 4, 0, 4)
+    -- local day_2_quests = brawl.PickQuests(all_valid_quests, selected_quests, 2, 4, 0, 4)
+    -- local day_3_quests = brawl.PickQuests(all_valid_quests, selected_quests, 3, 4, 0, 4)
+    -- local day_4_quests = brawl.PickQuests(all_valid_quests, selected_quests, 4, 4, 0, 4)
+    -- local day_5_quests = brawl.PickQuests(all_valid_quests, selected_quests, 5, 4, 0, 4)
 
     local bs = BrawlSchedule()
     bs:SetCurrentHome("home_hq")
     bs:SetDifficulty(1)
         :QuestPhase("starting_kashio")
         :Boss(brawl.PickBoss(data.bosses[1], used_bosses) )
-        :QuestPhase("strange_request")
-        :Boss(brawl.PickBoss(data.bosses[1], used_bosses), true)
-        :QuestPhase("gift_from_fssh1")
+        -- :Boss(brawl.PickBoss(data.bosses[1], used_bosses), true)
         :Bonus(all_kashio_bonuses, 2)
         :Night()
         :Bonus(all_kashio_bonuses, 2)
-        :QuestPhase("gift_from_fssh1")
+    
         :Sleep()
-    bs:SetDifficulty(2)
-        
-        :Quest(table.remove(day_2_quests))
-        :Bonus(all_kashio_bonuses, 2)
-        :Quest(table.remove(day_2_quests))
-        :Night()
-        :Merchants(brawl.PickMerchants(data.merchant_list,1))
-        :Boss(brawl.PickBoss(data.bosses[2], used_bosses))
-        :QuestPhase("gift_from_fssh1")
-        :Quest(table.remove(day_2_quests))
-        :Bonus(all_kashio_bonuses, 2)
-        :Quest(table.remove(day_2_quests))
-        :Boss(brawl.PickBoss(data.bosses[4], used_bosses))
-        :QuestPhase("gift_from_fssh1")
-        :Sleep()
-        
-    bs:SetDifficulty(3)
-    :Quest(table.remove(day_3_quests))
-    :Bonus(all_kashio_bonuses, 2)
-    :Quest(table.remove(day_3_quests))
-    :Bonus(all_kashio_bonuses, 2)
-    :Quest(table.remove(day_3_quests))
-    :Merchants(brawl.PickMerchants(data.merchant_list,2))
-    :Boss(brawl.PickBoss(data.bosses[1], used_bosses) )
-    :QuestPhase("gift_from_fssh2")
-    
-    :Night()
-    :Quest(table.remove(day_3_quests))
-    :Merchants({"coins"})
-    :Boss(brawl.PickBoss(data.bosses[3], used_bosses), true)
-    :QuestPhase("gift_from_fssh2")
-    :Merchants(brawl.PickMerchants(data.merchant_list,2))
-    :Sleep()
-
-bs:SetDifficulty(4)
-    :Quest(table.remove(day_4_quests))
-    :Bonus(all_kashio_bonuses, 2)
-    :Quest(table.remove(day_4_quests))
-    :Quest(table.remove(day_4_quests))
-    :Merchants(brawl.PickMerchants(data.merchant_list,2))
-    :Bonus(all_kashio_bonuses, 2)
-    :Boss(brawl.PickBoss(data.bosses[2], used_bosses))
-    :QuestPhase("gift_from_fssh2")
-     
-    :Night()
-    :Quest(table.remove(day_4_quests))
-    :Merchants({"coins"})        
-    :Boss(brawl.PickBoss(data.bosses[4], used_bosses), true)
-    :QuestPhase("gift_from_fssh2")
-    :Merchants(brawl.PickMerchants(data.merchant_list,2))
-    :Sleep()
-
-bs:SetDifficulty(5)
-    :Quest(table.remove(day_5_quests))
-    :Bonus(all_kashio_bonuses, 2)
-    :Quest(table.remove(day_5_quests))
-    :Merchants(brawl.PickMerchants(data.merchant_list,2))
-    :Quest(table.remove(day_5_quests))
-    :QuestPhase("gift_from_fssh2")
-    
-    :Night(3)
-    :Quest(table.remove(day_5_quests))
-    :Merchants(brawl.PickMerchants(data.merchant_list,2))
-    :Boss(brawl.PickBoss( data.bosses[5], used_bosses))
-    :Win()
-
-    
+        :Win()
     return bs.events
 end
 
@@ -296,13 +212,6 @@ QDEF:AddQuestLocation{
     {
         bartender = CreateClosedJob( PHASE_MASK_ALL, "Bartender", CHARACTER_ROLES.PROPRIETOR, "GROG_N_DOG_ITEMS"),
     },
-    -- patron_data = {
-    --     num_patrons = 4,
-    --     patron_generator = function(location)
-    --         local def = weightedpick(patron_weights)
-    --         TheGame:GetGameState():AddSkinnedAgent(def):GetBrain():SendToPatronize(location)
-    --     end
-    -- },
     on_assign = function(quest, location)
         AgentUtil.TakeJob(quest:GetCastMember("bartender"), location, "bartender")
     end,
@@ -320,282 +229,71 @@ QDEF:AddConvo("starting_kashio")
         :ConfrontState("CONF")
             :Loc{
                 DIALOG_INTRO = [[
-                    ** Deep Grout Bog
-                    * Kashio finds some Vagarant Tech
+                    * Kashio makes her way to what it appears to be a pile of metal junk 
                     player:
                         !left
                         Excellent, this will do for the Spark Barons.
                         Time to pay off my debt.
+                    agent:
+                        !right 
+                        !happy
+                        Greetings!
+                    player:
+                        !left
+                        !point
+                        Who the hell are you?
+                    agent:
+                        !right
+                        !happy
+                        I am the strongest Kra'deshi in all of Havaria!
+                        RAWR XD fear meme!!
+                    player:
+                        !left
+                        Whatever.
+                    * Hanging outside of Smith's pocket, Kashio sees a small bug crawling up the sleeve of his shirt
                 ]],
+                OPT_DO_DRAFT = "Starting Draft",
+                OPT_TRANSFORM = "Obtain {1#card}",
+                OPT_SKIP = "Skip"
             }
 :Fn(function(cxt) 
     cxt.quest:Complete("starting_kashio")
     TheGame:GetGameState():SetActProgress(cxt.quest.param.day)
     cxt:TalkTo("bartender")
     cxt:Dialog("DIALOG_INTRO")
+    
+    local did_draft, got_bug = false
     cxt:RunLoop(function( ... )
-            StateGraphUtil.AddEndOption(cxt)
+        if not got_bug then
+            cxt:Opt("OPT_TRANSFORM", "transform_bog_one")
+                :PreIcon( global_images.buycombat )
+                :GainCards{"transform_bog_one"}
+                :Fn(function()
+                    got_bug = true
+                end)
+        end
+
+        if not did_draft then
+            cxt:Opt("OPT_DO_DRAFT")
+                :Fn(function() 
+                    did_draft = true
+                    local function OnDone()
+                        cxt.encounter:ResumeEncounter()
+                    end
+                    for i = 1, 3 do
+                        local draft_popup = Screen.DraftChoicePopup()
+                        local cards = RewardUtil.GetBattleCards( 1, 3, cxt.player )
+                        draft_popup:DraftCards( cxt.player, Battle.Card, cards, OnDone )
+                        TheGame:FE():InsertScreen( draft_popup )
+                        cxt.enc:YieldEncounter()
+                    end
+                end)
+        end
+        cxt:Opt("OPT_SKIP")
+            :Fn(function() 
+                StateGraphUtil.AddEndOption(cxt)
+                end)
     end)
 end)
 
 
-
-QDEF:AddObjective{
-    id = "gift_from_fssh1",
-    desc = "",
-    mark = {"bartender"},
-    hide_in_overlay = true,
-}
-local randomCard = math.random(1,3)
-QDEF:AddConvo("gift_from_fssh1", "bartender")
-    :ConfrontState("CONF")
-        :Loc{
-            DIALOG_INTRO = [[
-                agent:
-                    !right 
-                    Hello {player}, I've brought you a gift.
-                player:
-                    !left
-                    Thanks Fssh.
-            ]],
-            OPT_TAKE_CARD = "Obtain {1#card}",
-            OPT_SKIP = "Skip Card"
-        }
-        :Fn(function(cxt)
-            cxt:Dialog("DIALOG_INTRO")
-
-            if randomCard == 1 then
-                cxt:Opt("OPT_TAKE_CARD", "deflect")
-                    :PreIcon( global_images.buycombat )
-                    :GainCards{"deflect"}
-                    :Fn(function(cxt)
-                        cxt.quest:Complete("gift_from_fssh1")
-                    end)
-                cxt:Opt("OPT_TAKE_CARD", "force_field")
-                    :PreIcon( global_images.buycombat )
-                    :GainCards{"force_field"}
-                    :Fn(function(cxt)
-                        cxt.quest:Complete("gift_from_fssh1")
-                    end)
-                cxt:Opt("OPT_TAKE_CARD", "extreme_focus")
-                    :PreIcon( global_images.buycombat )
-                    :GainCards{"extreme_focus"}
-                    :Fn(function(cxt)
-                        cxt.quest:Complete("gift_from_fssh1")
-                    end)
-                
-            end
-        
-            if randomCard == 2 then
-                cxt:Opt("OPT_TAKE_CARD", "ultimate_hunter")
-                    :PreIcon( global_images.buycombat )
-                    :GainCards{"ultimate_hunter"}
-                    :Fn(function(cxt)
-                        cxt.quest:Complete("gift_from_fssh1")
-                end)
-                cxt:Opt("OPT_TAKE_CARD", "tag_team")
-                    :PreIcon( global_images.buycombat )
-                    :GainCards{"tag_team"}
-                    :Fn(function(cxt)
-                        cxt.quest:Complete("gift_from_fssh1")
-                end)
-                cxt:Opt("OPT_TAKE_CARD", "weapon_swap_proficiency")
-                    :PreIcon( global_images.buycombat )
-                    :GainCards{"weapon_swap_proficiency"}
-                    :Fn(function(cxt)
-                        cxt.quest:Complete("gift_from_fssh1")
-                end)
-                
-            end
-
-            if randomCard == 3 then
-                cxt:Opt("OPT_TAKE_CARD", "massacre")
-                    :PreIcon( global_images.buycombat )
-                    :GainCards{"massacre"}
-                    :Fn(function(cxt)
-                        cxt.quest:Complete("gift_from_fssh1")
-                end)
-                cxt:Opt("OPT_TAKE_CARD", "prepared_circumstances")
-                    :PreIcon( global_images.buycombat )
-                    :GainCards{"prepared_circumstances"}
-                    :Fn(function(cxt)
-                        cxt.quest:Complete("gift_from_fssh1")
-                end)
-                cxt:Opt("OPT_TAKE_CARD", "bleeding_edge")
-                    :PreIcon( global_images.buycombat )
-                    :GainCards{"bleeding_edge"}
-                    :Fn(function(cxt)
-                        cxt.quest:Complete("gift_from_fssh1")
-                end)
-            end
-
-            cxt:Opt("OPT_SKIP")
-                :Fn(function(cxt)
-                    cxt.quest:Complete("gift_from_fssh1")
-                    StateGraphUtil.AddEndOption(cxt)
-                end)
-
-            StateGraphUtil.AddEndOption(cxt):Fn( function( cxt ) cxt.quest:Complete("gift_from_fssh1" ) end )
-        end)
-
-        QDEF:AddObjective{
-            id = "gift_from_fssh2",
-            desc = "",
-            mark = {"bartender"},
-            hide_in_overlay = true,
-        }
-        local randomCard2 = math.random(1,4)
-        QDEF:AddConvo("gift_from_fssh2", "bartender")
-            :ConfrontState("CONF")
-                :Loc{
-                    DIALOG_INTRO = [[
-                        agent:
-                            !right 
-                            Hello {player}, I've brought you a gift.
-                        player:
-                            !left
-                            Thanks Fssh.
-                    ]],
-                    OPT_TAKE_CARD = "Obtain {1#card}",
-                    OPT_SKIP = "Skip Card"
-                }
-                :Fn(function(cxt)
-                    cxt:Dialog("DIALOG_INTRO")
-        
-                    if randomCard2 == 1 then
-                    cxt:Opt("OPT_TAKE_CARD", "blade_dance")
-                        :PreIcon( global_images.buycombat )
-                        :GainCards{"blade_dance"}
-                        :Fn(function(cxt)
-                            cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                    cxt:Opt("OPT_TAKE_CARD", "flurry")
-                        :PreIcon( global_images.buycombat )
-                        :GainCards{"flurry"}
-                        :Fn(function(cxt)
-                            cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                    cxt:Opt("OPT_TAKE_CARD", "hologram_belt")
-                        :PreIcon( global_images.buycombat )
-                        :GainCards{"hologram_belt"}
-                        :Fn(function(cxt)
-                            cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                    end
-                    
-                   
-                    if randomCard2 == 2 then
-                        cxt:Opt("OPT_TAKE_CARD", "the_culling")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"the_culling"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                        cxt:Opt("OPT_TAKE_CARD", "call_lumicyte")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"call_lumicyte"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                        cxt:Opt("OPT_TAKE_CARD", "armor_of_disease")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"armor_of_disease"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                    end
-    
-                    if randomCard2 == 3 then
-                        cxt:Opt("OPT_TAKE_CARD", "contaminate")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"contaminate"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                        cxt:Opt("OPT_TAKE_CARD", "epidemic")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"epidemic"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                        cxt:Opt("OPT_TAKE_CARD", "infestation")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"infestation"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                    end
-                    
-                    if randomCard2 == 4 then
-                        cxt:Opt("OPT_TAKE_CARD", "parasite_infusion")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"parasite_infusion"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                        cxt:Opt("OPT_TAKE_CARD", "remote_plague")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"remote_plague"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                        cxt:Opt("OPT_TAKE_CARD", "infinity_blade")
-                        :PreIcon( global_images.buycombat )
-                        :GainCards{"infinity_blade"}
-                        :Fn(function(cxt)
-                            cxt.quest:Complete("gift_from_fssh2")
-                    end)
-                    end
-                
-                    cxt:Opt("OPT_SKIP")
-                        :Fn(function(cxt)
-                            cxt.quest:Complete("gift_from_fssh2")
-                            StateGraphUtil.AddEndOption(cxt)
-                        end)
-        
-                    StateGraphUtil.AddEndOption(cxt):Fn( function( cxt ) cxt.quest:Complete("gift_from_fssh2" ) end )
-                end)
-
-                
-                QDEF:AddObjective{
-                    id = "strange_request",
-                    desc = "",
-                    mark = {"bartender"},
-                    hide_in_overlay = true,
-                }
-                local randomCard2 = math.random(1,11)
-                QDEF:AddConvo("strange_request", "bartender")
-                    :ConfrontState("CONF")
-                        :Loc{
-                            DIALOG_INTRO = [[
-                                agent:
-                                    !right 
-                                    Hey {player} I was doing a little snooping around the bar and this shady guy left this at one of the tables. I'm sure you'll have a use for it. 
-                                player:
-                                    !left
-                                    What is it?
-                                agent:
-                                    !right
-                                    Beats me.
-                                player:
-                                    !left
-                                    Only one way to find out.
-                            ]],
-                            OPT_TRANSFORM = "Obtain {1#card}",
-                        
-                            OPT_SKIP = "Skip Card"
-                        }
-                        :Fn(function(cxt)
-                            cxt:Dialog("DIALOG_INTRO")
-                            cxt:Opt("OPT_TRANSFORM", "transform_bog_one")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"transform_bog_one"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("strange_request")
-                            end)
-                            cxt:Opt("OPT_SKIP")
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("strange_request")
-                                StateGraphUtil.AddEndOption(cxt)
-                            end)
-                        end)

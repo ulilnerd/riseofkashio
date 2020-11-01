@@ -1,5 +1,6 @@
 local brawl = require "content/quests/brawl/brawl_util"
 
+
 local patron_weights = {
     ADMIRALTY_PATROL_LEADER = 1,
     WEALTHY_MERCHANT = 1,
