@@ -13,10 +13,8 @@ local bonus_loc = {
     REQ_AT_FULL_HEALTH = "At full health",
     REQ_AT_FULL_RESOLVE = "At full resolve",
     OPT_HEAL_HEALTH = "Restore <#HEALTH>{1} Health</>",
-    OPT_HEAL_RESOLVE = "Restore <#TITLE>{1} Resolve</>",
 
     OPT_GAIN_MAX_HEALTH = "Increase max health by {1}",
-    OPT_GAIN_MAX_RESOLVE = "Increase max resolve by {1}",
     OPT_GAIN_ITEMS = "Get {1#card_list}",
 }
 local kashio_bonuses = 
@@ -90,23 +88,6 @@ local kashio_bonuses =
 
     },
     
-    heal_resolve = 
-    {
-        condition = function(quest) 
-            local resolve, resolve_max = TheGame:GetGameState():GetCaravan():GetResolve()
-            return resolve < resolve_max
-        end,
-
-        convo = function(cxt) 
-                    local resolve, resolve_max = TheGame:GetGameState():GetCaravan():GetResolve()
-                    local restore_amt = 30
-                    cxt:Opt("OPT_HEAL_RESOLVE", restore_amt)
-                        :ReqCondition(resolve < resolve_max, "REQ_AT_FULL_RESOLVE" )
-                        :DeltaResolve( restore_amt )
-                        :DoneConvo()
-                end,
-    },
-
     gain_max_health = 
     {
         condition = function(quest) 
@@ -188,11 +169,9 @@ data.MakeBrawlSchedule = function(data)
     bs:SetDifficulty(1)
         :QuestPhase("starting_kashio")
         :Boss(brawl.PickBoss(data.bosses[1], used_bosses) )
-        -- :Boss(brawl.PickBoss(data.bosses[1], used_bosses), true)
         :Bonus(all_kashio_bonuses, 2)
         :Night()
         :Bonus(all_kashio_bonuses, 2)
-    
         :Sleep()
         :Win()
     return bs.events
@@ -254,7 +233,8 @@ QDEF:AddConvo("starting_kashio")
                 ]],
                 OPT_DO_DRAFT = "Starting Draft",
                 OPT_TRANSFORM = "Obtain {1#card}",
-                OPT_SKIP = "Skip"
+                OPT_SKIP = "Skip",
+                OPT_REMOVE_BATTLE_CARDS = "Remove up to 3 Cards"
             }
 :Fn(function(cxt) 
     cxt.quest:Complete("starting_kashio")
@@ -262,7 +242,7 @@ QDEF:AddConvo("starting_kashio")
     cxt:TalkTo("bartender")
     cxt:Dialog("DIALOG_INTRO")
     
-    local did_draft, got_bug = false
+    local did_draft, got_bug, remove_cards = false
     cxt:RunLoop(function( ... )
         if not got_bug then
             cxt:Opt("OPT_TRANSFORM", "transform_bog_one")
@@ -289,6 +269,20 @@ QDEF:AddConvo("starting_kashio")
                     end
                 end)
         end
+        
+        if not remove_cards then
+            cxt:Opt("OPT_REMOVE_BATTLE_CARDS")
+                        :Fn(function() 
+                                remove_cards = true
+                                for i = 1, 3 do
+                                    AgentUtil.RemoveBattleCard( cxt.player, function( card )
+                                        cxt.enc:ResumeEncounter( card )
+                                    end)
+                                    local card = cxt.enc:YieldEncounter()
+                                end
+                            end)
+        end
+
         cxt:Opt("OPT_SKIP")
             :Fn(function() 
                 StateGraphUtil.AddEndOption(cxt)
