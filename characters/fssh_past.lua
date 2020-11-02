@@ -442,13 +442,46 @@ local def = CharacterDef("FSSH_PAST",
                 fssh_charge_up = table.extend(NPC_BUFF)
                 {
                     name = "Charge Flurry", 
-                    anim = "taunt2",
+                    pre_anim = "taunt2",
+                    anim = "hero_taunt2",
                     flags = CARD_FLAGS.SKILL | CARD_FLAGS.BUFF,
                     target_type = TARGET_TYPE.SELF,
 
                     OnPostResolve = function( self, battle, attack)
                         self.owner:AddCondition("FSSH_KILLING_SPREE", 1, self)
+                        self.owner:HealHealth(5,self)
                     end
+                },
+                fssh_dagger_throw = table.extend(NPC_RANGED)
+                {
+                    name = "Dagger Throw", -- deals damage twice
+                    pre_anim = "taunt",
+                    anim = "targetpractice2",
+                    hit_anim = true,
+                
+                    flags = CARD_FLAGS.RANGED,
+                    hit_count = 3,
+                    base_damage = 2,
+                },
+                fssh_deadly_precision = table.extend(NPC_RANGED)
+                {
+                    name = "Deadly Precision", 
+                    pre_anim = "taunt2",
+                    anim = "targetpractice1",
+                    flags = CARD_FLAGS.RANGED,
+                    
+                    base_damage = 4,
+                },
+                fssh_blast = table.extend(NPC_RANGED)
+                {
+                    name = "Quickdraw", 
+                    -- pre_anim = "blast_pre",
+                    -- anim = "blast",
+                    -- post_anim = "blast_pst",
+                    anim = "shoot",
+                    flags = CARD_FLAGS.RANGED,
+                    
+                    base_damage = 7,
                 },
             },
 
@@ -471,6 +504,10 @@ local def = CharacterDef("FSSH_PAST",
                         :AddID( "fssh_bleeding_edge", 2)
                         :AddID( "fssh_slice_up", 2)
                         :AddID( "fssh_spinning_slash", 2)
+                    self.rangedCards = self:MakePicker()
+                        :AddID( "fssh_dagger_throw", 2)
+                        :AddID( "fssh_deadly_precision", 2)
+                        :AddID( "fssh_blast", 2)
                         self:SetPattern( self.Cycle )
                         self.slicer = self:AddCard( "fssh_slicer" )
                         self.dicer = self:AddCard( "fssh_dicer" )
@@ -480,7 +517,7 @@ local def = CharacterDef("FSSH_PAST",
 
                 Cycle = function( self )
                      -- 20 stacks: have a chance to summon upgraded crayote
-                    local randomCards = 2 --math.random(1,2)
+                    local randomCards = math.random(1,3)
                     if self.fighter:GetConditionStacks("FINAL_EFFORT") >= 20 then
                         local randomNum = math.random(1,4)
                         if self.fighter:GetTeam():NumActiveFighters() < 2 and randomNum == 4 then
@@ -497,7 +534,9 @@ local def = CharacterDef("FSSH_PAST",
                         end
                     -- buffs
                     elseif randomCards == 2  then
-                      self.buffCards:ChooseCards(2)
+                        self.buffCards:ChooseCards(2)
+                    elseif randomCards == 3  then
+                        self.rangedCards:ChooseCards(3)
                     end
                     -- 40 stacks: gains an extra attack from a pool of advanced cards
                     if self.fighter:GetConditionStacks("FINAL_EFFORT") >= 40 then

@@ -479,7 +479,7 @@ local function CreateBrawlQuest(id, data)
     }
 
     :AddObjective{
-        id = "get_healing",
+        id = "talk_to_robot",
         mark = {"bartender"},
         hide_in_overlay = true,
         state = QSTATUS.ACTIVE,
@@ -685,7 +685,7 @@ local function CreateBrawlQuest(id, data)
                         I AM KNOWN AS VAGARANT TEST PROJECT NUMBER 05894265
                         BUT MY CREATORS CALL ME MR ROBOTO
                         I CAN HELP WITH VARIOUS TASKS
-                        SUCH AS ELIMINATE PESTS AND INSECTS
+                        SUCH AS ELIMINATING PESTS AND INSECTS
                     * Mr Roboto picks up a small bug
                 ]],
                 DIALOG_SKIP = [[
@@ -851,7 +851,9 @@ end)
 
     ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     local backupRequistioned = false
-    QDEF:AddConvo("get_healing", "bartender")
+    local randomNum = math.random(1,2)
+    local randomMech = {"COMBAT_DRONE", "AUTODOG"}
+    QDEF:AddConvo("talk_to_robot", "bartender")
         :Priority(CONVO_PRIORITY_LOW)
         :Loc{
             DIALOG_ROBOT_HELP = [[
@@ -862,7 +864,7 @@ end)
                 player:
                     So do you think you could help me get rid of some pests?
                 agent:
-                    I WILL ONLY FIGHT AMONGST WHO ARE WORTHY
+                    I WILL ONLY FIGHT AMONGST THOSE WHO ARE WORTHY
                 player:
                     Well I guess I got a lot of fighting to do
             ]],
@@ -883,16 +885,17 @@ end)
         :Hub(function(cxt, who)
                 cxt:Opt("OPT_ASK_ROBOT")
                     :Dialog( "DIALOG_ROBOT_HELP" )
-
                 if backupRequistioned == false then
                     cxt:Opt("OPT_BACKUP")
                         :Dialog( "DIALOG_BACKUP" )
                         :PreIcon( global_images.buynegotiation )
                         :Fn(function() 
-                            local pet = TheGame:GetGameState():AddAgent(Agent("AUTODOG"))
+                            local pet = TheGame:GetGameState():AddAgent(Agent(randomMech[randomNum]))
                             pet:Recruit(PARTY_MEMBER_TYPE.CREW)
+                            backupRequistioned = true
+                            randomNum = math.random(1,2)
                         end)
-                        backupRequistioned = true
+                        
                 end
             end
         )
