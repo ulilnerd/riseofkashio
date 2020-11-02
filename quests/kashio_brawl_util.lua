@@ -859,6 +859,14 @@ end)
     QDEF:AddConvo("talk_to_robot", "bartender")
         :Priority(CONVO_PRIORITY_LOW)
         :Loc{
+            -- DIALOG_INTRO_ROBOT = [[
+            --     player:
+            --         !left
+            --     agent:
+            --         !right
+            --         GREETINGS MASTER
+            --         WHAT CAN I DO FOR YOU TODAY
+            -- ]],
             DIALOG_ROBOT_HELP = [[
                 player:
                     !left
@@ -889,7 +897,7 @@ end)
                 player:
                     Get me more toys of destruction. Now.
                 agent:
-                    YES SIR
+                    YES MA'AM
             ]],
             OPT_ASK_ROBOT = "Ask Mr Robot for help",
             OPT_BACKUP = "Requistion Backup Mechs",
@@ -897,6 +905,7 @@ end)
         }
 
         :Hub(function(cxt, who)
+                -- :Dialog( "DIALOG_INTRO_ROBOT" )
                 cxt:Opt("OPT_ASK_ROBOT")
                     :Dialog( "DIALOG_ROBOT_HELP" )
                 if backupRequistioned == false then
