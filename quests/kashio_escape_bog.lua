@@ -6,7 +6,7 @@ local data = table.extend(brawl.base_data)
     home_loc_name = "Grout Bog",
     home_loc_desc = "Grout Bog Forest",
     home_loc_plax = "EXT_Bog_Forest_01",
-    bartender_alias = "SMITH",
+    bartender_alias = "ROBOT_BARTENDER",
 
     merchant_list = {
         "grafts", "pets", "battle"

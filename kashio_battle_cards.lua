@@ -6,6 +6,29 @@ require "eventsystem"
 
 local CARDS =
 {
+    kill_card = 
+    {
+        name = "Kill Card",
+        anim = "spin_attack",
+        desc = "Instantly executes an enemy.",
+
+        min_damage =  1,
+        max_damage =  1,
+        max_xp = 0,
+        
+        rarity = CARD_RARITY.UNIQUE,
+        cost = 0,
+        flags = CARD_FLAGS.MELEE,
+    
+        OnPostResolve = function( self, battle, attack)
+            for i, hit in attack:Hits() do
+                local target = hit.target
+                if not hit.evaded then 
+                    target:Kill()
+                end
+            end
+        end
+    },
     improvise_smokescreen = 
     {
         name = "Smokescreen",

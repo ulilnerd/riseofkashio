@@ -13,6 +13,14 @@ local PET_UPGRADE_COST = 300
 local FSSHCAKE_COST = 40
 local FSSHCAKE_HEAL = 15
 
+local VENDOR_DATA = {
+    grafts = {objective = "graft_sale"},
+    negotiation = {objective = "negotiation_sale"},
+    battle = {objective = "battle_sale"},
+    pets = {objective = "pet_sale"},
+    coins = {objective = "coin_trade"}
+}
+
 
 local BRAWL_LOCATIONS = {
     "EXT_BOGGER_HIDEOUT_01",
@@ -669,21 +677,24 @@ local function CreateBrawlQuest(id, data)
                         Time to pay off my debt.
                     agent:
                         !right 
-                        !happy
-                        Greetings!
+                        HELLO
                     player:
-                        !left
                         !point
                         Who the hell are you?
                     agent:
-                        !right
-                        !happy
-                        I am the strongest Kra'deshi in all of Havaria!
-                        RAWR XD fear meme!!
+                        I AM KNOWN AS VAGARANT TEST PROJECT NUMBER 05894265
+                        BUT MY CREATORS CALL ME MR ROBOTO
+                        I CAN HELP WITH VARIOUS TASKS
+                        SUCH AS ELIMINATE PESTS AND INSECTS
+                    * Mr Roboto picks up a small bug
+                ]],
+                DIALOG_SKIP = [[
                     player:
                         !left
-                        Whatever.
-                    * Hanging outside of Smith's pocket, Kashio sees a small bug crawling up the sleeve of his shirt
+                    agent:
+                        !right
+                    player:
+                        I'll be back for more later.
                 ]],
                 OPT_DO_DRAFT = "Starting Draft",
                 OPT_TRANSFORM = "Obtain {1#card}",
@@ -714,7 +725,7 @@ local function CreateBrawlQuest(id, data)
                     local function OnDone()
                         cxt.encounter:ResumeEncounter()
                     end
-                    for i = 1, 3 do
+                    for i = 1, 5 do
                         local draft_popup = Screen.DraftChoicePopup()
                         local cards = RewardUtil.GetBattleCards( 1, 3, cxt.player )
                         draft_popup:DraftCards( cxt.player, Battle.Card, cards, OnDone )
@@ -738,6 +749,7 @@ local function CreateBrawlQuest(id, data)
         end
 
         cxt:Opt("OPT_SKIP")
+            :Dialog("DIALOG_SKIP")
             :Fn(function() 
                 StateGraphUtil.AddEndOption(cxt)
                 end)
@@ -838,35 +850,52 @@ end)
 
 
     ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    local backupRequistioned = false
     QDEF:AddConvo("get_healing", "bartender")
         :Priority(CONVO_PRIORITY_LOW)
         :Loc{
-            OPT_BUY_FOOD_FSSH = "Eat one of Fssh's famous Fsshcakes",
-            OPT_BUY_FOOD = "Buy some food",
-            
-            DIALOG_BUY_FOOD = [[
+            DIALOG_ROBOT_HELP = [[
                 player:
-                    $neutralResigned
-                    I'm hurt, {agent}.
+                    !left
                 agent:
-                    !give
-                    $happyGreeting
-                    Here. Eat this.
+                    !right
+                player:
+                    So do you think you could help me get rid of some pests?
+                agent:
+                    I WILL ONLY FIGHT AMONGST WHO ARE WORTHY
+                player:
+                    Well I guess I got a lot of fighting to do
             ]],
-            REQ_TOO_FULL = "You have too many {1#card} cards in your deck already!",
-            TT_CAKES = "Restore {1} health.\nInsert {2#card} to your battle deck.",
+            DIALOG_BACKUP = [[
+                player:
+                    !left
+                agent:
+                    !right
+                player:
+                    Need more backup
+                agent:
+                    ROGER DODGER
+            ]],
+            OPT_ASK_ROBOT = "Ask Mr Robot for help",
+            OPT_BACKUP = "Requistion Backup Mechs",
         }
 
-        :Hub( function(cxt, who)
-                cxt:Opt(who:GetContentID() == "FSSH" and "OPT_BUY_FOOD_FSSH" or "OPT_BUY_FOOD")
-                    :PreIcon( cxt.quest:GetMarkData() )
-                    :Dialog( "DIALOG_BUY_FOOD" )
-                    :DoEat(FSSHCAKE_COST, FSSHCAKE_HEAL)
+        :Hub(function(cxt, who)
+                cxt:Opt("OPT_ASK_ROBOT")
+                    :Dialog( "DIALOG_ROBOT_HELP" )
+
+                if backupRequistioned == false then
+                    cxt:Opt("OPT_BACKUP")
+                        :Dialog( "DIALOG_BACKUP" )
+                        :PreIcon( global_images.buynegotiation )
+                        :Fn(function() 
+                            local pet = TheGame:GetGameState():AddAgent(Agent("AUTODOG"))
+                            pet:Recruit(PARTY_MEMBER_TYPE.CREW)
+                        end)
+                        backupRequistioned = true
+                end
             end
         )
-
-
-
 
     QDEF:AddConvo()
         :Loc{
@@ -901,9 +930,9 @@ end)
             :Loc{
                 DIALOG_INTRO = [[
                     * {bartender} pulls you aside.
-                        !happy
-                        Heres a few things that'll help you out. 
-                        Go ahead, pick one:
+                        MASTER I HAVE BROUGHT YOU SOME GIFTS. 
+                    player:
+                        Thanks buddy.
                 ]],
                 OPT_SKIP = "Skip {bartender}'s gift",
                 DIALOG_SKIP = [[

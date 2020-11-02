@@ -76,16 +76,17 @@ QDEF:AddConvo("start")
                     !left
                 agent:
                     !right
+                    !injured
                     You've bested me, like always Kashio
                     Now think really hard, do you really want to do this?
                     Throw everything away to repay some stupid debt?
                     Have you forgotten our promise to Fallon?? About our little niece Sal? you can't do this...
                 player:
                     !left
-                    Nothing you say can't stop me from handing this over to the Spark Barons
+                    Nothing you say can stop me from handing this over to the Spark Barons
                     I will achieve greatness and Havaria will bow down to my prowess
                     But I'll spare you for now...
-                * You leave Fssh, on the ground dirty and soaking wet.
+                * You leave Fssh on the ground injured, dirty, and soaking wet.
             ]],
 
         }
