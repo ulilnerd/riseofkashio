@@ -14,39 +14,6 @@ local FSSHCAKE_COST = 40
 local FSSHCAKE_HEAL = 15
 
 
-local VENDOR_DATA = {
-    grafts = {objective = "graft_sale"},
-    negotiation = {objective = "negotiation_sale"},
-    battle = {objective = "battle_sale"},
-    pets = {objective = "pet_sale"},
-    coins = {objective = "coin_trade"}
-}
-
-local PETS = {
-    FLEAD = {def = "FLEAD", cost = .8, upgrade_def = "FLEAD_UPGRADED"},
-    CRAYOTE = {def = "CRAYOTE", cost = 1, upgrade_def = "CRAYOTE_UPGRADED"},
-    VROC = {def = "VROC", cost = 1.2, upgrade_def = "VROC_UPGRADED"},
-    SHROOGLET = {def = "SHROOGLET", cost = .25, upgrade_def = "SHROOGLET_UPGRADED"},
-    ERCHIN = {def = "ERCHIN", cost = .25, upgrade_def = "ERCHIN_UPGRADED"},
-}
-
-
-local function FindCoinGrafts( number, rarity )
-    local owner = TheGame:GetGameState():GetPlayerAgent()
-    local collection = GraftCollection.RewardableCoin(owner):Rarity(rarity)
-    local grafts = collection:Generate(number)
-    
-    if grafts then
-        for k,graft in ipairs(grafts) do
-            TheGame:GetGameProfile():SetSeenGraft( graft.id )
-        end
-    end
-    
-    return grafts
-end
-
-
-
 local BRAWL_LOCATIONS = {
     "EXT_BOGGER_HIDEOUT_01",
     "EXT_BOG_DEEPBOG",
@@ -70,15 +37,11 @@ local bonus_loc = {
             Feels lighter, doesn't it?
     ]],
     REQ_AT_FULL_HEALTH = "At full health",
-    REQ_AT_FULL_RESOLVE = "At full resolve",
     OPT_HEAL_HEALTH = "Restore <#HEALTH>{1} Health</>",
-    OPT_HEAL_RESOLVE = "Restore <#TITLE>{1} Resolve</>",
 
     OPT_GAIN_MAX_HEALTH = "Increase max health by {1}",
-    OPT_GAIN_MAX_RESOLVE = "Increase max resolve by {1}",
     OPT_GAIN_ITEMS = "Get {1#card_list}",
     OPT_DRAFT_BATTLE_CARD = "Draft 2 battle cards",
-    OPT_DRAFT_NEGOTIATION_CARD = "Draft 2 negotiation cards",
 }
 
 
@@ -94,24 +57,6 @@ local bonuses =
                 :Dialog("DIALOG_BONUS_MONEY", amt)
                 :DoneConvo()
         end,
-    },
-    
-    negotiation_removal = 
-    {
-        convo = function(cxt) 
-                cxt:Opt("OPT_REMOVE_NEGOTIATION_CARD")
-                    :Fn(function() 
-                            AgentUtil.RemoveNegotiationCard( cxt.player, function( card )
-                                cxt.enc:ResumeEncounter( card )
-                            end)
-                            
-                            local card = cxt.enc:YieldEncounter()
-                            if card then
-                                cxt:Dialog("DIAL_REMOVE_CARD")
-                                StateGraphUtil.AddEndOption(cxt)
-                            end
-                        end)
-            end,
     },
     
     battle_removal = 
@@ -153,26 +98,7 @@ local bonuses =
                         end)
             end,
     },
-    negotiation_draft = 
-    {
-        convo = function(cxt) 
-                cxt:Opt("OPT_DRAFT_NEGOTIATION_CARD")
-                    :Fn(function(cxt) 
-                        local function OnDone()
-                            cxt.encounter:ResumeEncounter()
-                        end
-                        for i=1, 2 do
-                            local draft_popup = Screen.DraftChoicePopup()
-                            local cards = RewardUtil.GetNegotiationCards( TheGame:GetGameState():GetCurrentBaseDifficulty(), 3, cxt.player )
-                            draft_popup:DraftCards( cxt.player, Negotiation.Card, cards, OnDone )
-                            TheGame:FE():InsertScreen( draft_popup )
-                            cxt.enc:YieldEncounter()
-                        end
-                                StateGraphUtil.AddEndOption(cxt)
-                        end)
-            end,
-    },
-    
+
     heal_health = 
     {
         condition = function(quest) 
@@ -190,23 +116,6 @@ local bonuses =
 
     },
     
-    heal_resolve = 
-    {
-        condition = function(quest) 
-            local resolve, resolve_max = TheGame:GetGameState():GetCaravan():GetResolve()
-            return resolve < resolve_max
-        end,
-
-        convo = function(cxt) 
-                    local resolve, resolve_max = TheGame:GetGameState():GetCaravan():GetResolve()
-                    local restore_amt = 30
-                    cxt:Opt("OPT_HEAL_RESOLVE", restore_amt)
-                        :ReqCondition(resolve < resolve_max, "REQ_AT_FULL_RESOLVE" )
-                        :DeltaResolve( restore_amt )
-                        :DoneConvo()
-                end,
-    },
-
     gain_max_health = 
     {
         condition = function(quest) 
@@ -218,21 +127,6 @@ local bonuses =
                     cxt:Opt("OPT_GAIN_MAX_HEALTH", gain_amount)
                         :Fn(function() 
                             cxt.caravan:UpgradeHealth( gain_amount )
-                            StateGraphUtil.AddEndOption(cxt) 
-                        end)
-                end,
-    },
-    
-    gain_max_resolve = {
-        condition = function(quest) 
-            local resolve, resolve_max = TheGame:GetGameState():GetCaravan():GetResolve()
-            return resolve_max < 50
-        end,
-        convo = function(cxt)
-                    local gain_amount = 5
-                    cxt:Opt("OPT_GAIN_MAX_RESOLVE", gain_amount)
-                        :Fn(function() 
-                            cxt.caravan:UpgradeResolve( gain_amount )
                             StateGraphUtil.AddEndOption(cxt) 
                         end)
                 end,
@@ -325,6 +219,8 @@ local function PickQuests(all_valid, already_selected, rank, num_to_pick, min_ne
 end
 
 
+local bossCount = 1 -- increment this value for the next boss quest
+local bossQuests = {"FSSH_BOSS"} -- boss quests for different interactions
 
 local function do_next_quest_step(quest)
     local event = quest.param.schedule[quest.param.next_schedule_step]
@@ -376,14 +272,22 @@ local function do_next_quest_step(quest)
         elseif event.id == "difficulty" then 
             TheGame:GetGameState():SetDifficulty(event.diff or 1)
             return do_next_quest_step(quest)
-        elseif event.id == "boss" then 
+        -- elseif event.id == "boss" then 
+        --     if quest.param.current_job and not quest.param.current_job:IsDone() then
+        --         quest.param.current_job:Cancel()
+        --     end
+        --     quest.param.boss_time = true
+        --     local new_quest, err = QuestUtil.SpawnQuest( "SAL_BRAWL_BOSS_FIGHT", { qrank = TheGame:GetGameState():GetCurrentBaseDifficulty() , parameters = {boss_id = event.def, give_graft = event.give_graft } }  ) 
+        --     quest.param.current_job = new_quest
+        --     quest:Activate("pick_job")
+        elseif event.id == "boss" then
             if quest.param.current_job and not quest.param.current_job:IsDone() then
                 quest.param.current_job:Cancel()
             end
             quest.param.boss_time = true
-            local new_quest, err = QuestUtil.SpawnQuest( "SAL_BRAWL_BOSS_FIGHT", { qrank = TheGame:GetGameState():GetCurrentBaseDifficulty() , parameters = {boss_id = event.def, give_graft = event.give_graft } }  ) 
+            local new_quest, err = QuestUtil.SpawnQuest( bossQuests[bossCount], { qrank = TheGame:GetGameState():GetCurrentBaseDifficulty() , parameters = {boss_id = event.def, give_graft = event.give_graft } }  ) 
             quest.param.current_job = new_quest
-            quest:Activate("pick_job")            
+            quest:Activate("pick_job")
         elseif event.id == "sleep" then 
             quest:Activate("sleep")
         elseif event.id == "win" then 
@@ -545,12 +449,6 @@ local function CreateBrawlQuest(id, data)
     }
 
     QDEF:AddCastByAlias{
-        cast_id = "coin_trader",
-        alias = "COIN_TRADER",
-    }
-
-
-    QDEF:AddCastByAlias{
         cast_id = "pet_shop",
         alias = "BEASTMASTER",
     }
@@ -564,14 +462,13 @@ local function CreateBrawlQuest(id, data)
     }
 
 
+
     :AddObjective{
-        id = "starting",
+        id = "starting_kashio",
         title = "Starting out",
         desc = "",
         hide_in_overlay = true,
-        --state = QSTATUS.ACTIVE,
     }
-
 
     :AddObjective{
         id = "get_healing",
@@ -643,35 +540,6 @@ local function CreateBrawlQuest(id, data)
     }
 
     :AddObjective{
-        id = "coin_trade",
-        mark = {"coin_trader"},
-        hide_in_overlay = true,
-        on_activate = function(quest)
-            local COIN_RARITY_TABLE = {
-                CARD_RARITY.COMMON,
-                CARD_RARITY.UNCOMMON,
-                CARD_RARITY.UNCOMMON,
-                CARD_RARITY.RARE,
-                CARD_RARITY.RARE,
-            }
-
-            local trader = quest:GetCastMember("coin_trader")
-            if trader and not trader:IsRetired() then
-                quest.param.coins = FindCoinGrafts(3, COIN_RARITY_TABLE[math.min(#COIN_RARITY_TABLE, TheGame:GetGameState():GetCurrentBaseDifficulty())])
-                trader:MoveToLocation(quest:GetCastMember("home"))
-                trader:SetLocationRole(CHARACTER_ROLES.VENDOR)
-            end
-        end,
-        
-        on_deactivate = function(quest)
-            local trader = quest:GetCastMember("coin_trader")
-            if trader and not trader:IsRetired() then
-                quest:GetCastMember("coin_trader"):MoveToLimbo()
-            end
-        end,
-    }
-
-    :AddObjective{
         id = "pet_sale",
         mark = {"pet_shop"},
         hide_in_overlay = true,
@@ -685,145 +553,6 @@ local function CreateBrawlQuest(id, data)
              quest:GetCastMember("pet_shop"):MoveToLimbo()
         end,
     }
-
-    :AddObjective{
-        id = "negotiation_sale",
-        mark = {"negotiation_shop"},
-        hide_in_overlay = true,
-        on_activate = function(quest)
-            quest:GetCastMember("negotiation_shop"):MoveToLocation(quest:GetCastMember("home"))
-            quest:GetCastMember("negotiation_shop"):SetLocationRole(CHARACTER_ROLES.VENDOR)
-            quest:GetCastMember("negotiation_shop"):GetAspect("cardshop"):ForceRestock()
-        end,
-        
-        on_deactivate = function(quest)
-             quest:GetCastMember("negotiation_shop"):MoveToLimbo()
-        end,
-    }
-
-
-    QDEF:AddConvo("starting")
-        :ConfrontState("CONF")
-            :Loc{
-                DIALOG_INTRO = [[
-                    player:
-                        !left
-                    {player_sal?
-                        player:
-                            !thought
-                        * You've set your mind to revenge...
-                    }
-                    {player_rook?
-                        player:
-                            !thought
-                        * Your schemes have schemes to hatch...
-                    }
-                ]],
-
-                DIALOG_INTRO_2 = [[
-                    
-                    {player_sal?
-                        player:
-                            !hips
-                        agent:
-                            !right
-                            !happy
-                            !point
-                            Get out there and get stronger! Kashio is waiting for you!
-                    }
-                    {player_rook?
-                        player: 
-                            !crossed
-                        agent:
-                            !right
-                            !point
-                            Don't you have anything better to do? Get out there!
-                    }
-                ]],
-
-                OPT_DO_DRAFT = "Starting Draft",
-                OPT_SKIP = "Skip",
-                OPT_NEGOTIATION_GRAFT = "Choose a Negotiation Graft",
-                OPT_BATTLE_GRAFT = "Choose a Battle Graft"
-            }
-            :Fn(function(cxt) 
-                cxt.quest:Complete("starting")
-                TheGame:GetGameState():SetActProgress(cxt.quest.param.day)
-                cxt:TalkTo("bartender")
-                cxt:Dialog("DIALOG_INTRO")
-
-                local did_draft, took_battle_graft, took_negotiation_graft = false
-
-                cxt:RunLoop(function( ... )
-                    if did_draft and took_negotiation_graft and took_battle_graft then
-                        cxt:Dialog("DIALOG_INTRO_2")
-                        StateGraphUtil.AddEndOption(cxt)
-                    else
-                        if not did_draft then
-                            cxt:Opt("OPT_DO_DRAFT")
-                                :Fn(function() 
-                                    did_draft = true
-                                    local function OnDone()
-                                        cxt.encounter:ResumeEncounter()
-                                    end
-                                    
-                                    for i = 1, 2 do
-                                        local draft_popup = Screen.DraftChoicePopup()
-                                        local cards = RewardUtil.GetBattleCards( 1, 3, cxt.player )
-                                        draft_popup:DraftCards( cxt.player, Battle.Card, cards, OnDone )
-                                        TheGame:FE():InsertScreen( draft_popup )
-                                        cxt.enc:YieldEncounter()
-                                    end
-
-                                    for i = 1, 2 do
-                                        local draft_popup = Screen.DraftChoicePopup()
-                                        local cards = RewardUtil.GetNegotiationCards( 1, 3, cxt.player )
-                                        draft_popup:DraftCards( cxt.player, Negotiation.Card, cards, OnDone )
-                                        TheGame:FE():InsertScreen( draft_popup )
-                                        cxt.enc:YieldEncounter()
-                                    end
-                                end)
-                        end
-                        if not took_negotiation_graft then
-                            cxt:Opt("OPT_NEGOTIATION_GRAFT")
-                                :Fn(function(cxt)
-                                    took_negotiation_graft = true
-                                    local collection = GraftCollection(function(graft_def) return graft_def.brawl == true and graft_def.type == GRAFT_TYPE.NEGOTIATION end):NotInstalled(cxt.player):NotRestricted(cxt.player)
-                                    local grafts = collection:Generate(TheGame:GetGameState():GetGraftDraftDetails().count)
-                                    local popup = Screen.PickGraftScreen(grafts, false, function(...) cxt.enc:ResumeEncounter(...) end)
-                                    TheGame:FE():InsertScreen( popup )
-
-                                    local chosen_graft = cxt.enc:YieldEncounter()
-                                    cxt.player.graft_owner:IncreaseMaxGrafts( GRAFT_TYPE.NEGOTIATION, 1 )
-                                end)
-                        end
-                        if not took_battle_graft then
-                            cxt:Opt("OPT_BATTLE_GRAFT")
-                                :Fn(function(cxt)
-                                    took_battle_graft = true
-                                    local collection = GraftCollection(function(graft_def) return graft_def.brawl == true and graft_def.type == GRAFT_TYPE.COMBAT end):NotInstalled(cxt.player):NotRestricted(cxt.player)
-                                    local grafts = collection:Generate(TheGame:GetGameState():GetGraftDraftDetails().count)
-                                    local popup = Screen.PickGraftScreen(grafts, false, function(...) cxt.enc:ResumeEncounter(...) end)
-                                    TheGame:FE():InsertScreen( popup )
-
-                                    local chosen_graft = cxt.enc:YieldEncounter()
-                                    cxt.player.graft_owner:IncreaseMaxGrafts( GRAFT_TYPE.COMBAT, 1 )
-                                end)
-                        end
-                        cxt:Opt("OPT_SKIP")
-                            :Fn(function() 
-                                cxt:Dialog("DIALOG_INTRO_2")
-                                StateGraphUtil.AddEndOption(cxt)
-                            end)
-                    end
-                end)
-
-                
-
-            end)
-
-
-
 
     QDEF:AddAttract("graft_sale", "plocka",
         [[
@@ -929,85 +658,91 @@ local function CreateBrawlQuest(id, data)
 
             end )
 
-
-
-    QDEF:AddAttract("coin_trade", "coin_trader",
-        [[
-            agent:
-                Always looking for a good coin.
-        ]])
-
-
-    QDEF:AddConvo("coin_trade", "coin_trader")
+            QDEF:AddConvo("starting_kashio")
+        :ConfrontState("CONF")
             :Loc{
-                OPT_TRADE_COINS = "Trade Coins...",
-                DIALOG_NEW_COIN = [[
+                DIALOG_INTRO = [[
+                    * Kashio makes her way to what it appears to be a pile of metal junk 
+                    player:
+                        !left
+                        Excellent, this will do for the Spark Barons.
+                        Time to pay off my debt.
                     agent:
+                        !right 
                         !happy
-                        Excellent choice!
-                ]],
-                DIALOG_NO_COIN = [[
+                        Greetings!
+                    player:
+                        !left
+                        !point
+                        Who the hell are you?
                     agent:
-                        !sigh
-                        Maybe next time?
-                        
-                ]]
-            }
-            :Hub( function(cxt, who)
-                
-                cxt:Opt("OPT_TRADE_COINS")
-                    :PreIcon( global_images.receiving )
-                    :Fn(function() 
-                        cxt.enc:WaitOnLine()
-                        local popup = Screen.PickCoinScreen(cxt.quest.param.coins, false, function(graft) print (graft) cxt.enc:ResumeEncounter(graft) end, true)
-                        TheGame:FE():InsertScreen( popup )
-
-                        local chosen_coin = cxt.enc:YieldEncounter()
-                        cxt.enc:Wait()
-                        if chosen_coin then
-                            cxt:Dialog("DIALOG_NEW_COIN", chosen_coin)
-                            cxt:GetAgent():MoveToLimbo()
-                            cxt.quest:Cancel('coin_trade')
-                        else
-                            --cxt.enc:Next()
-                            cxt:Dialog("DIALOG_NO_COIN")
-                        end
-                    end)
-            end)
-
-
-    QDEF:AddAttract("negotiation_sale", "negotiation_shop",
-        [[
-            agent:
-                Today's a good day to fight!
-        ]])
-
-
-    QDEF:AddConvo("negotiation_sale", "negotiation_shop")
-            :Loc{
-                OPT_SHOP = "Buy Negotiation Cards...",
-                DIAL_REMOVE_CARD = [[
-                    agent:
-                        Let Hesh touch your mind...
+                        !right
+                        !happy
+                        I am the strongest Kra'deshi in all of Havaria!
+                        RAWR XD fear meme!!
+                    player:
+                        !left
+                        Whatever.
+                    * Hanging outside of Smith's pocket, Kashio sees a small bug crawling up the sleeve of his shirt
                 ]],
+                OPT_DO_DRAFT = "Starting Draft",
+                OPT_TRANSFORM = "Obtain {1#card}",
+                OPT_SKIP = "Skip",
+                OPT_REMOVE_BATTLE_CARDS = "Remove up to 3 Cards"
             }
-            :Hub( function(cxt, who)
-                
-                cxt:Opt("OPT_SHOP")
-                    :IsHubOption(true)
-                    :PreIcon( global_images.shop, UICOLOURS.MONEY_LIGHT )
-                    :Fn(function()
-                        cxt.enc:WaitOnLine()
-                        local screen = Screen.CardShopScreen( cxt:GetAgent(), function() cxt.enc:ResumeEncounter() end )
-                        TheGame:FE():InsertScreen( screen )
+:Fn(function(cxt) 
+    cxt.quest:Complete("starting_kashio")
+    TheGame:GetGameState():SetActProgress(cxt.quest.param.day)
+    cxt:TalkTo("bartender")
+    cxt:Dialog("DIALOG_INTRO")
+    
+    local did_draft, got_bug, remove_cards = false
+    cxt:RunLoop(function( ... )
+        if not got_bug then
+            cxt:Opt("OPT_TRANSFORM", "transform_bog_one")
+                :PreIcon( global_images.buycombat )
+                :GainCards{"transform_bog_one"}
+                :Fn(function()
+                    got_bug = true
+                end)
+        end
+
+        if not did_draft then
+            cxt:Opt("OPT_DO_DRAFT")
+                :Fn(function() 
+                    did_draft = true
+                    local function OnDone()
+                        cxt.encounter:ResumeEncounter()
+                    end
+                    for i = 1, 3 do
+                        local draft_popup = Screen.DraftChoicePopup()
+                        local cards = RewardUtil.GetBattleCards( 1, 3, cxt.player )
+                        draft_popup:DraftCards( cxt.player, Battle.Card, cards, OnDone )
+                        TheGame:FE():InsertScreen( draft_popup )
                         cxt.enc:YieldEncounter()
-                    end)
+                    end
+                end)
+        end
+        
+        if not remove_cards then
+            cxt:Opt("OPT_REMOVE_BATTLE_CARDS")
+                        :Fn(function() 
+                                remove_cards = true
+                                for i = 1, 3 do
+                                    AgentUtil.RemoveBattleCard( cxt.player, function( card )
+                                        cxt.enc:ResumeEncounter( card )
+                                    end)
+                                    local card = cxt.enc:YieldEncounter()
+                                end
+                            end)
+        end
 
-                StateGraphUtil.AddRemoveNegotiationCardOption( cxt, "DIAL_REMOVE_CARD" )                
-
-            end )
-
-
+        cxt:Opt("OPT_SKIP")
+            :Fn(function() 
+                StateGraphUtil.AddEndOption(cxt)
+                end)
+    end)
+end)
 
     QDEF:AddConvo("pick_job")
         :Loc{
@@ -1101,103 +836,6 @@ local function CreateBrawlQuest(id, data)
 
 
 
-    QDEF:AddConvo("pet_sale", "pet_shop")
-            :Loc{
-                OPT_BUY_PET = "Buy {1#agent}",
-                OPT_HEAL_PET = "Heal {1#agent}",
-                REQ_AT_FULL_HEALTH = "Your pet is at full health already",     
-                DIALOG_HEAL_PET = [[
-                    * {pet} healed for {1} HP.
-                ]],
-                OPT_UPGRADE_PET = "Upgrade {1#agent}",
-                DIALOG_UPGRADE_PET = [[
-                    * {pet} upgraded.
-                ]],
-                OPT_SELL_PET = "Sell {1#agent}",
-                DIALOG_SELL_PET = [[
-                    agent:
-                        !right
-                        !happy
-                        I'm always looking for spare parts!
-                ]],
-                DIALOG_BUY_PET = [[
-                    player:
-                        I'll take {1}!
-                ]]
-
-            }    
-            :Hub(function(cxt)
-                local can_own, reason = cxt.caravan:CanOwnPet()
-                for k,v in ipairs(cxt.quest.param.beasts) do
-                    local data = PETS[v:GetContentID()]
-                    
-                    if data then
-                        cxt:Opt("OPT_BUY_PET", v)
-                            :ReqCondition( can_own, reason )
-                            :Dialog("DIALOG_BUY_PET", v)
-                            :DeliverMoney(math.round( PET_COST*(data.cost or 1)),{ is_shop = true })
-                            :Fn(function() 
-                                table.arrayremove(cxt.quest.param.beasts, v)
-                                v:Recruit(PARTY_MEMBER_TYPE.CREW)
-                            end)
-                    end
-                end
-
-                local pets = TheGame:GetGameState():GetCaravan():GetPets()
-                for k, pet in ipairs (pets) do
-                    local DATA = PETS[pet:GetContentID()]
-                    
-                    local sell_cost = DATA and DATA.cost
-                    if not sell_cost then
-                        for k,v in pairs(PETS) do
-                            if v.upgrade_def == pet:GetContentID() then
-                                sell_cost = v.cost*2
-                                break
-                            end
-                        end
-                    end
-
-                    if sell_cost then
-                        cxt:Opt("OPT_SELL_PET", pet)
-                            :Fn(function() 
-                                cxt:ReassignCastMember("pet", pet)
-                            end)
-                            :Dialog("DIALOG_SELL_PET")
-                            :ReceiveMoney(math.round( .5*PET_COST*(sell_cost or 1)))
-                            :Fn(function() 
-                                pet:Dismiss()
-                                pet:Retire()
-                            end)
-                    end
-
-                    local current, max, min = pet.health:Get()
-                    cxt:Opt("OPT_HEAL_PET", pet)
-                        :Fn(function() 
-                            cxt:ReassignCastMember("pet", pet)
-                        end)
-                        :ReqCondition(pet.health:GetPercent() < 1, "REQ_AT_FULL_HEALTH")
-                        :DeliverMoney(math.round(PET_HEAL_COST*(1-pet.health:GetPercent())), { is_shop = true })
-                        :Dialog("DIALOG_HEAL_PET", math.round( (1-pet.health:GetPercent())*max))
-                        :Fn(function() 
-                            pet.health:SetPercent(1)
-                        end)
-
-                    if DATA and DATA.upgrade_def then
-                        cxt:Opt("OPT_UPGRADE_PET", pet)
-                            :PostText("TT_PET_UPGRADE")
-                            :Fn(function() 
-                                cxt:ReassignCastMember("pet", pet)
-                            end)
-                            :DeliverMoney(math.round( PET_UPGRADE_COST*(DATA.cost or 1)),{ is_shop = true })
-                            :Fn(function() 
-                                local upgrade_def = Content.GetCharacterDef( DATA.upgrade_def )
-                                    pet:ReinitializeAgent( upgrade_def )
-                            end)
-                            :Dialog("DIALOG_UPGRADE_PET")
-                    end
-
-                end
-            end)
 
     ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     QDEF:AddConvo("get_healing", "bartender")
@@ -1263,19 +901,9 @@ local function CreateBrawlQuest(id, data)
             :Loc{
                 DIALOG_INTRO = [[
                     * {bartender} pulls you aside.
-                    {player_sal?
-                        bartender:
-                            !happy
-                            I've got a little something for you, kid. 
-                            Go ahead, pick one:
-                    }
-                    {player_rook?
-                        bartender:
-                            !happy
-                            I'm contractually obliged to help you out.
-                            Don't get used to it.
-
-                    }
+                        !happy
+                        Heres a few things that'll help you out. 
+                        Go ahead, pick one:
                 ]],
                 OPT_SKIP = "Skip {bartender}'s gift",
                 DIALOG_SKIP = [[

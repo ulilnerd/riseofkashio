@@ -19,6 +19,7 @@ local def = CharacterDef("FSSH_PAST",
         species = "HUMAN",
         unique = true,
         boss = true,
+        gender = GENDER.FEMALE,
     
 
         fight_data = 
