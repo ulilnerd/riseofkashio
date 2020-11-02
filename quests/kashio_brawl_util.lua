@@ -851,8 +851,11 @@ end)
 
     ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     local backupRequistioned = false
+    local gotCard = false
     local randomNum = math.random(1,2)
     local randomMech = {"COMBAT_DRONE", "AUTODOG"}
+    local cardList = {"killing_spree", "prepared_circumstances", "extreme_focus" , "weapon_swap_proficiency" , "massacre" ,"spinningslash", "slice_up", "afterburner_gloves", "ultimate_hunter", "deflect"}
+    local randomCard = math.random(1,10)
     QDEF:AddConvo("talk_to_robot", "bartender")
         :Priority(CONVO_PRIORITY_LOW)
         :Loc{
@@ -878,8 +881,19 @@ end)
                 agent:
                     ROGER DODGER
             ]],
+            DIALOG_EQUIPMENT = [[
+                player:
+                    !left
+                agent:
+                    !right
+                player:
+                    Get me more toys of destruction. Now.
+                agent:
+                    YES SIR
+            ]],
             OPT_ASK_ROBOT = "Ask Mr Robot for help",
             OPT_BACKUP = "Requistion Backup Mechs",
+            OPT_EQUIPMENT = "Requistion Equipment",
         }
 
         :Hub(function(cxt, who)
@@ -895,7 +909,16 @@ end)
                             backupRequistioned = true
                             randomNum = math.random(1,2)
                         end)
-                        
+                end
+                if gotCard == false then
+                    cxt:Opt("OPT_EQUIPMENT")    
+                        :Dialog( "DIALOG_EQUIPMENT" )
+                        :PreIcon( global_images.buycombat )
+                        :GainCards{cardList[randomCard]}
+                        :Fn(function() 
+                            gotCard = true
+                            randomCard = math.random(1,10)
+                        end)
                 end
             end
         )
