@@ -42,6 +42,9 @@ local def = CharacterDef("FSSH_PAST",
                     slicerDicerUsed = false,
                     -- petCalled = false,
                     powerGained = false,
+                    invincibleUsed = false,
+                    killingSpreeUsed = false,
+                    damageTaken = 0,
 
                     -- OnApply = function( self, battle )
                     --     self.owner:AddCondition("FSSH_UNBREAKABLE", 1, self)
@@ -68,6 +71,19 @@ local def = CharacterDef("FSSH_PAST",
                             if self.powerGained == true then
                                 if self.owner:HasCondition("POWER") then
                                     self.owner:RemoveCondition("POWER", 1, self)
+                                end
+                            end
+                        end,
+                        [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit, target )
+                            if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
+                                self.damageTaken = self.damageTaken + hit.damage
+                            end
+                        end,
+                        [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, attack)
+                            if self.killingSpreeUsed == true then
+                                if self.owner:HasCondition("FSSH_KILLING_SPREE") then
+                                    self.damageTaken = 0
+                                    self.killingSpreeUsed = false
                                 end
                             end
                         end,
@@ -118,6 +134,37 @@ local def = CharacterDef("FSSH_PAST",
                             end
                         end
                     }
+                },
+                FSSH_INVINCIBLE = 
+                {
+                    name = "Invincible",
+                    desc = "Everytime Fssh gets hit, she gains 2 counter.",
+                    icon = "battle/conditions/shield_of_hesh.tex",
+                    max_stacks = 1,
+                    ctype = CTYPE.BUFF,
+
+                    event_handlers = 
+                    {
+                        [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit, target)
+                            if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
+                                self.owner:AddCondition("RIPOSTE", 2)
+                            end
+                        end,
+                        [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit, target)
+                            if self.owner:GetCondition("FINAL_EFFORT").invincibleUsed == true then
+                                self.owner:RemoveCondition("FSSH_INVINCIBLE", 1, self)
+                                self.owner:GetCondition("FINAL_EFFORT").invincibleUsed = false
+                            end
+                        end
+                    }
+                },
+                FSSH_KILLING_SPREE = 
+                {
+                    name = "Killing Spree",
+                    desc = "While Fssh has this condition, on her next attack she will shower her enemy with attacks, dealing bonus damage depending on how much damage was dealt to her last turn / 2.",
+                    icon = "battle/conditions/bloody_mess.tex",
+                    max_stacks = 1,
+                    ctype = CTYPE.BUFF,
                 },
             },
 
@@ -353,6 +400,56 @@ local def = CharacterDef("FSSH_PAST",
                         end
                     }
                 },
+                fssh_invincible = table.extend(NPC_BUFF)
+                {
+                    name = "Invincible", -- every time Fssh gets hit, she gains 2 counter
+                    anim = "taunt3",
+                    flags = CARD_FLAGS.SKILL | CARD_FLAGS.BUFF,
+                    target_type = TARGET_TYPE.SELF,
+
+                    OnPostResolve = function( self, battle, attack)
+                        self.owner:AddCondition("FSSH_INVINCIBLE", 1, self)
+                        self.owner:GetCondition("FINAL_EFFORT").invincibleUsed = true
+                    end
+                },
+                fssh_killing_spree = table.extend(NPC_MELEE)
+                {
+                    name = "Killing Spree", -- deals bonus damage depending on how much damage you dealt to her last turn
+                    pre_anim = "quickdraw",
+                    anim = "punch",
+                    post_anim = "slash",
+
+                    flags = CARD_FLAGS.MELEE,
+
+                    base_damage = 7,
+
+                    OnPostResolve = function( self, battle, attack)
+                        self.owner:GetCondition("FINAL_EFFORT").killingSpreeUsed = true
+                        self.owner:RemoveCondition("FSSH_KILLING_SPREE", 1, self)
+                    end,
+                    
+                    event_handlers = 
+                    {
+                        [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                            if card == self then
+                                if self.owner:HasCondition("FINAL_EFFORT") then
+                                    dmgt:AddDamage(math.floor(self.owner:GetCondition("FINAL_EFFORT").damageTaken / 2), math.floor(self.owner:GetCondition("FINAL_EFFORT").damageTaken / 2), self)
+                                end
+                            end
+                        end
+                    }
+                },
+                fssh_charge_up = table.extend(NPC_BUFF)
+                {
+                    name = "Charge Flurry", 
+                    anim = "taunt2",
+                    flags = CARD_FLAGS.SKILL | CARD_FLAGS.BUFF,
+                    target_type = TARGET_TYPE.SELF,
+
+                    OnPostResolve = function( self, battle, attack)
+                        self.owner:AddCondition("FSSH_KILLING_SPREE", 1, self)
+                    end
+                },
             },
 
             behaviour =
@@ -368,6 +465,8 @@ local def = CharacterDef("FSSH_PAST",
                     self.buffCards = self:MakePicker()
                         :AddID( "fssh_great_escape", 2)
                         :AddID( "fssh_rage", 2)
+                        :AddID( "fssh_invincible", 2)
+                        :AddID( "fssh_charge_up", 2)
                     self.advancedCards = self:MakePicker()
                         :AddID( "fssh_bleeding_edge", 2)
                         :AddID( "fssh_slice_up", 2)
@@ -376,17 +475,19 @@ local def = CharacterDef("FSSH_PAST",
                         self.slicer = self:AddCard( "fssh_slicer" )
                         self.dicer = self:AddCard( "fssh_dicer" )
                         self.crayote = self:AddCard( "fssh_call_crayote" )
+                        self.killingSpree = self:AddCard( "fssh_killing_spree" )
                 end,
 
                 Cycle = function( self )
                      -- 20 stacks: have a chance to summon upgraded crayote
-                    local randomCards = math.random(1,2)
+                    local randomCards = 2 --math.random(1,2)
                     if self.fighter:GetConditionStacks("FINAL_EFFORT") >= 20 then
                         local randomNum = math.random(1,4)
                         if self.fighter:GetTeam():NumActiveFighters() < 2 and randomNum == 4 then
                             self:ChooseCard( self.crayote )
                         end
                     end
+                    -- basic attacks
                     if randomCards == 1 then
                         self.basicCards:ChooseCards(2)
                         self.fighter:GetCondition("FINAL_EFFORT").powerGained = true
@@ -394,6 +495,7 @@ local def = CharacterDef("FSSH_PAST",
                             self:ChooseCard( self.slicer )
                             self:ChooseCard( self.dicer )
                         end
+                    -- buffs
                     elseif randomCards == 2  then
                       self.buffCards:ChooseCards(2)
                     end
@@ -404,6 +506,9 @@ local def = CharacterDef("FSSH_PAST",
                     -- 50 stacks: gains an extra attack from the basic card pool
                     if self.fighter:GetConditionStacks("FINAL_EFFORT") >= 50 then
                         self.basicCards:ChooseCards(1)
+                    end
+                    if self.fighter:HasCondition("FSSH_KILLING_SPREE") then
+                        self:ChooseCard( self.killingSpree )
                     end
                 end,
             }
