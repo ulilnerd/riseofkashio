@@ -78,9 +78,9 @@ QDEF:AddConvo("start")
                     !right
                     !injured
                     You've bested me, like always Kashio
-                    Now think really hard, do you really want to do this?
+                    Now think about it, theres no turning back. Do you really want to do this?
                     Throw everything away to repay some stupid debt?
-                    Have you forgotten our promise to Fallon?? About our little niece Sal? you can't do this...
+                    Have you forgotten our promise to Fallon?? About our little niece Sal? You can't do this Kashio...
                 player:
                     !left
                     Nothing you say can stop me from handing this over to the Spark Barons

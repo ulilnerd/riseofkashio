@@ -136,6 +136,9 @@ local CARDS =
         burn_amount = 3,
         max_xp = 0,
 
+        min_damage = 0,
+        max_damage = 0,
+
         desc_fn = function(self, fmt_str)
             return loc.format(fmt_str, self:CalculateDefendText( self.burn_amount ))
         end,
@@ -831,7 +834,7 @@ local CARDS =
         cost = 1,
         max_xp = 6,
         flags = CARD_FLAGS.SKILL,
-        defend_amount = 4,
+        defend_amount = 3,
 
         OnPostResolve = function( self, battle, attack )
             attack:AddCondition( "DEFEND", self.defend_amount, self )
@@ -845,7 +848,7 @@ local CARDS =
     safeguard_plus = 
     {
         name = "Boosted Safeguard",
-        desc = "Apply 6 {DEFEND} then <#UPGRADE>equip {equip_flail}</>.",
+        desc = "Apply 5 {DEFEND} then <#UPGRADE>equip {equip_flail}</>.",
         
         manual_desc = true,
 
@@ -5717,7 +5720,7 @@ local CONDITIONS =
     equip_flail = 
     {
         name = "Kashio's Flail",
-        desc = "Gain {DEFEND} equal to 5% of your current health and {DEFEND} then {HEAL} self for 10% of your missing health every turn. Also have a 25% chance to apply a random debuff to an enemy on hit.",
+        desc = "Gain {DEFEND} equal to 5% of your current health and {DEFEND} then {HEAL} self for 10% of your missing health if you are under 20 health every turn. Also have a 25% chance to apply a random debuff to an enemy on hit.",
         -- desc = "Gain {DEFEND} for every 10 current health then {HEAL} self for 10% of your missing health every turn.", -- new description
         icon = "battle/conditions/spree_rage.tex",
 
@@ -5751,7 +5754,10 @@ local CONDITIONS =
             -- defense and healing every turn
             [ BATTLE_EVENT.END_PLAYER_TURN ] = function (self, battle, attack)
                 self.owner:AddCondition("DEFEND", math.round(self.owner:GetHealth() * 0.05), self)
-                self.owner:HealHealth(math.round((self.owner:GetMaxHealth() - self.owner:GetHealth()) * 0.10), self)
+                -- heal health if you're currently under 20 health
+                if self.owner:GetHealth() <= 20 then
+                    self.owner:HealHealth(math.round((self.owner:GetMaxHealth() - self.owner:GetHealth()) * 0.10), self)
+                end
             end,
 
              -- gain card "the_execution after using the same weapon for 6 actions"
