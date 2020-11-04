@@ -228,7 +228,7 @@ end
 
 
 local bossCount = 1 -- increment this value for the next boss quest
-local bossQuests = {"FSSH_BOSS"} -- boss quests for different interactions
+local bossQuests = {"FALLON_BOSS", "FSSH_BOSS" } -- boss quests for different interactions
 
 local function do_next_quest_step(quest)
     local event = quest.param.schedule[quest.param.next_schedule_step]
@@ -280,14 +280,6 @@ local function do_next_quest_step(quest)
         elseif event.id == "difficulty" then 
             TheGame:GetGameState():SetDifficulty(event.diff or 1)
             return do_next_quest_step(quest)
-        -- elseif event.id == "boss" then 
-        --     if quest.param.current_job and not quest.param.current_job:IsDone() then
-        --         quest.param.current_job:Cancel()
-        --     end
-        --     quest.param.boss_time = true
-        --     local new_quest, err = QuestUtil.SpawnQuest( "SAL_BRAWL_BOSS_FIGHT", { qrank = TheGame:GetGameState():GetCurrentBaseDifficulty() , parameters = {boss_id = event.def, give_graft = event.give_graft } }  ) 
-        --     quest.param.current_job = new_quest
-        --     quest:Activate("pick_job")
         elseif event.id == "boss" then
             if quest.param.current_job and not quest.param.current_job:IsDone() then
                 quest.param.current_job:Cancel()
@@ -296,6 +288,7 @@ local function do_next_quest_step(quest)
             local new_quest, err = QuestUtil.SpawnQuest( bossQuests[bossCount], { qrank = TheGame:GetGameState():GetCurrentBaseDifficulty() , parameters = {boss_id = event.def, give_graft = event.give_graft } }  ) 
             quest.param.current_job = new_quest
             quest:Activate("pick_job")
+            bossCount = bossCount + 1
         elseif event.id == "sleep" then 
             quest:Activate("sleep")
         elseif event.id == "win" then 

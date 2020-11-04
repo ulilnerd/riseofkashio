@@ -3,7 +3,7 @@ local fun = require "util/fun"
 
 local QDEF = QuestDef.Define
 {
-    title = "Defeat Fssh Menewene",
+    title = "Defeat Dal Fallon",
     icon = engine.asset.Texture("icons/quests/sal_story_act1_huntingkashio.tex"),
     act_filter = "SAL_BRAWL",
     desc = [[{target} is looking to kill you. Get {target.himher} first!]],
@@ -22,7 +22,7 @@ local QDEF = QuestDef.Define
 
 :AddObjective{
     id = "start",
-    title = "Defeat Fssh Menewene!",
+    title = "Defeat Dal Fallon!",
     --desc = "kill {target} for {giver}.",
 }
 
@@ -37,31 +37,38 @@ QDEF:AddConvo("start")
                 agent:
                     !right
                     !point
-                    !angry
-                    KASHIO!!
-                    Kashio, how could you?!
-                    Slaughtering your own forces, betraying Fallon, and taking the Vagarant technology to the Spark Barons
-                    We were supposed to be family!  
+                    !crossed
+                    Kashio wait up!!
+                    I know what you're about to do
+                    We can fix everything, you just have to listen to me.
                 player:
-                    !left
-                    You should understand what I need to do Fssh
-                    It's the only way to fix things.
+                    Fallon nothing will change if we don't act now
+                    Havaria will fall victim to those who seek power for the sake of being above others
+                    I thought you of all people would understand.
                 agent:
-                    !right
-                    I know you, I know you wouldn't sell everyone out for your own benefit
-                    No, you're not the Kashio we know
-                    You're just a monster
+                    No, I get it, I understand that completely
+                    But this is just... Kashio... 
+                    You gathered up Rise and Spark Baron forces for an expedition to find this thing to pay off your debt. 
+                    The result... both sides, Rise and Spark Baron's alike are fighting for their lives and being slaughtered all throughout the Bog
+                    You've backstabbed your own forces and now you've set off a monstrocity in a rampage in the middle of the Bog to create confusion
                 player:
-                    You can't stop me even if you tried.
+                    Correct.
+                    All according to plan.
                 agent:
-                    Even if it costs me my life, I won't let you destroy everything that we've built
+                    This is not the way of the Rise.
+                    You've crossed too many lines here Kashio
                 player:
                     !point
+                    And what are you going to do about it?
+                agent:
+                    I sense a dark future ahead of us
+                    I'll do what I must
+                Player:
                     !angry
-                    Then bring it!
+                    Out of my way Fallon!
             ]],
 
-            OPT_ATTACK = "Showdown with Fssh Menewene!",
+            OPT_ATTACK = "Showdown with Dal Fallon!",
             DIALOG_ATTACK = [[
                 player:
                     !fight
@@ -77,16 +84,24 @@ QDEF:AddConvo("start")
                 agent:
                     !right
                     !injured
-                    You've bested me, like always Kashio
-                    Now think about it, theres no turning back. Do you really want to do this?
-                    Throw everything away to repay some stupid debt?
-                    Have you forgotten our promise to Fallon?? About our little niece Sal? You can't do this Kashio...
+                    You impress me once again.
+                    I had hoped that you would be my successor, a ruthless leader and fighter who will lead the Rise and stop the Spark Barons from further forced labour.
+                    To bring balance amongst the working class
+                    But I suppose we had different ideals
                 player:
                     !left
-                    Nothing you say can stop me from handing this over to the Spark Barons
-                    I will achieve greatness and Havaria will bow down to my prowess
-                    But I'll spare you for now...
-                * You leave Fssh on the ground injured, dirty, and soaking wet.
+                    We had very diferrent ideals from the very start.
+                    I've become more powerful than anyone in Havaria, and I'm planning on keeping it that way.
+                    You will rot in this forest, and the Rise Organization will be left in the dirt, forgotten.
+                agent:
+                    Please, take care of my daughter
+                    Once I'm gone there will be no one else left to let her live a normal life
+                player:
+                    We will see.
+                * You finish off Fallon, now just a lifeless corpse, seeping away into the dirt
+                player:
+                    !left 
+                    No regrets.
             ]],
 
         }
