@@ -187,9 +187,11 @@ name = "Confusion" ,
 name = "Killing Spree" ,
 name = "Even the Odds" ,
 name = "Unbreakable" ,
+name = "Soul Bound" ,
 
 CONDITIONS
 ,
+name = "Soul Bound" ,
 name = "Unbreakable" ,
 name = "Even The Odds" ,
 name = "Out of the way" ,
