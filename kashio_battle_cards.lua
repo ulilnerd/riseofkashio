@@ -5833,8 +5833,11 @@ local CONDITIONS =
                 end      
             end,
 
-            -- defense and healing every turn
+            -- gain DEFEND, HEAL and a random debuff every turn
             [ BATTLE_EVENT.END_PLAYER_TURN ] = function (self, battle, attack)
+                local randomDebuffList = { "EXPOSED", "TARGETED", "WOUND", "DEFECT", "IMPAIR", "BLEED", "BURN" }
+                local randomDebuff = math.random(1,7)
+                self.owner:AddCondition(randomDebuffList[randomDebuff], 1, self)
                 self.owner:AddCondition("DEFEND", math.round(self.owner:GetHealth() * 0.05), self)
                 -- heal health if you're currently under 20 health
                 if self.owner:GetHealth() <= 20 then
