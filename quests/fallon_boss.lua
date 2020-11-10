@@ -20,9 +20,10 @@ local QDEF = QuestDef.Define
     end,
 }
 
+
 :AddObjective{
     id = "start",
-    title = "Defeat Dal Fallon!",
+    title = "Defeat Fallon!",
     --desc = "kill {target} for {giver}.",
 }
 
@@ -106,12 +107,12 @@ QDEF:AddConvo("start")
 
         }
         :Fn(function(cxt) 
-            
             cxt.encounter:DoLocationTransition(TheGame:GetGameState():GetMainQuest():DefFn("GetRandomLocation"))
             cxt:TalkTo("target")
+            -- cxt:TalkTo("target")
             cxt:Dialog("DIALOG_INTRO")
-
             local battle_flags = BATTLE_FLAGS.SELF_DEFENCE | BATTLE_FLAGS.NO_FLEE | BATTLE_FLAGS.BOSS_FIGHT
+            -- RISE_RADICAL, RISE_REBEL
            
             cxt:Opt("OPT_ATTACK")
                 :Dialog("DIALOG_ATTACK")
@@ -121,12 +122,7 @@ QDEF:AddConvo("start")
                     :OnWin()
                         :Fn(function() 
                             cxt:Dialog("DIALOG_WON")
-                                -- if TheGame:GetGameState():GetPlayerAgent():GetContentID() == "SAL" then
-                                --     ConvoUtil.GiveBossRewards(cxt)
-                                -- else
-                                --     ConvoUtil.GiveGraftChoice(cxt, RewardUtil.GetGrafts(cxt.quest:GetRank() + 1, TheGame:GetGameState():GetGraftDraftDetails().count))
-                                -- end
-                
+                            
                             cxt.quest:Complete()
                             StateGraphUtil.AddEndOption(cxt)
                         end)

@@ -2832,7 +2832,7 @@ local CARDS =
         max_damage = 5,
 
         OnPostResolve = function( self, battle, attack, card )
-            local randomNum = math.random(1,3)
+            local randomNum = math.random(1,4)
             if self.owner:HasCondition("equip_flail") then
                 battle:DrawCards(1)
                 for i, hit in attack:Hits() do
@@ -5569,52 +5569,65 @@ local CONDITIONS =
     FORCE_FIELD =
     {
         name = "Rentorian Force Field",
-        desc = "Gain a shield that will negate all damage from enemies that have a lower max damage than the threshold, the threshold is equal to 10% of your max health plus current defend value.",
+        desc = "Gain a shield that will negate all damage from enemies that have a lower max damage than the threshold, the threshold is equal to 10% of your max health.",
+        -- plus current defend value
         icon = "battle/conditions/active_shield_generator.tex",
 
         threshold = 0,
         OnApply = function( self, battle, anim_fighter )
-            self.threshold = math.round(self.owner:GetMaxHealth() * 0.10)
+            self.threshold = math.round(self.owner:GetMaxHealth() * 0.10) 
         end,
     
         event_handlers = 
         {
             [ BATTLE_EVENT.ON_HIT ] = function (self, battle, attack, hit)
-                if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
+                if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() and attack.card.max_damage > 0 then
                     if hit.damage > self.threshold then
-                        if self.owner:HasCondition("DEFEND") then
-                            if hit.damage > self.threshold + self.owner:GetConditionStacks("DEFEND") then
-                                self.owner:RemoveCondition("FORCE_FIELD", 1, self)
-                            end
-                        else
-                            self.owner:RemoveCondition("FORCE_FIELD", 1, self)
-                        end
+                        self.owner:RemoveCondition("FORCE_FIELD", 1, self)
                     end
                 end
             end,
 
-            [ BATTLE_EVENT.POST_RESOLVE ] = function (self, battle, attack)
-                for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-                    if enemy.prepared_cards then
-                        for i, card in ipairs( enemy.prepared_cards ) do
-                            if card:IsAttackCard() then
-                                if card.max_damage <= self.threshold then
-                                    card.min_damage = 0
-                                    card.max_damage = 0
-                                end
-                                if card.max_damage > self.threshold then
-                                    if self.owner:HasCondition("DEFEND") then
-                                        if card.max_damage < self.threshold + self.owner:GetConditionStacks("DEFEND") then
-                                            card.min_damage = 0
-                                            card.max_damage = 0
-                                        end
-                                    end
-                                end
-                            end
-                        end
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                if target == self.owner and self.owner:HasCondition("FORCE_FIELD")then
+                    if dmgt.max_damage < self.threshold then
+                        dmgt:ModifyDamage( 0,0, self )
                     end
                 end
             end,
+
+            -- [ BATTLE_EVENT.POST_RESOLVE ] = function (self, battle, attack)
+            --     if self.owner:HasCondition("DEFEND") then
+            --         self.threshold = self.threshold + self.owner:GetConditionStacks("DEFEND")
+            --     end
+            -- end,
+
+            [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function (self, battle, attack)
+                self.threshold = math.round(self.owner:GetMaxHealth() * 0.10) 
+            end,
+
+            -- [ BATTLE_EVENT.POST_RESOLVE ] = function (self, battle, attack)
+            --     for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+            --         if enemy.prepared_cards then
+            --             for i, card in ipairs( enemy.prepared_cards ) do
+            --                 if card:IsAttackCard() then
+            --                     if card.max_damage <= self.threshold then
+            --                         card.min_damage = 0
+            --                         card.max_damage = 0
+            --                     end
+            --                     if card.max_damage > self.threshold then
+            --                         if self.owner:HasCondition("DEFEND") then
+            --                             if card.max_damage < self.threshold + self.owner:GetConditionStacks("DEFEND") then
+            --                                 card.min_damage = 0
+            --                                 card.max_damage = 0
+            --                             end
+            --                         end
+            --                     end
+            --                 end
+            --             end
+            --         end
+            --     end
+            -- end,
         }
     },
 
