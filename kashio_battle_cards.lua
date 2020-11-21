@@ -10,7 +10,7 @@ local CARDS =
     {
         name = "Kill Card",
         anim = "spin_attack",
-        desc = "Instantly executes an enemy.",
+        desc = "Instantly executes an enemy, this card is used to test and skip fights.",
 
         min_damage =  1,
         max_damage =  1,
@@ -29,6 +29,7 @@ local CARDS =
             end
         end
     },
+
     improvise_smokescreen = 
     {
         name = "Smokescreen",
@@ -411,10 +412,10 @@ local CARDS =
         desc = "Gain <#UPGRADE>2</> {EVASION} and {IMPAIR}.",
         manual_desc = true,
     
-       features = 
-       {
-            EVASION = 1,
-       }
+        OnPostResolve = function( self, battle, attack)
+            self.owner:AddCondition("EVASION", 2, self)
+            self.owner:AddCondition("IMPAIR", self.impair_amount, self)
+        end
     },
     dodge_and_compromise_plus3 = 
     {
@@ -4150,7 +4151,6 @@ local CARDS =
             self.owner:AddCondition("UNBREAKABLE", 1, self)
         end
     },
-
     --     blind_grenade = 
     -- {
     --     name = "Blinding Grenade",
@@ -4227,6 +4227,8 @@ end
 
 local CONDITIONS = 
 {
+
+
 
     UNBREAKABLE = 
     {

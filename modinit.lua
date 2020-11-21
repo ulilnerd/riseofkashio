@@ -42,8 +42,7 @@ local function OnLoad( mod )
 
 
     require "RISE:kashio_battle_cards"
-
-
+    
     ------------------------------------------------------------------------------------------
     -- Characters
     for k, filepath in ipairs( filepath.list_files( "RISE:characters", "*.lua", true )) do
