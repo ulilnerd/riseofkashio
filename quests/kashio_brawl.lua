@@ -203,7 +203,7 @@ data.MakeBrawlSchedule = function(data)
     local bs = BrawlSchedule()
     bs:SetCurrentHome("home_hq")
     bs:SetDifficulty(1)
-    :QuestPhase("gift_from_fssh2")
+    
         :Merchants(data.merchant_list)
         :QuestPhase("starting_kashio")
         :Quest(table.remove(day_1_quests))

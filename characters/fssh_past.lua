@@ -44,7 +44,8 @@ local def = CharacterDef("FSSH_PAST",
                     powerGained = false,
                     invincibleUsed = false,
                     killingSpreeUsed = false,
-                    damageTaken = 0,
+                    timesHit = 0,
+                    firstPet = true,
 
                     -- OnApply = function( self, battle )
                     --     self.owner:AddCondition("FSSH_UNBREAKABLE", 1, self)
@@ -75,14 +76,14 @@ local def = CharacterDef("FSSH_PAST",
                             end
                         end,
                         [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit, target )
-                            if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
-                                self.damageTaken = self.damageTaken + hit.damage
+                            if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() and self.owner:HasCondition("KILLING_SPREE") then
+                                self.timesHit = self.timesHit + 3 -- gains 3 damage everytime she gets hit
                             end
                         end,
                         [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, attack)
                             if self.killingSpreeUsed == true then
                                 if self.owner:HasCondition("FSSH_KILLING_SPREE") then
-                                    self.damageTaken = 0
+                                    self.timesHit = 0
                                     self.killingSpreeUsed = false
                                 end
                             end
@@ -414,7 +415,7 @@ local def = CharacterDef("FSSH_PAST",
                 },
                 fssh_killing_spree = table.extend(NPC_MELEE)
                 {
-                    name = "Killing Spree", -- deals bonus damage depending on how much damage you dealt to her last turn
+                    name = "Killing Spree", -- deals bonus damage depending on how many times she was hit last turn
                     pre_anim = "quickdraw",
                     anim = "punch",
                     post_anim = "slash",
@@ -433,7 +434,7 @@ local def = CharacterDef("FSSH_PAST",
                         [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
                             if card == self then
                                 if self.owner:HasCondition("FINAL_EFFORT") then
-                                    dmgt:AddDamage(math.floor(self.owner:GetCondition("FINAL_EFFORT").damageTaken / 2), math.floor(self.owner:GetCondition("FINAL_EFFORT").damageTaken / 2), self)
+                                    dmgt:AddDamage(self.owner:GetCondition("FINAL_EFFORT").timesHit , self.owner:GetCondition("FINAL_EFFORT").timesHit, self)
                                 end
                             end
                         end
@@ -516,12 +517,25 @@ local def = CharacterDef("FSSH_PAST",
                 end,
 
                 Cycle = function( self )
-                     -- 20 stacks: have a chance to summon upgraded crayote
                     local randomCards = math.random(1,3)
-                    if self.fighter:GetConditionStacks("FINAL_EFFORT") >= 20 then
-                        local randomNum = math.random(1,4)
-                        if self.fighter:GetTeam():NumActiveFighters() < 2 and randomNum == 4 then
+                    -- 20 stacks: have a chance to summon upgraded crayote
+                    if self.fighter:GetConditionStacks("FINAL_EFFORT") >= 1 then
+                        if self.fighter:GetCondition("FINAL_EFFORT").firstPet == true then -- fssh calls pet regardless the first time she gets 20 stacks of final effort
                             self:ChooseCard( self.crayote )
+                            self.fighter:GetCondition("FINAL_EFFORT").firstPet = false
+                        else
+                            local hasCrayote = false
+                            for i, ally in self.fighter:GetTeam():Fighters() do -- if crayote is not already, active and the first crayote was slain, have a chance to call another crayote
+                                if ally.id == "CRAYOTE_UPGRADED" then
+                                    hasCrayote = true
+                                end
+                            end
+                            if hasCrayote == false then
+                                local randomNum = math.random(1,4)
+                                if self.fighter:GetTeam():NumActiveFighters() < 2 and randomNum == 4 then
+                                    self:ChooseCard( self.crayote )
+                                end
+                            end
                         end
                     end
                     -- basic attacks
