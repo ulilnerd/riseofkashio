@@ -203,7 +203,7 @@ data.MakeBrawlSchedule = function(data)
     local bs = BrawlSchedule()
     bs:SetCurrentHome("home_hq")
     bs:SetDifficulty(1)
-    :QuestPhase("gift_from_fssh1")
+    :QuestPhase("gift_from_fssh2")
         :Merchants(data.merchant_list)
         :QuestPhase("starting_kashio")
         :Quest(table.remove(day_1_quests))
@@ -213,7 +213,7 @@ data.MakeBrawlSchedule = function(data)
         :Night()
         :Merchants(brawl.PickMerchants(data.merchant_list,1))
         :Boss(brawl.PickBoss(data.bosses[1], used_bosses) )
-        
+        :QuestPhase("gift_from_fssh1")
         :Quest(table.remove(day_1_quests))
         :Bonus(all_kashio_bonuses, 2)
         :Quest(table.remove(day_1_quests))
@@ -370,7 +370,11 @@ QDEF:AddObjective{
     mark = {"bartender"},
     hide_in_overlay = true,
 }
-local giftFssh1 = {"deflect", "force_field", "extreme_focus", "ultimate_hunter", "tag_team", "weapon_swap_proficiency", "massacre", "prepared_circumstances", "bleeding_edge", "afterburn_gloves", "grandslam", "feel_what_i_feel"}
+local giftFssh1 = {"deflect", "force_field", "extreme_focus", "ultimate_hunter", "tag_team", "weapon_swap_proficiency", "massacre", "prepared_circumstances", "bleeding_edge", "grandslam", "feel_what_i_feel"}
+local count = 0
+for i, card in pairs(giftFssh1) do
+    count = count + 1
+end
 QDEF:AddConvo("gift_from_fssh1", "bartender")
     :ConfrontState("CONF")
         :Loc{
@@ -387,9 +391,9 @@ QDEF:AddConvo("gift_from_fssh1", "bartender")
         }
         :Fn(function(cxt) 
             cxt:Dialog("DIALOG_INTRO")
-            local randomCard1 = math.random(1,12)
-            local randomCard2 = math.random(1,12)
-            local randomCard3 = math.random(1,12)
+            local randomCard1 = math.random(1,count)
+            local randomCard2 = math.random(1,count)
+            local randomCard3 = math.random(1,count)
 
             cxt:Opt("OPT_TAKE_CARD", giftFssh1[randomCard1])
                 :PreIcon( global_images.buycombat )
@@ -425,7 +429,11 @@ QDEF:AddConvo("gift_from_fssh1", "bartender")
             mark = {"bartender"},
             hide_in_overlay = true,
         }
-        
+        local count = 0
+        local fsshGift2 = {"blade_dance", "flurry", "hologram_belt", "the_culling", "call_lumicyte", "armor_of_disease", "contaminate", "epidemic", "infestation", "parasite_infusion", "remote_plague", "infinity_blade", "killing_spree", "soul_bound", "strengh_of_one_thousand", "unbreakable"}
+        for i, card in pairs(fsshGift2) do
+            count = count + 1
+        end
         QDEF:AddConvo("gift_from_fssh2", "bartender")
             :ConfrontState("CONF")
                 :Loc{
@@ -441,93 +449,31 @@ QDEF:AddConvo("gift_from_fssh1", "bartender")
                     OPT_SKIP = "Skip Card"
                 }
                 :Fn(function(cxt)
+                    local randomCard1 = math.random(1,count)
+                    local randomCard2 = math.random(1,count)
+                    local randomCard3 = math.random(1,count)
+
                     cxt:Dialog("DIALOG_INTRO")
-                    local randomCard2 = math.random(1,4)
-                    if randomCard2 == 1 then
-                    cxt:Opt("OPT_TAKE_CARD", "blade_dance")
+                    cxt:Opt("OPT_TAKE_CARD", fsshGift2[randomCard1])
                         :PreIcon( global_images.buycombat )
-                        :GainCards{"blade_dance"}
+                        :GainCards{fsshGift2[randomCard1]}
                         :Fn(function(cxt)
                             cxt.quest:Complete("gift_from_fssh2")
                         end)
-                    cxt:Opt("OPT_TAKE_CARD", "flurry")
+                    cxt:Opt("OPT_TAKE_CARD", fsshGift2[randomCard2])
                         :PreIcon( global_images.buycombat )
-                        :GainCards{"flurry"}
+                        :GainCards{fsshGift2[randomCard2]}
                         :Fn(function(cxt)
                             cxt.quest:Complete("gift_from_fssh2")
                         end)
-                    cxt:Opt("OPT_TAKE_CARD", "hologram_belt")
+                    cxt:Opt("OPT_TAKE_CARD", fsshGift2[randomCard3])
                         :PreIcon( global_images.buycombat )
-                        :GainCards{"hologram_belt"}
+                        :GainCards{fsshGift2[randomCard3]}
                         :Fn(function(cxt)
                             cxt.quest:Complete("gift_from_fssh2")
                         end)
-                    end
-                    
                    
-                    if randomCard2 == 2 then
-                        cxt:Opt("OPT_TAKE_CARD", "the_culling")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"the_culling"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                        cxt:Opt("OPT_TAKE_CARD", "call_lumicyte")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"call_lumicyte"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                        cxt:Opt("OPT_TAKE_CARD", "armor_of_disease")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"armor_of_disease"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                    end
-    
-                    if randomCard2 == 3 then
-                        cxt:Opt("OPT_TAKE_CARD", "contaminate")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"contaminate"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                        cxt:Opt("OPT_TAKE_CARD", "epidemic")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"epidemic"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                        cxt:Opt("OPT_TAKE_CARD", "infestation")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"infestation"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                    end
                     
-                    if randomCard2 == 4 then
-                        cxt:Opt("OPT_TAKE_CARD", "parasite_infusion")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"parasite_infusion"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                        cxt:Opt("OPT_TAKE_CARD", "remote_plague")
-                            :PreIcon( global_images.buycombat )
-                            :GainCards{"remote_plague"}
-                            :Fn(function(cxt)
-                                cxt.quest:Complete("gift_from_fssh2")
-                        end)
-                        cxt:Opt("OPT_TAKE_CARD", "infinity_blade")
-                        :PreIcon( global_images.buycombat )
-                        :GainCards{"infinity_blade"}
-                        :Fn(function(cxt)
-                            cxt.quest:Complete("gift_from_fssh2")
-                    end)
-                    end
-                
                     cxt:Opt("OPT_SKIP")
                         :Fn(function(cxt)
                             cxt.quest:Complete("gift_from_fssh2")
