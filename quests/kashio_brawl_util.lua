@@ -226,10 +226,12 @@ local function PickQuests(all_valid, already_selected, rank, num_to_pick, min_ne
     return ret
 end
 
-
+-------- custom variables -------------
 local bossCount = 1 -- increment this value for the next boss quest
-local bossQuests = {"FSSH_BOSS"} -- boss quests for different interactions
-
+local bossQuests = {"FALLON_BOSS", "FSSH_BOSS" } -- boss quests for different interactions
+local backupRequistioned = false
+local gotCard = false
+---------------------------------------
 local function do_next_quest_step(quest)
     local event = quest.param.schedule[quest.param.next_schedule_step]
     if event then
@@ -280,14 +282,6 @@ local function do_next_quest_step(quest)
         elseif event.id == "difficulty" then 
             TheGame:GetGameState():SetDifficulty(event.diff or 1)
             return do_next_quest_step(quest)
-        -- elseif event.id == "boss" then 
-        --     if quest.param.current_job and not quest.param.current_job:IsDone() then
-        --         quest.param.current_job:Cancel()
-        --     end
-        --     quest.param.boss_time = true
-        --     local new_quest, err = QuestUtil.SpawnQuest( "SAL_BRAWL_BOSS_FIGHT", { qrank = TheGame:GetGameState():GetCurrentBaseDifficulty() , parameters = {boss_id = event.def, give_graft = event.give_graft } }  ) 
-        --     quest.param.current_job = new_quest
-        --     quest:Activate("pick_job")
         elseif event.id == "boss" then
             if quest.param.current_job and not quest.param.current_job:IsDone() then
                 quest.param.current_job:Cancel()
@@ -296,6 +290,11 @@ local function do_next_quest_step(quest)
             local new_quest, err = QuestUtil.SpawnQuest( bossQuests[bossCount], { qrank = TheGame:GetGameState():GetCurrentBaseDifficulty() , parameters = {boss_id = event.def, give_graft = event.give_graft } }  ) 
             quest.param.current_job = new_quest
             quest:Activate("pick_job")
+            -- custom variables
+            bossCount = bossCount + 1
+            backupRequistioned = false
+            gotCard = false
+            --------------------
         elseif event.id == "sleep" then 
             quest:Activate("sleep")
         elseif event.id == "win" then 
@@ -850,8 +849,7 @@ end)
 
 
     ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    local backupRequistioned = false
-    local gotCard = false
+    
     local randomNum = math.random(1,2)
     local randomMech = {"COMBAT_DRONE", "AUTODOG"}
     local cardList = {"killing_spree", "prepared_circumstances", "extreme_focus" , "weapon_swap_proficiency" , "massacre" ,"spinningslash", "slice_up", "afterburner_gloves", "ultimate_hunter", "deflect"}
@@ -916,7 +914,6 @@ end)
                             local pet = TheGame:GetGameState():AddAgent(Agent(randomMech[randomNum]))
                             pet:Recruit(PARTY_MEMBER_TYPE.CREW)
                             backupRequistioned = true
-                            randomNum = math.random(1,2)
                         end)
                 end
                 if gotCard == false then

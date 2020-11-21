@@ -24,7 +24,7 @@ local def = CharacterDef("FSSH_PAST",
 
         fight_data = 
         {
-            MAX_HEALTH = 120,
+            MAX_HEALTH = 160,
             formation = FIGHTER_FORMATION.FRONT_Z,
             actions = 1,
 
@@ -470,7 +470,7 @@ local def = CharacterDef("FSSH_PAST",
                     anim = "targetpractice1",
                     flags = CARD_FLAGS.RANGED,
                     
-                    base_damage = 4,
+                    base_damage = 7,
                 },
                 fssh_blast = table.extend(NPC_RANGED)
                 {

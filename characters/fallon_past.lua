@@ -4,7 +4,7 @@ local CARD_FLAGS = battle_defs.CARD_FLAGS
 
 local def = CharacterDef("FALLON_PAST",
     {
-        name = "Fallon",
+        name = "Dal Fallon",
         base_def = "NPC_BASE",
         alias = "FALLON_PAST",
         id = "FALLON_PAST",
@@ -25,7 +25,7 @@ local def = CharacterDef("FALLON_PAST",
 
         fight_data = 
         {
-            MAX_HEALTH = 150,
+            MAX_HEALTH = 180,
             formation = FIGHTER_FORMATION.FRONT_Z,
             actions = 1,
 
@@ -38,27 +38,29 @@ local def = CharacterDef("FALLON_PAST",
                     icon = "battle/conditions/spree_rage.tex",
             
                     max_stacks = 1,
-                    momentum = 0,
             
                     OnApply = function( self )
                         if self.owner:HasCondition("FALLON_DUAL_BLADES") then
                             self.owner:RemoveCondition("FALLON_DUAL_BLADES", 1, self)
                         end
+                        -- swapping to glaive instantly grants defend and heals fallon
+                        self.owner:AddCondition("DEFEND", 2, self)
+                        self.owner:HealHealth(2, self)
                     end,
 
                     event_handlers = 
                     {
                         -- defense and healing every turn
                         [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function (self, battle, attack)
-                            self.owner:AddCondition("DEFEND", math.round(self.owner:GetHealth() * 0.02), self)
-                            self.owner:HealHealth(math.round((self.owner:GetMaxHealth() - self.owner:GetHealth()) * 0.02), self)
+                            self.owner:AddCondition("DEFEND", 5 ,self)
+                            -- self.owner:HealHealth(math.round((self.owner:GetMaxHealth() - self.owner:GetHealth()) * 0.05), self)
                         end,
                     }
                 },
                 FALLON_DUAL_BLADES = 
                 {
                     name = "Fallon's Dual Blades",
-                    desc = "While {FALLON_DUAL_BLADES} is active, Fallon deals increased damage and has a chance to use attacks from a special pool of cards, at the cost of halving {DEFEND}.",
+                    desc = "While {FALLON_DUAL_BLADES} is active, Fallon deals increased damage and has a chance to use attacks from a special pool of cards.",
                     icon = "battle/conditions/kashio_glaive.tex",
             
                     max_stacks = 1,
@@ -67,52 +69,194 @@ local def = CharacterDef("FALLON_PAST",
                         if self.owner:HasCondition("FALLON_GLAIVE") then
                             self.owner:RemoveCondition("FALLON_GLAIVE", 1, self)
                         end
+                        self.owner:AddCondition("POWER", 2 ,self)
+                    end,
+                },
+                FALLON = -- condition is used to track weapon swaps, show useful user information/tooltips and store various variables (some conditions dependant on this, yeah i know it's bad)
+                {
+                    name = "Fallon's Fury",
+                    desc = "Fallon is an experienced fighter that showers you with a flurry of attacks every round and deals massive damage, although he does not have much defensive capability as a downfall.\n\nDespite being an experienced fighter in combat, Fallon still suffers from fatigue.\n\nEverytime you attack Fallon, you will deal bonus damage equal to how many actions he has made last turn.",
+                    icon = "battle/conditions/brutality.tex",
+                    max_stacks = 1,
+                    -- hidden = true,
+
+                    baitSwitch = false,
+                    glaiveEquipped = 0,
+                    dualBladesEquipped = 0,
+                    weaponSwapped = false,
+                    actionsMade = 0,
+                    bonusDamageDealt = false,
+                    
+                    OnApply = function( self )
+                        if self.owner:HasCondition("FALLON_DUAL_BLADES") then
+                            self.dualBladesEquipped = 1
+                        end
+                        if self.owner:HasCondition("FALLON_GLAIVE") then
+                            self.glaiveEquipped = 1
+                        end
                     end,
 
                     event_handlers = 
                     {
-                        -- take roughly 30% more damage and deal 30% more damage
-                        [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
-                            if card.owner == self.owner and card:IsAttackCard() then
-                                dmgt:ModifyDamage( math.round(dmgt.min_damage + (dmgt.min_damage * 0.30)), math.round(dmgt.max_damage + (dmgt.max_damage * 0.30)), self )
+                        [ BATTLE_EVENT.CARD_MOVED ] = function( self, battle, attack, hit )
+                            if self.owner:HasCondition("FALLON_DUAL_BLADES") then
+                                self.dualBladesEquipped = 1
+                            end
+                            if self.owner:HasCondition("FALLON_GLAIVE") then
+                                self.glaiveEquipped = 1
+                            end
+                            if self.weaponSwapped == true then
+                                self.dualBladesEquipped = 0
+                                self.glaiveEquipped = 0
+                                self.weaponSwapped = false
                             end
                         end,
-            
-                        -- defend for less
-                        [ BATTLE_EVENT.CALC_MODIFY_STACKS ] = function( self, acc, condition_id, fighter, source )
-                            if condition_id == "DEFEND" and fighter == self.owner then
-                                if acc.value > 0 then
-                                    acc:AddValue( -math.floor( acc.value / 2 ), self )
+                        [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit, target )
+                            if attack.attacker == self.owner and attack.card:IsAttackCard() and not hit.evaded then
+                                if self.owner:HasCondition("POWER") then
+                                    self.owner:RemoveCondition("POWER", 1, self)
+                                end
+                                self.actionsMade = self.actionsMade + 1
+                            end
+                            if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
+                                self.bonusDamageDealt = true
+                                self.actionsMade = 0
+                            end
+                        end,
+                        [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                            if target == self.owner and self.bonusDamageDealt == false then
+                                dmgt:AddDamage(self.actionsMade, self.actionsMade, self)
+                            end
+                        end,
+                        [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, battle, attack, hit )
+                            self.bonusDamageDealt = false
+                        end
+                    }
+                },
+                FALLON_EXTREME_FOCUS = 
+                {
+                    name = "Extreme Focus",
+                    desc = "While this condition is active, Fallon hits you an additional time.",
+                    icon = "battle/conditions/focus.tex",   
+
+                    event_handlers = 
+                    {
+                        [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, card, battle )
+                            if self.owner:HasCondition("FALLON_EXTREME_FOCUS") then
+                                self.owner:RemoveCondition("FALLON_EXTREME_FOCUS", 1, self)
+                            end
+                        end,
+                    }
+                },
+                FALLON_BLADE_DANCE = 
+                {
+                    name = "Blade Dance",
+                    desc = "Every 3 attacks, Fallon gains {EVASION}.",
+                    icon = "battle/conditions/sharpened_blades.tex",  
+
+                    evasionCount = 0,
+
+                    event_handlers = 
+                    {
+                        [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, card, battle )
+                            if self.owner:HasCondition("FALLON_BLADE_DANCE") then
+                                self.owner:RemoveCondition("FALLON_BLADE_DANCE", 1, self)
+                            end
+                        end,
+                        [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit, target )
+                            if attack.attacker == self.owner and attack.card:IsAttackCard() and not hit.evaded then
+                                self.evasionCount = self.evasionCount + 1
+                                if self.evasionCount >= 3 then
+                                    self.owner:AddCondition("EVASION", 1, self)
+                                    self.evasionCount = 0
                                 end
                             end
                         end,
                     }
                 },
-                FALLON = 
+                FALLON_WEAPON_PROFICIENCY = 
                 {
-                    name = "Fallon",
-                    desc = "This is Fallon, condition is used to track weapon swaps and other various variables.",
-                    -- icon = "battle/conditions/kashio_glaive.tex",
-                    max_stacks = 1,
-                    hidden = true,
+                    name = "Weapon Swap Proficiency",
+                    desc = "Everytime Fallon swaps weapons, he gains 3 random buffs.",
+                    icon = "battle/conditions/steady_hands.tex",  
 
-                    baitSwitch = false,
-                    powerGained = false,
-                    powerCount = 0,
+                    buff_amount = 2,
 
                     event_handlers = 
                     {
-                        [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, battle, attack)
-                            if self.powerGained == true then
-                                self.powerCount = self.powerCount + 1
+                        [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, card, battle )
+                            if self.owner:HasCondition("FALLON_WEAPON_PROFICIENCY") then
+                                self.owner:RemoveCondition("FALLON_WEAPON_PROFICIENCY", 1, self)
                             end
-                            if self.powerCount == 2 then
-                                if self.owner:HasCondition("POWER") then
-                                    self.owner:RemoveCondition("POWER", 1, self)
-                                    self.powerGained = 0
+                        end,
+                        [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack, hit, fighter )
+                            if fighter == self then
+                                if self.owner:GetCondition("FALLON").glaiveEquipped == 1 and self.owner:GetCondition("FALLON").dualBladesEquipped == 1 then
+                                    local posConditions = {"POWER", "ARMOURED", "RIPOSTE", "EVASION", "DEFEND"}
+                                    local randomCon = math.random(1,5)
+                                    if randomCon == 5 then
+                                        self.buff_amount = 5
+                                    end
+                                    self.owner:AddCondition(posConditions[randomCon], self.buff_amount , self)
+                                    self.owner:GetCondition("FALLON").weaponSwapped = true
                                 end
                             end
                         end
+                    }
+                },
+                FALLON_FORCE_FIELD = 
+                {
+                    name = "Fallon's Force Field",
+                    desc = "Everytime Fallon is attacked, if the damage dealt to him is lower or equal to the threshold, Fallon heals equal to the damage dealt. The threshold is equal to Fallon's Force Field stacks.",
+                    icon = "battle/conditions/active_shield_generator.tex",
+
+                    threshold =  0,
+
+                    OnApply = function( self )
+                        self.threshold = self.owner:GetConditionStacks("FALLON_FORCE_FIELD")
+                    end,
+
+                    event_handlers = 
+                    {
+                        [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, card, battle )
+                            if self.owner:HasCondition("FALLON_FORCE_FIELD") then
+                                self.threshold = self.owner:GetConditionStacks("FALLON_FORCE_FIELD")
+                                self.owner:RemoveCondition("FALLON_FORCE_FIELD", 1, self)
+                            end
+                        end,
+                        [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit, target )
+                            if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
+                                if hit.damage <= self.threshold and not self.owner:HasCondition("DEFEND") then
+                                    self.owner:HealHealth(hit.damage, attack.attacker)
+                                end
+                            end
+                        end,
+                    }
+                },
+                FALLON_MASSACRE = 
+                {
+                    name = "Massacre",
+                    desc = "Every 3 attacks, Fallon gains {POWER}.",
+                    icon = "battle/conditions/concentration.tex",  
+
+                    hitCount = 0,
+
+                    event_handlers = 
+                    {
+                        [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function( self, card, battle )
+                            if self.owner:HasCondition("FALLON_MASSACRE") then
+                                self.owner:RemoveCondition("FALLON_MASSACRE", 1, self)
+                            end
+                        end,
+                        [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit, target )
+                            if attack.attacker == self.owner and attack.card:IsAttackCard() and not hit.evaded then
+                                self.hitCount = self.hitCount + 1
+                                if self.hitCount >= 3 then
+                                    self.owner:AddCondition("POWER", 1, self)
+                                    self.hitCount = 0
+                                end
+                            end
+                        end,
                     }
                 },
             },
@@ -132,7 +276,7 @@ local def = CharacterDef("FALLON_PAST",
 
                     OnPostResolve = function( self, battle, attack)
                         if self.owner:HasCondition("FALLON_GLAIVE") then
-                            self.owner:AddCondition("DEFEND", 7, self)
+                            self.owner:AddCondition("DEFEND", 5, self)
                         end
                         self.owner:AddCondition("FALLON_GLAIVE", 1, self)
                     end
@@ -149,10 +293,7 @@ local def = CharacterDef("FALLON_PAST",
                     end,
 
                     OnPostResolve = function( self, battle, attack)
-                        if self.owner:HasCondition("FALLON_DUAL_BLADES") then
-                            self.owner:AddCondition("POWER", 1 ,self)
-                            self.owner:GetCondition("FALLON").powerGained = true
-                        end
+                        
                         self.owner:AddCondition("FALLON_DUAL_BLADES", 1, self)
                     end
                 },
@@ -173,7 +314,7 @@ local def = CharacterDef("FALLON_PAST",
                         if self.owner:HasCondition("FALLON_DUAL_BLADES") then
                             self.owner:GetCondition("FALLON").baitSwitch = true
                         end
-                        self.owner:AddCondition("FALLON_DUAL_BLADES", 1, self)
+                        -- self.owner:AddCondition("FALLON_DUAL_BLADES", 1, self)
                     end,
                 },
                 fallon_exposeaid = table.extend(NPC_MELEE)
@@ -201,11 +342,11 @@ local def = CharacterDef("FALLON_PAST",
 
                     base_damage = 4,
                     
-                    OnPostResolve = function( self, battle, attack)
-                        if self.owner:HasCondition("FALLON_DUAL_BLADES") then
-                            -- self.owner:AddCondition("FSSH_INVINCIBLE", 1, self)
-                        end
-                    end,
+                    -- OnPostResolve = function( self, battle, attack)
+                    --     if self.owner:HasCondition("FALLON_DUAL_BLADES") then
+                    --         self.owner:AddCondition("FSSH_INVINCIBLE", 1, self)
+                    --     end
+                    -- end,
                     event_handlers = 
                     {
                         [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
@@ -219,6 +360,152 @@ local def = CharacterDef("FALLON_PAST",
                         end,
                     }
                 },
+                fallon_extreme_focus = table.extend(NPC_MELEE)
+                {
+                    name = "Extreme Focus", -- deal damage then gain a condition that will allow fallon to swap weapons an additional time 
+                    anim = "attack_dual",
+        
+                    flags = CARD_FLAGS.MELEE,
+
+                    base_damage = 6,
+                    
+                    OnPostResolve = function( self, battle, attack)
+                        self.owner:AddCondition("FALLON_EXTREME_FOCUS", 2, self)
+                    end,
+                },
+                fallon_nice_knowin_ya = table.extend(NPC_MELEE)
+                {
+                    name = "Nice Knowin Ya", -- have a chance to deal double damage for this attack
+                    anim = "attack_dual",
+        
+                    flags = CARD_FLAGS.MELEE,
+
+                    base_damage = 4,
+                    
+                    event_handlers =
+                    {
+                        [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                            local damageChance = math.random(1,2)
+                            if card == self then
+                                if self.owner:HasCondition("FALLON_DUAL_BLADES") then
+                                    if damageChance == 2 then
+                                        dmgt:ModifyDamage( dmgt.min_damage + 1, dmgt.max_damage + 3 , self ) -- double damage
+                                    end
+                                end
+                            end
+                        end,
+                    },
+                },
+                fallon_grand_slam = table.extend(NPC_MELEE)
+                {
+                    name = "Grand Slam", -- deals damage to all enemies, applies wound to all enemies if glaive equipped
+                    anim = "attack2",
+                    pre_anim = "taunt",
+                    flags = CARD_FLAGS.MELEE,
+                    base_damage = 5,
+                    target_mod = TARGET_MOD.TEAM,
+
+                    OnPostResolve = function( self, battle, attack)
+                        if self.owner:HasCondition("FALLON_GLAIVE") then
+                            for i, hit in attack:Hits() do
+                                local target = hit.target
+                                if not hit.evaded then
+                                    target:AddCondition("WOUND", 2)
+                                end
+                            end
+                        end
+                    end
+                },
+                fallon_infinity_blade = table.extend(NPC_MELEE)
+                {
+                    name = "Infinity Blade", -- deals damage then enemy gains DEFECT if dual blades active
+                    anim = "attack1",
+                    pre_anim = "taunt",
+                    flags = CARD_FLAGS.MELEE,
+                    base_damage = 7,
+
+                    OnPostResolve = function( self, battle, attack)
+                        if self.owner:HasCondition("FALLON_DUAL_BLADES") then
+                            for i, hit in attack:Hits() do
+                                local target = hit.target
+                                if not hit.evaded then
+                                    target:AddCondition("DEFECT", 1)
+                                end
+                            end
+                        end
+                    end
+                },
+                fallon_flurry_dagger = table.extend(NPC_MELEE)
+                {
+                    name = "Flurry Dagger", -- deals light damage, 5 used when flurry is active
+                    anim = "attack2_dual",
+        
+                    flags = CARD_FLAGS.MELEE,
+                    hit_count = 5,
+                    hit_anim = true,
+                    base_damage = 1,
+                },
+                fallon_flurry = table.extend(NPC_BUFF)
+                {
+                    name = "Flurry", -- gains kashio's flurry and 5 flurry daggers
+                    anim = "taunt2",
+        
+                    flags = CARD_FLAGS.SKILL | CARD_FLAGS.BUFF,
+                    target_type = TARGET_TYPE.SELF,
+
+                    OnPostResolve = function( self, battle, attack)
+                        self.owner:AddCondition("FLURRY", 1, self)
+                    end
+                },
+                fallon_blade_dance = table.extend(NPC_BUFF)
+                {
+                    name = "Blade Dance", -- after 3 attacks, fallon gains evasion
+                    anim = "taunt",
+        
+                    flags = CARD_FLAGS.SKILL | CARD_FLAGS.BUFF,
+                    target_type = TARGET_TYPE.SELF,
+
+                    OnPostResolve = function( self, battle, attack)
+                        self.owner:AddCondition("FALLON_BLADE_DANCE", 3, self)
+                    end
+                },
+                fallon_weapon_proficiency = table.extend(NPC_BUFF)
+                {
+                    name = "Weapon Swap Proficiency", -- gains buffs everytime fallon swaps weapons
+                    anim = "taunt2",
+        
+                    flags = CARD_FLAGS.SKILL | CARD_FLAGS.BUFF,
+                    target_type = TARGET_TYPE.SELF,
+
+                    OnPostResolve = function( self, battle, attack)
+                        self.owner:AddCondition("FALLON_WEAPON_PROFICIENCY", 3, self)
+                    end
+                },
+                fallon_force_field = table.extend(NPC_BUFF)
+                {
+                    name = "Fallon's Force Field", -- if an enemy attacks fallon with this condition, and the damage is lower than the threshold, fallon gains health equal to the damage
+                    anim = "taunt",
+        
+                    flags = CARD_FLAGS.SKILL | CARD_FLAGS.BUFF,
+                    target_type = TARGET_TYPE.SELF,
+
+                    OnPostResolve = function( self, battle, attack)
+                        self.owner:AddCondition("FALLON_FORCE_FIELD", 3, self)
+                    end
+                },
+                fallon_massacre = table.extend(NPC_MELEE)
+                {
+                    name = "Massacre", -- deals damage then gain massacre; fallon gains power every turn as long as massacre is active
+                    anim = "attack_dual",
+                    pre_anim = "taunt",
+                    post_anim = "taunt2",
+                    flags = CARD_FLAGS.MELEE,
+                    base_damage = 6,
+
+                    OnPostResolve = function( self, battle, attack)
+                        self.owner:AddCondition("FALLON_MASSACRE", 2, self)
+                    end
+                },
             },
 
             behaviour =
@@ -230,29 +517,60 @@ local def = CharacterDef("FALLON_PAST",
                         :AddID( "fallon_bait_and_switch", 2)
                         :AddID( "fallon_exposeaid", 2)
                         :AddID( "fallon_excel_pressure", 2)
+                        :AddID( "fallon_extreme_focus", 2)
+                        :AddID( "fallon_nice_knowin_ya", 2)
                     self.swapCards = self:MakePicker()
-                        :AddID( "fallon_equip_glaive", 1)
-                        :AddID( "fallon_equip_dualblades", 1)
+                        :AddID( "fallon_equip_glaive", 2)
+                        :AddID( "fallon_equip_dualblades", 2)
+                    self.advancedCards = self:MakePicker()
+                        :AddID( "fallon_grand_slam", 2)
+                        :AddID( "fallon_infinity_blade", 2)
+                        :AddID( "fallon_massacre", 2)
+                    self.buffCards = self:MakePicker()
+                        :AddID( "fallon_flurry", 1)
+                        :AddID( "fallon_blade_dance", 1)
+                        :AddID( "fallon_weapon_proficiency", 1)
+                        :AddID( "fallon_force_field", 1)
+                    self.flurryCards = self:MakePicker()
+                        :AddID( "fallon_flurry_dagger", 2)
                     self:SetPattern( self.Cycle )
-                    self.glaive = self:AddCard( "fallon_equip_glaive" )
-                    self.dualblades = self:AddCard( "fallon_equip_dualblades" )
-                    self.underPressure = self:AddCard( "fallon_excel_pressure" )
                 end,
 
                 Cycle = function( self )
-                    local swaps = math.random(1,4)
-                    self.basicCards:ChooseCards(swaps)
+                    local randomAction = math.random(1,2)
+                    local swaps = math.random(1,3)
+
+                    -- hits you with 5 flurry daggers if fallon has flurry
+                    if self.fighter:HasCondition("FLURRY") then
+                        self.flurryCards:ChooseCards(1)
+                    end
+
+                    -- fallon gains an extra attack when extreme focus is active
+                    if self.fighter:HasCondition("FALLON_EXTREME_FOCUS") then
+                        swaps = swaps + 1
+                    end
+            
+                    -- hits 1 to 3 times
+                    if randomAction == 1 then
+                        self.basicCards:ChooseCards(swaps)
+                    elseif randomAction == 2 then
+                        self.buffCards:ChooseCards(1)
+                    end
+
+                    -- extra attack with bait and switch
                     if self.fighter:HasCondition("FALLON") then
                         if self.fighter:GetCondition("FALLON").baitSwitch == true then
-                            self:ChooseCard( self.underPressure )
+                            self.basicCards:ChooseCards(1)
                             self.fighter:GetCondition("FALLON").baitSwitch = false
                         end
                     end
-                    -- if self.fighter:HasCondition("FALLON_GLAIVE") then
-                    --     self:ChooseCard( self.dualblades )
-                    -- elseif self.fighter:HasCondition("FALLON_DUAL_BLADES") then
-                    --     self:ChooseCard( self.glaive )
-                    -- end
+
+                    -- fallon uses attacks from advanced attack pool 
+                    if self.fighter:HasCondition("FALLON_DUAL_BLADES") then
+                        self.advancedCards:ChooseCards(1)
+                    end
+                    
+                    -- always swaps weapons after turn
                     self.swapCards:ChooseCards(1)
                 end,
             },

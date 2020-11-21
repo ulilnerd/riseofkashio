@@ -22,7 +22,7 @@ local QDEF = QuestDef.Define
 
 :AddObjective{
     id = "start",
-    title = "Defeat the boss!",
+    title = "Defeat Fssh Menewene!",
     --desc = "kill {target} for {giver}.",
 }
 
@@ -78,9 +78,9 @@ QDEF:AddConvo("start")
                     !right
                     !injured
                     You've bested me, like always Kashio
-                    Now think really hard, do you really want to do this?
+                    Now think about it, theres no turning back. Do you really want to do this?
                     Throw everything away to repay some stupid debt?
-                    Have you forgotten our promise to Fallon?? About our little niece Sal? you can't do this...
+                    Have you forgotten our promise to Fallon?? About our little niece Sal? You can't do this Kashio...
                 player:
                     !left
                     Nothing you say can stop me from handing this over to the Spark Barons
@@ -106,11 +106,11 @@ QDEF:AddConvo("start")
                     :OnWin()
                         :Fn(function() 
                             cxt:Dialog("DIALOG_WON")
-                                if TheGame:GetGameState():GetPlayerAgent():GetContentID() == "SAL" then
-                                    ConvoUtil.GiveBossRewards(cxt)
-                                else
-                                    ConvoUtil.GiveGraftChoice(cxt, RewardUtil.GetGrafts(cxt.quest:GetRank() + 1, TheGame:GetGameState():GetGraftDraftDetails().count))
-                                end
+                                -- if TheGame:GetGameState():GetPlayerAgent():GetContentID() == "SAL" then
+                                --     ConvoUtil.GiveBossRewards(cxt)
+                                -- else
+                                --     ConvoUtil.GiveGraftChoice(cxt, RewardUtil.GetGrafts(cxt.quest:GetRank() + 1, TheGame:GetGameState():GetGraftDraftDetails().count))
+                                -- end
                 
                             cxt.quest:Complete()
                             StateGraphUtil.AddEndOption(cxt)

@@ -13,6 +13,7 @@ local data = table.extend(brawl.base_data)
     },
 
     bosses = {
+        {"FALLON_PAST"},
         {"FSSH_PAST"},
     }
 }
@@ -32,11 +33,12 @@ data.MakeBrawlSchedule = function(data)
 
     local bs = BrawlSchedule()
     bs:SetCurrentHome("home_hq")
-    bs:SetDifficulty(1)
+    bs:SetDifficulty(5)
         :QuestPhase("starting_kashio")
-        :Boss(brawl.PickBoss(data.bosses[1], used_bosses) )
+        :Boss(brawl.PickBoss(data.bosses[1], used_bosses) ) -- fallon
         :Bonus(data.all_bonuses, 2)
         :Night()
+        :Boss(brawl.PickBoss(data.bosses[2], used_bosses) ) -- fssh
         :Sleep()
         :Win()
     return bs.events

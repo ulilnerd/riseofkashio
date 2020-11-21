@@ -137,6 +137,9 @@ local CARDS =
         burn_amount = 3,
         max_xp = 0,
 
+        min_damage = 0,
+        max_damage = 0,
+
         desc_fn = function(self, fmt_str)
             return loc.format(fmt_str, self:CalculateDefendText( self.burn_amount ))
         end,
@@ -832,7 +835,7 @@ local CARDS =
         cost = 1,
         max_xp = 6,
         flags = CARD_FLAGS.SKILL,
-        defend_amount = 4,
+        defend_amount = 3,
 
         OnPostResolve = function( self, battle, attack )
             attack:AddCondition( "DEFEND", self.defend_amount, self )
@@ -846,7 +849,7 @@ local CARDS =
     safeguard_plus = 
     {
         name = "Boosted Safeguard",
-        desc = "Apply 6 {DEFEND} then <#UPGRADE>equip {equip_flail}</>.",
+        desc = "Apply 5 {DEFEND} then <#UPGRADE>equip {equip_flail}</>.",
         
         manual_desc = true,
 
@@ -2830,7 +2833,7 @@ local CARDS =
         max_damage = 5,
 
         OnPostResolve = function( self, battle, attack, card )
-            local randomNum = math.random(1,3)
+            local randomNum = math.random(1,4)
             if self.owner:HasCondition("equip_flail") then
                 battle:DrawCards(1)
                 for i, hit in attack:Hits() do
@@ -2965,7 +2968,7 @@ local CARDS =
         rarity = CARD_RARITY.COMMON,
         max_xp = 6,
       
-        min_damage = 1,
+        min_damage = 2,
         max_damage = 3, 
 
         event_handlers =
@@ -2975,11 +2978,11 @@ local CARDS =
                 if card == self then
                     if self.owner:HasCondition("equip_glaive") then
                         if damageChance == 3 then
-                            dmgt:ModifyDamage( dmgt.min_damage + 2, dmgt.max_damage + 6, self ) -- triple damage
+                            dmgt:ModifyDamage( dmgt.min_damage * 3, dmgt.max_damage * 3 , self ) -- triple damage
                         elseif damageChance == 2 then
-                            dmgt:ModifyDamage( dmgt.min_damage + 1, dmgt.max_damage + 3 , self ) -- double damage
+                            dmgt:ModifyDamage( dmgt.min_damage * 2, dmgt.max_damage * 2 , self ) -- double damage
                         elseif damageChance == 1 then
-                            dmgt:ModifyDamage( dmgt.min_damage, dmgt.max_damage - 2, self ) -- decreased damage (1 min, 1 max)
+                            dmgt:ModifyDamage( math.round(dmgt.min_damage / 2), math.round(dmgt.max_damage / 2) , self ) -- decreased damage (half damage)
                         end
                     end
                 end
@@ -4143,7 +4146,7 @@ local CARDS =
 
         flags =  CARD_FLAGS.SKILL,
         cost = 2,
-        rarity = CARD_RARITY.UNCOMMON,
+        rarity = CARD_RARITY.RARE,
         max_xp = 4,
         target_type = TARGET_TYPE.SELF,
 
@@ -4151,6 +4154,25 @@ local CARDS =
             self.owner:AddCondition("UNBREAKABLE", 1, self)
         end
     },
+
+    soul_bound = 
+    {
+        name = "Soul Bound",
+        anim = "taunt",
+        desc = "Gain {SOUL_BOUND}.",
+        icon = "RISE:textures/gathertheirsouls.png",
+
+        flags =  CARD_FLAGS.SKILL | CARD_FLAGS.EXPEND,
+        cost = 3,
+        rarity = CARD_RARITY.RARE,
+        max_xp = 4,
+        target_type = TARGET_TYPE.SELF,
+
+        OnPostResolve = function( self, battle, attack, card, fighter )
+            self.owner:AddCondition("SOUL_BOUND", 3, self)
+        end
+    },
+
     --     blind_grenade = 
     -- {
     --     name = "Blinding Grenade",
@@ -4228,6 +4250,46 @@ end
 local CONDITIONS = 
 {
 
+    SOUL_BOUND = 
+    {
+        name = "Soul Bound",
+        desc = "For 3 turns, you and your teammates split damage taken depending on how many teammates you have, if you are alone, gain numerous buffs.",
+        icon = "battle/conditions/barbed_defense.tex",
+
+        OnApply = function( self, battle )
+            if self.owner:GetTeam():NumActiveFighters() == 1 then
+                self.owner:AddCondition("INVINCIBLE", 3, self)
+                self.owner:AddCondition("UNBREAKABLE", 3, self)
+                self.owner:AddCondition("POWER", 3, self)
+            end
+        end,
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                for i, ally in self.owner:GetTeam():Fighters() do
+                    if target == ally and card:IsAttackCard() and card.max_damage > 0 then
+                        dmgt:ModifyDamage(math.round(dmgt.min_damage / self.owner:GetTeam():NumActiveFighters()), math.round(dmgt.max_damage / self.owner:GetTeam():NumActiveFighters()), self)
+                    end
+                end
+            end,
+            [ BATTLE_EVENT.END_PLAYER_TURN ] = function( self, card, battle )
+                if self.owner:HasCondition("SOUL_BOUND") then
+                    self.owner:RemoveCondition("SOUL_BOUND", 1, self)
+                end
+
+            end,
+            [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit )
+                for i, ally in self.owner:GetTeam():Fighters() do
+                    if attack:IsTarget( ally ) and attack.card:IsAttackCard() then
+                        for i, allies in self.owner:GetTeam():Fighters() do
+                            allies:ApplyDamage(hit.damage, hit.damage)
+                        end
+                    end
+                end
+            end,
+        }
+    },
 
 
     UNBREAKABLE = 
@@ -4251,7 +4313,6 @@ local CONDITIONS =
                 self.owner:RemoveCondition("UNBREAKABLE", 1, self)
             end,
         }
-        
     },
 
     EVEN_ODDS = 
@@ -4792,7 +4853,8 @@ local CONDITIONS =
     INVINCIBLE = 
     {
         name = "Invincible", 
-        desc = "Negate 50% of all damage this turn and gain {RIPOSTE} equal to that damage.",
+        desc = "Negate 50% of all damage this turn and gain 2 {RIPOSTE} per hit.",
+        -- equal to that damage.
         icon = "battle/conditions/shield_of_hesh.tex",  
 
         ctype = CTYPE.BUFF,
@@ -4806,23 +4868,32 @@ local CONDITIONS =
                 end
             end,
 
-            [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack, hit )
-                for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-                    if enemy.prepared_cards then
-                        for i, card in ipairs( enemy.prepared_cards ) do
-                            if card:IsAttackCard() and attack:IsTarget( self.owner ) and card.min_damage > 0 then
-                                card.min_damage = math.ceil(card.min_damage / 2)
-                                card.max_damage = math.ceil(card.max_damage / 2)
-                            end
-                        end
-                    end
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                if target == self.owner and self.owner:HasCondition("INVINCIBLE") then
+                    dmgt:ModifyDamage( math.round(dmgt.min_damage / 2), math.round(dmgt.max_damage / 2), self )
                 end
             end,
+
             [ BATTLE_EVENT.ON_HIT ] = function( self, battle, attack, hit, target)
-                if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
-                    self.owner:AddCondition("RIPOSTE", math.ceil(hit.damage / 2))
+                if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() and attack.card.max_damage > 0 then
+                    self.owner:AddCondition("RIPOSTE", 2) -- changed to only 2 per hit
+                    -- math.ceil(hit.damage / 2)
                 end
             end
+
+            -- [ BATTLE_EVENT.POST_RESOLVE ] = function( self, battle, attack, hit )
+            --     for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+            --         if enemy.prepared_cards then
+            --             for i, card in ipairs( enemy.prepared_cards ) do
+            --                 if card:IsAttackCard() and attack:IsTarget( self.owner ) and card.min_damage > 0 then
+            --                     card.min_damage = math.ceil(card.min_damage / 2)
+            --                     card.max_damage = math.ceil(card.max_damage / 2)
+            --                 end
+            --             end
+            --         end
+            --     end
+            -- end,
+
         }
     },
 
@@ -5282,7 +5353,7 @@ local CONDITIONS =
                         end
                     self.owner:BroadcastEvent( BATTLE_EVENT.PLAY_ANIM, "taunt3")
                     self.owner:RemoveCondition("DEFLECTION", 1)
-                end
+                end,
         }
     },
 
@@ -5568,52 +5639,65 @@ local CONDITIONS =
     FORCE_FIELD =
     {
         name = "Rentorian Force Field",
-        desc = "Gain a shield that will negate all damage from enemies that have a lower max damage than the threshold, the threshold is equal to 10% of your max health plus current defend value.",
+        desc = "Gain a shield that will negate all damage from enemies that have a lower max damage than the threshold, the threshold is equal to 10% of your max health.",
+        -- plus current defend value
         icon = "battle/conditions/active_shield_generator.tex",
 
         threshold = 0,
         OnApply = function( self, battle, anim_fighter )
-            self.threshold = math.round(self.owner:GetMaxHealth() * 0.10)
+            self.threshold = math.round(self.owner:GetMaxHealth() * 0.10) 
         end,
     
         event_handlers = 
         {
             [ BATTLE_EVENT.ON_HIT ] = function (self, battle, attack, hit)
-                if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() then
+                if attack:IsTarget( self.owner ) and attack.card:IsAttackCard() and attack.card.max_damage > 0 then
                     if hit.damage > self.threshold then
-                        if self.owner:HasCondition("DEFEND") then
-                            if hit.damage > self.threshold + self.owner:GetConditionStacks("DEFEND") then
-                                self.owner:RemoveCondition("FORCE_FIELD", 1, self)
-                            end
-                        else
-                            self.owner:RemoveCondition("FORCE_FIELD", 1, self)
-                        end
+                        self.owner:RemoveCondition("FORCE_FIELD", 1, self)
                     end
                 end
             end,
 
-            [ BATTLE_EVENT.POST_RESOLVE ] = function (self, battle, attack)
-                for i, enemy in self.owner:GetEnemyTeam():Fighters() do
-                    if enemy.prepared_cards then
-                        for i, card in ipairs( enemy.prepared_cards ) do
-                            if card:IsAttackCard() then
-                                if card.max_damage <= self.threshold then
-                                    card.min_damage = 0
-                                    card.max_damage = 0
-                                end
-                                if card.max_damage > self.threshold then
-                                    if self.owner:HasCondition("DEFEND") then
-                                        if card.max_damage < self.threshold + self.owner:GetConditionStacks("DEFEND") then
-                                            card.min_damage = 0
-                                            card.max_damage = 0
-                                        end
-                                    end
-                                end
-                            end
-                        end
+            [ BATTLE_EVENT.CALC_DAMAGE ] = function( self, card, target, dmgt )
+                if target == self.owner and self.owner:HasCondition("FORCE_FIELD")then
+                    if dmgt.max_damage < self.threshold then
+                        dmgt:ModifyDamage( 0,0, self )
                     end
                 end
             end,
+
+            -- [ BATTLE_EVENT.POST_RESOLVE ] = function (self, battle, attack)
+            --     if self.owner:HasCondition("DEFEND") then
+            --         self.threshold = self.threshold + self.owner:GetConditionStacks("DEFEND")
+            --     end
+            -- end,
+
+            [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function (self, battle, attack)
+                self.threshold = math.round(self.owner:GetMaxHealth() * 0.10) 
+            end,
+
+            -- [ BATTLE_EVENT.POST_RESOLVE ] = function (self, battle, attack)
+            --     for i, enemy in self.owner:GetEnemyTeam():Fighters() do
+            --         if enemy.prepared_cards then
+            --             for i, card in ipairs( enemy.prepared_cards ) do
+            --                 if card:IsAttackCard() then
+            --                     if card.max_damage <= self.threshold then
+            --                         card.min_damage = 0
+            --                         card.max_damage = 0
+            --                     end
+            --                     if card.max_damage > self.threshold then
+            --                         if self.owner:HasCondition("DEFEND") then
+            --                             if card.max_damage < self.threshold + self.owner:GetConditionStacks("DEFEND") then
+            --                                 card.min_damage = 0
+            --                                 card.max_damage = 0
+            --                             end
+            --                         end
+            --                     end
+            --                 end
+            --             end
+            --         end
+            --     end
+            -- end,
         }
     },
 
@@ -5719,7 +5803,7 @@ local CONDITIONS =
     equip_flail = 
     {
         name = "Kashio's Flail",
-        desc = "Gain {DEFEND} equal to 5% of your current health and {DEFEND} then {HEAL} self for 10% of your missing health every turn. Also have a 25% chance to apply a random debuff to an enemy on hit.",
+        desc = "Gain {DEFEND} equal to 5% of your current health and {DEFEND} then {HEAL} self for 10% of your missing health if you are under 20 health every turn. Also have a 25% chance to apply a random debuff to an enemy on hit.",
         -- desc = "Gain {DEFEND} for every 10 current health then {HEAL} self for 10% of your missing health every turn.", -- new description
         icon = "battle/conditions/spree_rage.tex",
 
@@ -5750,10 +5834,16 @@ local CONDITIONS =
                 end      
             end,
 
-            -- defense and healing every turn
+            -- gain DEFEND, HEAL and a random debuff every turn
             [ BATTLE_EVENT.END_PLAYER_TURN ] = function (self, battle, attack)
+                local randomDebuffList = { "EXPOSED", "TARGETED", "WOUND", "DEFECT", "IMPAIR", "BLEED", "BURN" }
+                local randomDebuff = math.random(1,7)
+                self.owner:AddCondition(randomDebuffList[randomDebuff], 1, self)
                 self.owner:AddCondition("DEFEND", math.round(self.owner:GetHealth() * 0.05), self)
-                self.owner:HealHealth(math.round((self.owner:GetMaxHealth() - self.owner:GetHealth()) * 0.10), self)
+                -- heal health if you're currently under 20 health
+                if self.owner:GetHealth() <= 20 then
+                    self.owner:HealHealth(math.round((self.owner:GetMaxHealth() - self.owner:GetHealth()) * 0.10), self)
+                end
             end,
 
              -- gain card "the_execution after using the same weapon for 6 actions"
