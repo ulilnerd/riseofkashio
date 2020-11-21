@@ -4249,7 +4249,6 @@ end
 
 local CONDITIONS = 
 {
-
     SOUL_BOUND = 
     {
         name = "Soul Bound",
