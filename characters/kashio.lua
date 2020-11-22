@@ -10,6 +10,16 @@ local def = CharacterDef("KASHIO_PLAYER",
     combat_anims = { "anim/med_combat_flail_kashio.zip" },
 
     voice_actor = "kashio",
+    -- battle_preview_anim = "anim/boss_kashio_slide.zip",
+    -- battle_preview_offset = { x = 200, y = 50 },
+    -- battle_preview_glow = { colour = 0xFF9501ff, bloom = 0.13, threshold = 0.02 },
+
+    battle_preview_anim_fn = function( build )
+        local anims = {
+            ["kashio_base"] = { anim = "anim/boss_kashio_slide.zip", offset = { x = 200, y = 50, scale = 1}, glow = { colour = 0xFF9501ff, bloom = 0.13, threshold = 0.02 }, audio = nil },
+        }
+        return anims[build] or anims["kashio_base"]
+    end,
     
     max_grafts = {
         [GRAFT_TYPE.COMBAT] = 6,
@@ -24,6 +34,7 @@ local def = CharacterDef("KASHIO_PLAYER",
         ranged_riposte = true,
         actions = 3,
         formation = FIGHTER_FORMATION.FRONT_X,
+
 
         anim_mapping =
         {

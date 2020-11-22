@@ -13,6 +13,7 @@ local data = table.extend(brawl.base_data)
     },
 
     bosses = {
+        {"BOG_BURR_BOSS"},
         {"FALLON_PAST"},
         {"FSSH_PAST"},
     }
@@ -38,10 +39,16 @@ data.MakeBrawlSchedule = function(data)
         :QuestPhase("starting_kashio")
         :QuestPhase("backupRise")
         :QuestPhase("riseHub")
-        :Boss(brawl.PickBoss(data.bosses[1], used_bosses) ) -- fallon
+        :Boss(brawl.PickBoss(data.bosses[1], used_bosses) ) -- bog boss
+        :SetCurrentHome("bog_forest")
+        :Bonus(data.all_bonuses, 2)
+        :Boss(brawl.PickBoss(data.bosses[2], used_bosses) ) -- fallon
+        
+        :QuestPhase("riseHub")
         :Bonus(data.all_bonuses, 2)
         :Night()
-        :Boss(brawl.PickBoss(data.bosses[2], used_bosses) ) -- fssh
+        :Boss(brawl.PickBoss(data.bosses[3], used_bosses) ) -- fssh
+        :Bonus(data.all_bonuses, 2)
         :Sleep()
         :Win()
     return bs.events
@@ -65,6 +72,21 @@ QDEF:AddQuestLocation{
         AgentUtil.TakeJob(quest:GetCastMember("bartender"), location, "bartender")
     end,
 
+}
+QDEF:AddQuestLocation{
+    cast_id = "bog_forest",
+    name = "Bog Forest",
+    plax = "EXT_Bog_Forest_01",
+    show_agents = true,
+    tags = {"tavern"},
+    indoors = true,
+    work = 
+    {
+        bartender = CreateClosedJob( PHASE_MASK_ALL, "Bartender", CHARACTER_ROLES.PROPRIETOR, "GROG_N_DOG_ITEMS"),
+    },
+    on_assign = function(quest, location)
+        AgentUtil.TakeJob(quest:GetCastMember("bartender"), location, "bartender")
+    end,
 }
 -- CUSTOM VARIABLES -- 
 local backupTaken = false

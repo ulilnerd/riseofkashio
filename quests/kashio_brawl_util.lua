@@ -228,7 +228,7 @@ end
 
 -------- custom variables -------------
 local bossCount = 1 -- increment this value for the next boss quest
-local bossQuests = {"FALLON_BOSS", "FSSH_BOSS" } -- boss quests for different interactions
+local bossQuests = {"BOG_BOSS","FALLON_BOSS", "FSSH_BOSS" } -- boss quests for different interactions
 local backupRequistioned = false
 local gotCard = false
 ---------------------------------------
@@ -291,7 +291,7 @@ local function do_next_quest_step(quest)
             quest.param.current_job = new_quest
             quest:Activate("pick_job")
             -- CUSTOM VARIABLES ------------------
-            if bossCount < 3 then 
+            if bossCount < 4 then 
                 bossCount = bossCount + 1
             end
             backupRequistioned = false
@@ -419,8 +419,10 @@ local function CreateBrawlQuest(id, data)
         },
 
         GetRandomLocation = function (quest)
+            local possibleLocations = {"EXT_BOG_DEEPBOG", "EXT_Bog_Forest_01", "Ext_Bog_Illegal_Worksite_1"}
             local location = quest:SpawnTempLocation("TEMP_LOCATION")
-            local plax_id = fun(BRAWL_LOCATIONS):filter(function(id) return TheGame:GetGameProfile():HasSeenPlax(id) end):randomPick() or "EXT_Forest_1"
+            -- local plax_id = fun(BRAWL_LOCATIONS):filter(function(id) return TheGame:GetGameProfile():HasSeenPlax(id) end):randomPick() or "EXT_Forest_1"
+            local plax_id = possibleLocations[bossCount-1]
             location:SetPlax(plax_id)
             return location
         end
@@ -762,7 +764,7 @@ end)
     QDEF:AddConvo("pick_job")
         :Loc{
             OPT_FIND_WORK = "Venture forth! {1#quest}",
-            OPT_FIGHT_BOSS = "Fight a boss!",
+            OPT_FIGHT_BOSS = "Next Step!",
         }
         :Hub_Location( function(cxt)
                         local opt = cxt:Opt(cxt.quest.param.boss_time and "OPT_FIGHT_BOSS" or "OPT_FIND_WORK", cxt.quest.param.current_job) 
@@ -965,7 +967,7 @@ end)
             :Loc(bonus_loc)
             :Loc{
                 DIALOG_INTRO = [[
-                    * {bartender} pulls you aside.
+                    * {bartender} approaches you.
                         MASTER I HAVE BROUGHT YOU SOME GIFTS. 
                     player:
                         Thanks buddy.
@@ -973,7 +975,7 @@ end)
                 OPT_SKIP = "Skip {bartender}'s gift",
                 DIALOG_SKIP = [[
                     player:
-                        No thanks!
+                        Maybe next time.
                 ]]
             }
             :Fn(function(cxt) 
