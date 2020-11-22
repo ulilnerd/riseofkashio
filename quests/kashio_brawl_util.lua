@@ -291,7 +291,9 @@ local function do_next_quest_step(quest)
             quest.param.current_job = new_quest
             quest:Activate("pick_job")
             -- custom variables
-            bossCount = bossCount + 1
+            if bossCount < 3 then
+                bossCount = bossCount + 1
+            end
             backupRequistioned = false
             gotCard = false
             --------------------

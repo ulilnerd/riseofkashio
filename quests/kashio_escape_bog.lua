@@ -18,6 +18,7 @@ local data = table.extend(brawl.base_data)
     }
 }
 
+
 data.MakeBrawlSchedule = function(data)
 
     local all_valid_quests = {}
@@ -35,6 +36,7 @@ data.MakeBrawlSchedule = function(data)
     bs:SetCurrentHome("home_hq")
     bs:SetDifficulty(5)
         :QuestPhase("starting_kashio")
+        :QuestPhase("backupRise")
         :Boss(brawl.PickBoss(data.bosses[1], used_bosses) ) -- fallon
         :Bonus(data.all_bonuses, 2)
         :Night()
@@ -63,3 +65,89 @@ QDEF:AddQuestLocation{
     end,
 
 }
+local backupTaken = false
+
+QDEF:AddObjective{
+    id = "backupRise",
+    desc = "",
+    mark = {"riseBackup"},
+    hide_in_overlay = true,
+
+    on_activate = function(quest)
+        quest:GetCastMember("riseBackup"):MoveToLocation(quest:GetCastMember("home"))
+    end,
+}
+:AddCastByAlias{
+    cast_id = "riseBackup",
+    alias = "RISE_TURNCOAT_BOSS",
+}
+QDEF:AddConvo("backupRise", "riseBackup")
+    :ConfrontState("CONF")
+        :Loc{
+            DIALOG_INTRO = [[
+                agent:
+                    !right
+                player:
+                    !left
+                agent:
+                    Ma'am, I've rounded up our remaining forces and we're ready to move to the rendezvous.
+                player:
+                    !point
+                    Move out on my mark.
+            ]],
+            DIALOG_SKIP = [[
+                agent:
+                    !right
+                player:
+                    !left
+                player:
+                    !point
+                    Hold your positions.
+                agent:
+                   Yes Ma'am.
+            ]],
+            DIALOG_TAKE_BACKUP = [[
+                agent:
+                    !right
+                player:
+                    !left
+                player:
+                    !point
+                    !angry
+                    Move your ass soldier!
+                agent:
+                    Yes Ma'am!
+            ]],
+            OPT_BACKUP = "Get Backup",
+            OPT_SKIP = "Skip Backup"
+        }
+        :Fn(function(cxt) 
+            cxt:Dialog("DIALOG_INTRO")
+            cxt:Opt("OPT_BACKUP")
+                :Dialog("DIALOG_TAKE_BACKUP")
+                :PreIcon( global_images.buycombat )
+                :Fn(function(cxt)
+                    local riseUnits = {"RISE_REBEL", "RISE_PAMPHLETEER", "RISE_RADICAL", "RISE_AUTOMECH", "RISE_REBEL_PROMOTED"}
+                    local randomUnit1 = math.random(1,5)
+                    local randomUnit2 = math.random(1,4)
+                    local randomUnit3 = math.random(1,4)
+                    if backupTaken == false then
+                        local riseSoldier1 = TheGame:GetGameState():AddAgent(Agent(riseUnits[randomUnit1]))
+                        riseSoldier1:Recruit(PARTY_MEMBER_TYPE.CREW)
+
+                        local riseSoldier2 = TheGame:GetGameState():AddAgent(Agent(riseUnits[randomUnit2]))
+                        riseSoldier2:Recruit(PARTY_MEMBER_TYPE.CREW)
+
+                        local riseSoldier3 = TheGame:GetGameState():AddAgent(Agent(riseUnits[randomUnit3]))
+                        riseSoldier3:Recruit(PARTY_MEMBER_TYPE.CREW)
+
+                        backupTaken = true
+                        cxt.quest:Complete("backupRise")
+                    end
+                end)
+            cxt:Opt("OPT_SKIP")
+                :Dialog("DIALOG_SKIP")
+                :Fn(function() 
+                    StateGraphUtil.AddEndOption(cxt):Fn( function( cxt ) cxt.quest:Complete("backupRise" ) end )
+                end)
+        end)

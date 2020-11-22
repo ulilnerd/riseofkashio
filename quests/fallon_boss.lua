@@ -31,6 +31,7 @@ QDEF:AddConvo("start")
     :ConfrontState("CONF")
         :Loc{
             DIALOG_INTRO = [[
+               
                 agent:
                     !right
                 player:
@@ -67,6 +68,7 @@ QDEF:AddConvo("start")
                 Player:
                     !angry
                     Out of my way Fallon!
+                    
             ]],
 
             OPT_ATTACK = "Showdown with Dal Fallon!",

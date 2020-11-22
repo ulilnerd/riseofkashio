@@ -5735,6 +5735,21 @@ local CONDITIONS =
         },
     },
 
+    TEMP_TARGETTED = {
+        name = "Temporary Targetted",
+        desc = "Lose 1 {TARGETED} when you begin your turn.",
+        icon = "battle/conditions/power_loss.tex",
+
+        event_handlers = 
+        {
+            [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function (self, battle, attack)
+                if self.owner:HasCondition("TARGETED") then
+                    self.owner:RemoveCondition("TARGETED", 1, self)
+                end
+            end,
+        },
+    },
+
     equip_glaive = 
     {
         name = "Kashio's Force Glaive",
@@ -5838,11 +5853,14 @@ local CONDITIONS =
                 local randomDebuffList = { "EXPOSED", "TARGETED", "WOUND", "DEFECT", "IMPAIR", "BLEED", "BURN" }
                 local randomDebuff = math.random(1,7)
                 self.owner:AddCondition(randomDebuffList[randomDebuff], 1, self)
+                if randomDebuff == 2 then
+                    self.owner:AddCondition("TEMP_TARGETTED")
+                end
                 self.owner:AddCondition("DEFEND", math.round(self.owner:GetHealth() * 0.05), self)
                 -- heal health if you're currently under 20 health
-                if self.owner:GetHealth() <= 20 then
+                -- if self.owner:GetHealth() <= 20 then
                     self.owner:HealHealth(math.round((self.owner:GetMaxHealth() - self.owner:GetHealth()) * 0.10), self)
-                end
+                -- end
             end,
 
              -- gain card "the_execution after using the same weapon for 6 actions"

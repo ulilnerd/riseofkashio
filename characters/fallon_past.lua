@@ -545,9 +545,9 @@ local def = CharacterDef("FALLON_PAST",
                         self.flurryCards:ChooseCards(1)
                     end
 
-                    -- fallon gains an extra attack when extreme focus is active
+                    -- fallon gains 2 extra attacks when extreme focus is active
                     if self.fighter:HasCondition("FALLON_EXTREME_FOCUS") then
-                        swaps = swaps + 1
+                        swaps = swaps + 2
                     end
             
                     -- hits 1 to 3 times
