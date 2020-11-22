@@ -290,13 +290,13 @@ local function do_next_quest_step(quest)
             local new_quest, err = QuestUtil.SpawnQuest( bossQuests[bossCount], { qrank = TheGame:GetGameState():GetCurrentBaseDifficulty() , parameters = {boss_id = event.def, give_graft = event.give_graft } }  ) 
             quest.param.current_job = new_quest
             quest:Activate("pick_job")
-            -- custom variables
-            if bossCount < 3 then
+            -- CUSTOM VARIABLES ------------------
+            if bossCount < 3 then 
                 bossCount = bossCount + 1
             end
             backupRequistioned = false
             gotCard = false
-            --------------------
+            --------------------------------------
         elseif event.id == "sleep" then 
             quest:Activate("sleep")
         elseif event.id == "win" then 
@@ -667,6 +667,8 @@ local function CreateBrawlQuest(id, data)
 
             end )
 
+            local bogCards = {"parasite_infusion", "contaminate", "remote_plague", "epidemic", "armor_of_disease", "infestation", "transform_bog_one"}
+            local randomCard = math.random(1,7)
             QDEF:AddConvo("starting_kashio")
         :ConfrontState("CONF")
             :Loc{
@@ -711,9 +713,9 @@ local function CreateBrawlQuest(id, data)
     local did_draft, got_bug, remove_cards = false
     cxt:RunLoop(function( ... )
         if not got_bug then
-            cxt:Opt("OPT_TRANSFORM", "transform_bog_one")
+            cxt:Opt("OPT_TRANSFORM", bogCards[randomCard])
                 :PreIcon( global_images.buycombat )
-                :GainCards{"transform_bog_one"}
+                :GainCards{bogCards[randomCard]}
                 :Fn(function()
                     got_bug = true
                 end)
