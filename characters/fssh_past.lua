@@ -46,6 +46,7 @@ local def = CharacterDef("FSSH_PAST",
                     killingSpreeUsed = false,
                     timesHit = 0,
                     firstPet = true,
+                    calledJakesFighters = false,
 
                     -- OnApply = function( self, battle )
                     --     self.owner:AddCondition("FSSH_UNBREAKABLE", 1, self)
@@ -484,6 +485,35 @@ local def = CharacterDef("FSSH_PAST",
                     
                     base_damage = 7,
                 },
+                fssh_call_to_jakes = table.extend(NPC_BUFF)
+                {
+                    name = "Call To Jakes", -- calls jakes backup to help, summons 2 jakes fighters from a random list at the start of battle.
+                    anim = "taunt",
+        
+                    flags = CARD_FLAGS.SKILL | CARD_FLAGS.BUFF,
+                    target_type = TARGET_TYPE.SELF,
+
+                    OnPostResolve = function( self, battle, attack)
+                        local riseUnits = {"JAKES_SMUGGLER", "JAKES_RUNNER", "JAKES_LIFTER"}
+                        local randomUnit1 = math.random(1,3)
+                        local randomUnit2 = math.random(1,3)
+                        local randomUnit3 = math.random(1,3)
+
+                        local summon = Agent( riseUnits[randomUnit1] )
+                        local riseFighter1 = Fighter.CreateFromAgent( summon, battle:GetScenario():GetAllyScale() )
+                        self.owner:GetTeam():AddFighter( riseFighter1 )
+
+                        local summon = Agent( riseUnits[randomUnit2] )
+                        local riseFighter2 = Fighter.CreateFromAgent( summon, battle:GetScenario():GetAllyScale() )
+                        self.owner:GetTeam():AddFighter( riseFighter2 )
+
+                        -- local summon = Agent( riseUnits[randomUnit3] )
+                        -- local riseFighter3 = Fighter.CreateFromAgent( summon, battle:GetScenario():GetAllyScale() )
+                        -- self.owner:GetTeam():AddFighter( riseFighter3 )
+
+                        self.owner:GetTeam():ActivateNewFighters()
+                    end
+                },
             },
 
             behaviour =
@@ -513,13 +543,19 @@ local def = CharacterDef("FSSH_PAST",
                         self.slicer = self:AddCard( "fssh_slicer" )
                         self.dicer = self:AddCard( "fssh_dicer" )
                         self.crayote = self:AddCard( "fssh_call_crayote" )
+                        self.callJakes = self:AddCard( "fssh_call_to_jakes" )
                         self.killingSpree = self:AddCard( "fssh_killing_spree" )
                 end,
 
                 Cycle = function( self )
+                    if self.fighter:GetCondition("FINAL_EFFORT").calledJakesFighters == false then
+                        self:ChooseCard( self.callJakes )
+                        self.fighter:GetCondition("FINAL_EFFORT").calledJakesFighters = true
+                    end
+
                     local randomCards = math.random(1,3)
                     -- 20 stacks: have a chance to summon upgraded crayote
-                    if self.fighter:GetConditionStacks("FINAL_EFFORT") >= 1 then
+                    if self.fighter:GetConditionStacks("FINAL_EFFORT") >= 20 then
                         if self.fighter:GetCondition("FINAL_EFFORT").firstPet == true then -- fssh calls pet regardless the first time she gets 20 stacks of final effort
                             self:ChooseCard( self.crayote )
                             self.fighter:GetCondition("FINAL_EFFORT").firstPet = false
