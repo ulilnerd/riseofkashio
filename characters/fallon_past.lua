@@ -86,6 +86,7 @@ local def = CharacterDef("FALLON_PAST",
                     weaponSwapped = false,
                     actionsMade = 0,
                     bonusDamageDealt = false,
+                    calledRiseFighters = false,
                     
                     OnApply = function( self )
                         if self.owner:HasCondition("FALLON_DUAL_BLADES") then
@@ -506,6 +507,35 @@ local def = CharacterDef("FALLON_PAST",
                         self.owner:AddCondition("FALLON_MASSACRE", 2, self)
                     end
                 },
+                fallon_call_to_rise = table.extend(NPC_BUFF)
+                {
+                    name = "Call To Rise", -- calls rise backup to help, summons 2 rise fighters from a random list at the start of battle.
+                    anim = "taunt",
+        
+                    flags = CARD_FLAGS.SKILL | CARD_FLAGS.BUFF,
+                    target_type = TARGET_TYPE.SELF,
+
+                    OnPostResolve = function( self, battle, attack)
+                        local riseUnits = {"RISE_REBEL", "RISE_PAMPHLETEER", "RISE_RADICAL", "RISE_AUTOMECH", "RISE_REBEL_PROMOTED"}
+                        local randomUnit1 = math.random(1,5)
+                        local randomUnit2 = math.random(1,4)
+                        local randomUnit3 = math.random(1,4)
+
+                        local summon = Agent( riseUnits[randomUnit1] )
+                        local riseFighter1 = Fighter.CreateFromAgent( summon, battle:GetScenario():GetAllyScale() )
+                        self.owner:GetTeam():AddFighter( riseFighter1 )
+
+                        local summon = Agent( riseUnits[randomUnit2] )
+                        local riseFighter2 = Fighter.CreateFromAgent( summon, battle:GetScenario():GetAllyScale() )
+                        self.owner:GetTeam():AddFighter( riseFighter2 )
+
+                        -- local summon = Agent( riseUnits[randomUnit3] )
+                        -- local riseFighter3 = Fighter.CreateFromAgent( summon, battle:GetScenario():GetAllyScale() )
+                        -- self.owner:GetTeam():AddFighter( riseFighter3 )
+
+                        self.owner:GetTeam():ActivateNewFighters()
+                    end
+                },
             },
 
             behaviour =
@@ -533,10 +563,17 @@ local def = CharacterDef("FALLON_PAST",
                         :AddID( "fallon_force_field", 1)
                     self.flurryCards = self:MakePicker()
                         :AddID( "fallon_flurry_dagger", 2)
+                    self.riseFighters = self:AddCard( "fallon_call_to_rise" )
                     self:SetPattern( self.Cycle )
                 end,
 
                 Cycle = function( self )
+                    -- beginning of battle call rise fighters to help fallon
+                    if self.fighter:GetCondition("FALLON").calledRiseFighters == false then
+                        self:ChooseCard( self.riseFighters )
+                        self.fighter:GetCondition("FALLON").calledRiseFighters = true
+                    end
+
                     local randomAction = math.random(1,2)
                     local swaps = math.random(1,3)
 

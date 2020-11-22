@@ -5745,6 +5745,7 @@ local CONDITIONS =
             [ BATTLE_EVENT.BEGIN_PLAYER_TURN ] = function (self, battle, attack)
                 if self.owner:HasCondition("TARGETED") then
                     self.owner:RemoveCondition("TARGETED", 1, self)
+                    self.owner:RemoveCondition("TEMP_TARGETED", 1, self)
                 end
             end,
         },

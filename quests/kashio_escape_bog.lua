@@ -37,6 +37,7 @@ data.MakeBrawlSchedule = function(data)
     bs:SetDifficulty(5)
         :QuestPhase("starting_kashio")
         :QuestPhase("backupRise")
+        :QuestPhase("riseHub")
         :Boss(brawl.PickBoss(data.bosses[1], used_bosses) ) -- fallon
         :Bonus(data.all_bonuses, 2)
         :Night()
@@ -65,7 +66,9 @@ QDEF:AddQuestLocation{
     end,
 
 }
+-- CUSTOM VARIABLES -- 
 local backupTaken = false
+------------------------
 
 QDEF:AddObjective{
     id = "backupRise",
@@ -92,6 +95,7 @@ QDEF:AddConvo("backupRise", "riseBackup")
                 agent:
                     Ma'am, I've rounded up our remaining forces and we're ready to move to the rendezvous.
                 player:
+                    Excellent
                     !point
                     Move out on my mark.
             ]],
@@ -118,14 +122,27 @@ QDEF:AddConvo("backupRise", "riseBackup")
                 agent:
                     Yes Ma'am!
             ]],
+            DIALOG_STATUS = [[
+                agent:
+                    !right
+                player:
+                    !left
+                player:
+                    Status report on our allies?
+                agent:
+                    General Fallon is out in the Bog with our remaining Rise Forces and Liutenant Fssh is being accompanied by the mercenaries we hired for this expedition.
+                player:
+                    Copy that.
+            ]],
             OPT_BACKUP = "Get Backup",
-            OPT_SKIP = "Skip Backup"
+            OPT_SKIP = "Skip Backup",
+            OPT_STATUS = "Status Report"
         }
         :Fn(function(cxt) 
             cxt:Dialog("DIALOG_INTRO")
             cxt:Opt("OPT_BACKUP")
                 :Dialog("DIALOG_TAKE_BACKUP")
-                :PreIcon( global_images.buycombat )
+                :PreIcon( engine.asset.Texture( "UI/ic_graftscompendium.tex"), UICOLOURS.NEGOTIATION )
                 :Fn(function(cxt)
                     local riseUnits = {"RISE_REBEL", "RISE_PAMPHLETEER", "RISE_RADICAL", "RISE_AUTOMECH", "RISE_REBEL_PROMOTED"}
                     local randomUnit1 = math.random(1,5)
@@ -151,3 +168,73 @@ QDEF:AddConvo("backupRise", "riseBackup")
                     StateGraphUtil.AddEndOption(cxt):Fn( function( cxt ) cxt.quest:Complete("backupRise" ) end )
                 end)
         end)
+        
+
+    QDEF:AddObjective{
+        id = "riseHub",
+        desc = "",
+        mark = {"riseBackup"},
+        hide_in_overlay = true,
+    }
+    QDEF:AddConvo("riseHub", "riseBackup")
+        :Loc{
+            DIALOG_STATUS = [[
+                agent:
+                    !right
+                player:
+                    !left
+                player:
+                    Status report on our allies?
+                agent:
+                    General Fallon is out in the Bog with our remaining Rise Forces and Liutenant Fssh is being accompanied by the mercenaries we hired for this expedition.
+                player:
+                    Copy that.
+            ]],
+            DIALOG_TAKE_BACKUP = [[
+                agent:
+                    !right
+                player:
+                    !left
+                player:
+                    !point
+                    !angry
+                    Move your ass soldier!
+                agent:
+                    Yes Ma'am!
+            ]],
+            OPT_STATUS = "Status Report",
+            OPT_BACKUP = "Get Backup",
+        }
+        :Hub( function(cxt, who)
+            cxt:Opt("OPT_STATUS")
+                :Dialog("DIALOG_STATUS")
+                :Fn(function(cxt) 
+                    StateGraphUtil.AddEndOption(cxt)
+                end)
+            if backupTaken == false then
+                cxt:Opt("OPT_BACKUP")
+                    :Dialog("DIALOG_TAKE_BACKUP")
+                    :PreIcon( engine.asset.Texture( "UI/ic_graftscompendium.tex"), UICOLOURS.NEGOTIATION )
+                    :Fn(function(cxt)
+                        local riseUnits = {"RISE_REBEL", "RISE_PAMPHLETEER", "RISE_RADICAL", "RISE_AUTOMECH", "RISE_REBEL_PROMOTED"}
+                        local randomUnit1 = math.random(1,5)
+                        local randomUnit2 = math.random(1,4)
+                        local randomUnit3 = math.random(1,4)
+                        
+                            local riseSoldier1 = TheGame:GetGameState():AddAgent(Agent(riseUnits[randomUnit1]))
+                            riseSoldier1:Recruit(PARTY_MEMBER_TYPE.CREW)
+
+                            local riseSoldier2 = TheGame:GetGameState():AddAgent(Agent(riseUnits[randomUnit2]))
+                            riseSoldier2:Recruit(PARTY_MEMBER_TYPE.CREW)
+
+                            local riseSoldier3 = TheGame:GetGameState():AddAgent(Agent(riseUnits[randomUnit3]))
+                            riseSoldier3:Recruit(PARTY_MEMBER_TYPE.CREW)
+
+                            backupTaken = true
+                            cxt.quest:Complete("backupRise")
+                        
+                    end)
+            end
+        end)
+
+        
