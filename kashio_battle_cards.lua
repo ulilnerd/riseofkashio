@@ -5476,6 +5476,7 @@ local CONDITIONS =
         flail_equipped = false,
         attackCount = 0,
         robotSummon = false,
+        thirdTurn = 0,
 
         -- 10 stacks: gain METALLIC
         -- 20 stacks: Your attacks on an enemy have a small chance of granting you a random buff
@@ -5518,7 +5519,7 @@ local CONDITIONS =
                     end
                 end
 
-                -- 10 stacks: gain metallic and remove all bleed and wound from yourself
+                -- 10 stacks: gain an energy shield that negates all debuffs every 3 turns
                 if self.owner:GetConditionStacks("KINGPIN") >= 10 then
                     if not self.owner:HasCondition("METALLIC") then
                         self.owner:AddCondition("METALLIC", 1, self)
@@ -5559,6 +5560,7 @@ local CONDITIONS =
                         end
                     end
                 end
+               
             end,
             
             -- 40 stacks: every 3 attacks deal double damage, damage counter carries on to next turn as well

@@ -228,5 +228,6 @@ name = "Pleaded for Life" ,
 name = "Flurry" ,
 name = "Rentorian Force Field" ,
 name = "Strength of One Thousand" ,
+name = "Temporary Targetted" ,
 name = "Kashio's Force Glaive" ,
 name = "Kashio's Flail" 

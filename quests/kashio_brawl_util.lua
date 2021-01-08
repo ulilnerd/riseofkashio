@@ -422,7 +422,7 @@ local function CreateBrawlQuest(id, data)
             local possibleLocations = {"EXT_BOG_DEEPBOG", "EXT_Bog_Forest_01", "Ext_Bog_Illegal_Worksite_1"}
             local location = quest:SpawnTempLocation("TEMP_LOCATION")
             -- local plax_id = fun(BRAWL_LOCATIONS):filter(function(id) return TheGame:GetGameProfile():HasSeenPlax(id) end):randomPick() or "EXT_Forest_1"
-            local plax_id = possibleLocations[bossCount-1]
+            local plax_id = possibleLocations[bossCount-1] or "EXT_Bog_Forest_01"
             location:SetPlax(plax_id)
             return location
         end
@@ -687,10 +687,8 @@ local function CreateBrawlQuest(id, data)
                         !point
                         Who the hell are you?
                     agent:
-                        I AM KNOWN AS VAGARANT TEST PROJECT NUMBER 05894265
-                        BUT MY CREATORS CALL ME MR ROBOTO
-                        I CAN HELP WITH VARIOUS TASKS
-                        SUCH AS ELIMINATING PESTS AND INSECTS
+                        I AM KNOWN AS VAGARANT TEST PROJECT NUMBER 05894265. BUT MY CREATORS CALL ME MR ROBOTO
+                        I CAN HELP WITH VARIOUS TASKS. SUCH AS ELIMINATING PESTS AND INSECTS
                     * Mr Roboto picks up a small bug
                 ]],
                 DIALOG_SKIP = [[
@@ -764,7 +762,7 @@ end)
     QDEF:AddConvo("pick_job")
         :Loc{
             OPT_FIND_WORK = "Venture forth! {1#quest}",
-            OPT_FIGHT_BOSS = "Next Step!",
+            OPT_FIGHT_BOSS = "Move Out!",
         }
         :Hub_Location( function(cxt)
                         local opt = cxt:Opt(cxt.quest.param.boss_time and "OPT_FIGHT_BOSS" or "OPT_FIND_WORK", cxt.quest.param.current_job) 

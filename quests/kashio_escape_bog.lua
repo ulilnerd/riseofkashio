@@ -39,6 +39,7 @@ data.MakeBrawlSchedule = function(data)
         :QuestPhase("starting_kashio")
         :QuestPhase("backupRise")
         :QuestPhase("riseHub")
+        :QuestPhase("slotMachineHub")
         :Boss(brawl.PickBoss(data.bosses[1], used_bosses) ) -- bog boss
         :SetCurrentHome("bog_forest")
         :Bonus(data.all_bonuses, 2)
@@ -257,6 +258,62 @@ QDEF:AddConvo("backupRise", "riseBackup")
                         
                     end)
             end
+        end)
+        QDEF:AddObjective{
+            id = "slotMachineHub",
+            desc = "",
+            mark = {"slotMachine"},
+            hide_in_overlay = true,
+
+            on_activate = function(quest)
+                quest:GetCastMember("slotMachine"):MoveToLocation(quest:GetCastMember("home"))
+            end,
+        }
+        :AddCastByAlias{
+            cast_id = "slotMachine",
+            alias = "ROBOT_SLOTMACHINE",
+        }
+        QDEF:AddConvo("slotMachineHub", "slotMachine")
+        :Loc{
+            DIALOG_INTRO = [[
+                agent: 
+                    !right
+                player:
+                    !left
+                agent:
+                    Welcome to the Griftlands Microtransaction Store! You can insert some shills to buy a loot box that will allow you to pick one card.
+                player:
+                    Well thats just great.
+            ]],
+            DIALOG_GAMBLE_CARDS = [[
+                agent: 
+                    !left
+                player:
+                    !right
+                agent: 
+                    BEEP BOOP BEEP BOOP
+                player:
+                    Not a bad haul.
+            ]],
+            OPT_CARDS = "Gamble for Cards",
+        }
+        :Hub( function(cxt, who)
+            cxt:Dialog("DIALOG_INTRO")
+            cxt:Opt("OPT_CARDS")
+                :PreIcon( engine.asset.Texture( "UI/ic_graftscompendium.tex"), UICOLOURS.NEGOTIATION )
+                :Dialog("DIALOG_GAMBLE_CARDS")
+                :DeliverMoney( 20, { is_shop = true } )
+                :Fn(function(cxt) 
+                    local function OnDone()
+                        cxt.encounter:ResumeEncounter()
+                    end
+                    local draft_popup = Screen.DraftChoicePopup()
+                    local cards = RewardUtil.GetBattleCards( 1, 3, cxt.player )
+                    draft_popup:DraftCards( cxt.player, Battle.Card, cards, OnDone )
+                    TheGame:FE():InsertScreen( draft_popup )
+                    cxt.enc:YieldEncounter()
+                    StateGraphUtil.AddEndOption(cxt)
+                end)
         end)
 
         

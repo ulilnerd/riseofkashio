@@ -8,7 +8,7 @@ AddPlayerCharacter(
 
             name = "Kashio",
             title = "The Kingpin",
-            desc = "A loyal working class citizen just trying to scrape by",
+            desc = "Formerly an indentured laborer, made now as the biggest debt-broker in Murder Bay.",
             advancement = DEFAULT_ADVANCEMENT,
 
             pre_battle_music = "event:/music/dailyrun_precombat_sal",
