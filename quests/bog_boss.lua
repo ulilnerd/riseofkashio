@@ -59,12 +59,14 @@ QDEF:AddConvo("start")
                     The main problem is getting even near this thing, didn't even suffer a small scratch yet.
                     Before you showed up my men have been pinned down by it's ranged capabilities, raining down fire upon us everytime we clear it's minions out.
                     Let my squad clear a path for your forces then we will be able to get in range of this thing, take it down once and for all and get the hell out of here
+                    Or you can take care of the bog humanoid creature so you can clear a path for us.
                 player:
                     !happy
                     Sounds good
                     It's clean up time
             ]],
             OPT_ATTACK = "Eliminate the Bog Monstrocity!",
+            OPT_ATTACK_HUMANOID = "Clear a path for Fallon",
             DIALOG_ATTACK = [[
                 player:
                     !fight

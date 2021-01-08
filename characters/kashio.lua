@@ -6,8 +6,8 @@ local def = CharacterDef("KASHIO_PLAYER",
     -- "anim/weapon_double_bladed_staff_rentorian.zip" 
     -- "anim/med_combat_rentorian.zip"
 
-    anims = {"anim/weapon_flail_kashio.zip" },
-    combat_anims = { "anim/med_combat_flail_kashio.zip" },
+    anims = {"anim/weapon_blaster_phicket_assassin_02.zip","anim/weapon_flail_kashio.zip" },
+    combat_anims = { "anim/med_combat_blaster_phicket_assassin_02.zip","anim/med_combat_flail_kashio.zip" },
 
     voice_actor = "kashio",
     -- battle_preview_anim = "anim/boss_kashio_slide.zip",
@@ -38,7 +38,7 @@ local def = CharacterDef("KASHIO_PLAYER",
 
         anim_mapping =
         {
-            riposte = "gun2",
+            riposte = "attack1",
             execute = "spin_attack",
         },
 

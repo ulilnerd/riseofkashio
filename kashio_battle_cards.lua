@@ -5737,8 +5737,8 @@ local CONDITIONS =
         },
     },
 
-    TEMP_TARGETTED = {
-        name = "Temporary Targetted",
+    TEMP_TARGETED = {
+        name = "Temporary Targeted",
         desc = "Lose 1 {TARGETED} when you begin your turn.",
         icon = "battle/conditions/power_loss.tex",
 
@@ -5857,7 +5857,7 @@ local CONDITIONS =
                 local randomDebuff = math.random(1,7)
                 self.owner:AddCondition(randomDebuffList[randomDebuff], 1, self)
                 if randomDebuff == 2 then
-                    self.owner:AddCondition("TEMP_TARGETTED")
+                    self.owner:AddCondition("TEMP_TARGETED")
                 end
                 self.owner:AddCondition("DEFEND", math.round(self.owner:GetHealth() * 0.05), self)
                 -- heal health if you're currently under 20 health
