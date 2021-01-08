@@ -15,7 +15,7 @@ local def = CharacterDef("FALLON_PAST",
         head = "head_male_hesh_luminiciate",
         build = "male_rise_promoted_build",
         
-        hair_colour = 0xCB5D3Cff,
+        hair_colour = 0xF8F8FFFF,
         skin_colour = 0xd2a18cff,
         species = "HUMAN",
         unique = true,

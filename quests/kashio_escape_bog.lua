@@ -105,7 +105,7 @@ QDEF:AddObjective{
 }
 :AddCastByAlias{
     cast_id = "riseBackup",
-    alias = "RISE_TURNCOAT_BOSS",
+    alias = "RISE_SECOND",
 }
 QDEF:AddConvo("backupRise", "riseBackup")
     :ConfrontState("CONF")
